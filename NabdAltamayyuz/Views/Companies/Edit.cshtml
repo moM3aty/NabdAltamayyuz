@@ -1,0 +1,77 @@
+﻿@model NabdAltamayyuz.Models.Company
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "تعديل الشركة";
+    var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- هامش علوي لتفادي التداخل مع الـ Navbar -->
+<div class="container py-5 animate-fade-in" style="margin-top: 100px;">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-dark text-white py-3 border-0 d-flex justify-content-between align-items-center px-4">
+                    <h5 class="mb-0 fw-bold text-gold">
+                        <i class="fas fa-building me-2"></i> @(isRtl ? "تعديل بيانات الشركة" : "Edit Company")
+                    </h5>
+                    <a href="/Dashboard" class="btn btn-sm btn-outline-light rounded-pill border-secondary text-white-50 hover-white">
+                        <i class="fas fa-arrow-left me-1"></i> @(isRtl ? "عودة" : "Back")
+                    </a>
+                </div>
+
+                <div class="card-body p-4 p-md-5 bg-white">
+                    <form asp-action="Edit" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="CreatedAt" />
+
+                        <div class="text-center mb-4">
+                            <div class="avatar-circle bg-light text-gold fw-bold d-inline-flex align-items-center justify-content-center border border-gold mb-2" style="width: 80px; height: 80px; border-radius: 50%; font-size: 2rem;">
+                                <i class="fas fa-city"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark mt-2">@Model.Name</h5>
+                        </div>
+
+                        <div class="row g-4">
+                            <!-- Company Name -->
+                            <div class="col-12">
+                                <label asp-for="Name" class="form-label fw-bold text-muted small">@(isRtl ? "اسم الشركة" : "Company Name")</label>
+                                <div class="input-group shadow-sm">
+                                    <span class="input-group-text bg-light border-end-0 text-gold"><i class="fas fa-signature"></i></span>
+                                    <input asp-for="Name" class="form-control bg-light border-start-0" required />
+                                </div>
+                                <span asp-validation-for="Name" class="text-danger small mt-1"></span>
+                            </div>
+
+                            <!-- Registration Number -->
+                            <div class="col-12">
+                                <label asp-for="RegistrationNumber" class="form-label fw-bold text-muted small">@(isRtl ? "رقم السجل التجاري" : "Registration Number")</label>
+                                <div class="input-group shadow-sm">
+                                    <span class="input-group-text bg-light border-end-0 text-gold"><i class="fas fa-id-card"></i></span>
+                                    <input asp-for="RegistrationNumber" class="form-control bg-light border-start-0" required />
+                                </div>
+                                <span asp-validation-for="RegistrationNumber" class="text-danger small mt-1"></span>
+                            </div>
+                        </div>
+
+                        <hr class="my-4 opacity-10">
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold px-5 py-2 rounded-pill hover-scale shadow-lg">
+                                <i class="fas fa-save me-2"></i> @(isRtl ? "حفظ التعديلات" : "Save Changes")
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

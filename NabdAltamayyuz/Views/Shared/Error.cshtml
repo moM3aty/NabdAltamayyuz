@@ -1,0 +1,47 @@
+﻿@{
+    ViewData["Title"] = "Error | خطأ";
+    var isRtl = System.Globalization.CultureInfo.CurrentCulture.Name.StartsWith("ar");
+}
+
+<div class="container d-flex flex-column justify-content-center align-items-center min-vh-100 text-center animate-fade-in">
+    <div class="error-icon mb-4">
+        <i class="fas fa-exclamation-triangle fa-5x text-gold fa-beat-fade"></i>
+    </div>
+
+    @if (isRtl)
+    {
+        <h1 class="display-4 fw-bold text-dark mb-3">عذراً، حدث خطأ غير متوقع</h1>
+        <p class="lead text-muted mb-5 w-75 mx-auto">
+            لا تقلق، فريقنا التقني قد تم إبلاغه بالمشكلة ويعمل على حلها حالياً.
+            <br>يمكنك المحاولة مرة أخرى لاحقاً أو العودة للصفحة الرئيسية.
+        </p>
+        <div class="d-flex gap-3 justify-content-center">
+            <a href="/" class="btn btn-dark btn-lg px-5 shadow-lg rounded-pill">
+                <i class="fas fa-home me-2"></i> العودة للرئيسية
+            </a>
+            <a href="javascript:history.back()" class="btn btn-outline-gold btn-lg px-5 shadow-sm rounded-pill">
+                <i class="fas fa-arrow-right me-2"></i> السابق
+            </a>
+        </div>
+    }
+    else
+    {
+        <h1 class="display-4 fw-bold text-dark mb-3">Oops! Unexpected Error</h1>
+        <p class="lead text-muted mb-5 w-75 mx-auto">
+            Don't worry, our technical team has been notified and is working on it.
+            <br>You can try again later or return to the homepage.
+        </p>
+        <div class="d-flex gap-3 justify-content-center">
+            <a href="/" class="btn btn-dark btn-lg px-5 shadow-lg rounded-pill">
+                <i class="fas fa-home me-2"></i> Home
+            </a>
+            <a href="javascript:history.back()" class="btn btn-outline-gold btn-lg px-5 shadow-sm rounded-pill">
+                <i class="fas fa-arrow-left me-2"></i> Back
+            </a>
+        </div>
+    }
+
+    <div class="mt-5 text-muted small opacity-50">
+        Request ID: <code>@System.Diagnostics.Activity.Current?.Id ?? Context.TraceIdentifier</code>
+    </div>
+</div>

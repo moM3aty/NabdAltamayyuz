@@ -1,0 +1,154 @@
+﻿@model IEnumerable<NabdAltamayyuz.Models.WorkTask>
+@using System.Globalization
+@using NabdAltamayyuz.Models
+
+@{
+    ViewData["Title"] = "إدارة المهام";
+    var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var isEmployee = User.IsInRole(UserRole.Employee.ToString());
+}
+
+<!-- تمت إضافة margin-top: 100px لتفادي التداخل مع الـ Navbar -->
+<div class="container py-5 animate-fade-in" style="margin-top: 100px;">
+    <!-- Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">
+                <i class="fas fa-tasks text-gold me-2"></i> @(isRtl ? "إدارة المهام" : "Task Management")
+            </h3>
+            <p class="text-muted small mb-0">@(isRtl ? "متابعة وإدارة المهام الوظيفية والتشغيلية" : "Track and manage operational tasks")</p>
+        </div>
+
+        @if (!isEmployee)
+        {
+            <a href="/Tasks/Create" class="btn btn-gold bg-dark text-gold fw-bold shadow-sm hover-lift rounded-pill px-4">
+                <i class="fas fa-plus-circle me-2"></i> @(isRtl ? "إسناد مهمة جديدة" : "Assign New Task")
+            </a>
+        }
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success border-0 bg-success bg-opacity-10 text-success rounded-3 shadow-sm mb-4 fade show">
+            <i class="fas fa-check-circle me-2"></i> @TempData["Success"]
+        </div>
+    }
+
+    <!-- Tasks Grid -->
+    <div class="row g-4">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var task in Model)
+            {
+                var isOverdue = !task.IsCompleted && task.DueDate < DateTime.Today;
+                var dueClass = isOverdue ? "text-danger" : "text-muted";
+                var statusBadge = task.IsCompleted
+                ? "bg-success bg-opacity-10 text-success"
+                : (isOverdue ? "bg-danger bg-opacity-10 text-danger" : "bg-warning bg-opacity-10 text-dark");
+                var statusText = task.IsCompleted
+                ? (isRtl ? "مكتملة" : "Completed")
+                : (isOverdue ? (isRtl ? "متأخرة" : "Overdue") : (isRtl ? "قيد التنفيذ" : "Pending"));
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card border-0 shadow-sm h-100 rounded-4 hover-lift task-card bg-white position-relative overflow-hidden">
+                        <!-- Status Strip -->
+                        <div class="position-absolute top-0 start-0 w-100" style="height: 4px; background: @(task.IsCompleted ? "#198754" : "#D4AF37");"></div>
+
+                        <div class="card-body p-4 d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span class="badge @statusBadge rounded-pill px-3 py-1">@statusText</span>
+                                <small class="@dueClass fw-bold d-flex align-items-center">
+                                    <i class="far fa-clock me-1"></i> @task.DueDate.ToString("dd MMM")
+                                </small>
+                            </div>
+
+                            <h5 class="card-title fw-bold text-dark mb-2 text-truncate" title="@task.Title">@task.Title</h5>
+                            <p class="card-text text-muted small mb-4 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                                @task.Description
+                            </p>
+
+                            <!-- Assigned To (Visible to Admin) -->
+                            @if (!isEmployee)
+                            {
+                                <div class="d-flex align-items-center mb-3 bg-light p-2 rounded-3">
+                                    <div class="avatar-xs bg-dark text-gold rounded-circle d-flex justify-content-center align-items-center me-2" style="width: 25px; height: 25px; font-size: 0.7rem;">
+                                        @task.AssignedTo?.FullName?.Substring(0, 1)
+                                    </div>
+                                    <div class="d-flex flex-column">
+                                        <small class="text-muted" style="font-size: 0.65rem;">@(isRtl ? "مسندة إلى" : "Assigned To")</small>
+                                        <small class="fw-bold text-dark" style="font-size: 0.8rem;">@task.AssignedTo?.FullName</small>
+                                    </div>
+                                </div>
+                            }
+
+                            <hr class="border-secondary opacity-10 mt-auto">
+
+                            <div class="d-flex justify-content-between align-items-center pt-1">
+                                <div class="btn-group">
+                                    @if (!string.IsNullOrEmpty(task.AttachmentPath))
+                                    {
+                                        <a href="/uploads/@task.AttachmentPath" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill me-1" title="@(isRtl ? "عرض المرفق" : "View Attachment")">
+                                            <i class="fas fa-paperclip"></i>
+                                        </a>
+                                    }
+                                    @if (!isEmployee)
+                                    {
+                                        <a href="/Tasks/Edit/@task.Id" class="btn btn-sm btn-outline-primary rounded-pill me-1" title="@(isRtl ? "تعديل" : "Edit")">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-danger rounded-pill" title="@(isRtl ? "حذف" : "Delete")"><i class="fas fa-trash-alt"></i></button>
+                                    }
+                                </div>
+
+                                @if (isEmployee && !task.IsCompleted)
+                                {
+                                    <button onclick="completeTask(@task.Id)" class="btn btn-sm btn-gold text-dark fw-bold rounded-pill px-3 shadow-sm">
+                                        <i class="fas fa-check me-1"></i> @(isRtl ? "إنجاز" : "Complete")
+                                    </button>
+                                }
+                                else if (task.IsCompleted)
+                                {
+                                    <span class="text-success small fw-bold"><i class="fas fa-check-double me-1"></i> @(isRtl ? "تم الإنجاز" : "Done")</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center py-5">
+                <div class="bg-light rounded-4 p-5 border border-dashed mx-auto" style="max-width: 500px;">
+                    <i class="fas fa-clipboard-check fa-4x text-gold opacity-50 mb-3"></i>
+                    <h5 class="fw-bold text-muted">@(isRtl ? "لا توجد مهام" : "No Tasks Found")</h5>
+                    <p class="text-muted small mb-3">@(isRtl ? "قائمة المهام فارغة حالياً." : "The task list is currently empty.")</p>
+                    @if (!isEmployee)
+                    {
+                        <a href="/Tasks/Create" class="btn btn-outline-dark rounded-pill px-4">@(isRtl ? "إضافة مهمة جديدة" : "Create New Task")</a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function completeTask(id) {
+            if (confirm('@(isRtl ? "تأكيد إنجاز المهمة؟" : "Confirm task completion?")')) {
+                fetch('/Tasks/Complete/' + id, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.success) location.reload();
+                });
+            }
+        }
+    </script>
+}

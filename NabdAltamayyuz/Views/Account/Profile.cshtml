@@ -1,0 +1,136 @@
+﻿@using System.Globalization
+@using System.Security.Claims
+@{
+    ViewData["Title"] = "الملف الشخصي";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+
+    var userName = User.Identity.Name ?? (isRtl ? "مستخدم" : "User");
+    var userEmail = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value ?? "user@example.com";
+    var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "Employee";
+    var roleDisplay = userRole == "SuperAdmin" ? (isRtl ? "مالك النظام" : "Super Admin") :
+                      userRole == "CompanyAdmin" ? (isRtl ? "مدير شركة" : "Company Manager") :
+                      (isRtl ? "موظف" : "Employee");
+}
+
+<div class="container py-5 animate-fade-in" style="margin-top: 100px;">
+    <div class="row g-4">
+        <!-- Sidebar Profile Card -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden h-100">
+                <div class="card-body p-0 text-center">
+                    <div class="bg-dark py-5 position-relative">
+                        <div class="position-absolute top-0 start-0 w-100 h-100 opacity-10" style="background: url('https://www.transparenttextures.com/patterns/cubes.png');"></div>
+                        <div class="avatar bg-white text-gold display-3 d-flex align-items-center justify-content-center mx-auto shadow-lg position-relative z-1" style="width: 130px; height: 130px; border-radius: 50%; border: 5px solid #D4AF37;">
+                            @userName.Substring(0, 1).ToUpper()
+                        </div>
+                    </div>
+                    <div class="p-4 mt-2">
+                        <h4 class="fw-bold text-dark mb-1">@userName</h4>
+                        <p class="text-muted mb-3">@userEmail</p>
+                        <span class="badge bg-gold text-dark px-4 py-2 rounded-pill shadow-sm mb-4">@roleDisplay</span>
+
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-dark rounded-pill"><i class="fas fa-camera me-2"></i> @(isRtl ? "تحديث الصورة" : "Update Photo")</button>
+                            <button class="btn btn-light text-danger rounded-pill"><i class="fas fa-sign-out-alt me-2"></i> @(isRtl ? "تسجيل الخروج" : "Logout")</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white border-top p-4">
+                    <h6 class="fw-bold small text-uppercase text-muted mb-3">@(isRtl ? "معلومات النظام" : "System Info")</h6>
+                    <div class="d-flex justify-content-between mb-2">
+                        <small class="text-muted">@(isRtl ? "تاريخ الانضمام" : "Joined")</small>
+                        <small class="fw-bold text-dark">01 Jan 2024</small>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <small class="text-muted">@(isRtl ? "آخر ظهور" : "Last Active")</small>
+                        <small class="fw-bold text-success">@(isRtl ? "الآن" : "Now")</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details & Settings -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
+                <div class="card-header bg-white py-4 px-4 border-bottom d-flex align-items-center">
+                    <i class="fas fa-user-cog text-gold fa-lg me-3"></i>
+                    <div>
+                        <h5 class="mb-0 fw-bold text-dark">@(isRtl ? "بيانات الحساب" : "Account Details")</h5>
+                        <small class="text-muted">@(isRtl ? "إدارة معلوماتك الشخصية وإعدادات الدخول" : "Manage your personal info and login settings")</small>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <form>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted">@(isRtl ? "الاسم الكامل" : "Full Name")</label>
+                                <input type="text" class="form-control bg-light border-0" value="@userName" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted">@(isRtl ? "المسمى الوظيفي" : "Job Title")</label>
+                                <input type="text" class="form-control bg-light border-0" value="@roleDisplay" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted">@(isRtl ? "البريد الإلكتروني" : "Email")</label>
+                                <input type="email" class="form-control bg-light border-0" value="@userEmail" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted">@(isRtl ? "رقم الهاتف" : "Phone")</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="fas fa-phone text-muted"></i></span>
+                                    <input type="text" class="form-control bg-light border-0" value="05xxxxxxxx">
+                                    <button class="btn btn-link text-gold btn-sm fw-bold text-decoration-none">@(isRtl ? "تغيير" : "Change")</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Security Section -->
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-white py-4 px-4 border-bottom d-flex align-items-center">
+                    <i class="fas fa-shield-alt text-gold fa-lg me-3"></i>
+                    <div>
+                        <h5 class="mb-0 fw-bold text-dark">@(isRtl ? "الأمان وكلمة المرور" : "Security & Password")</h5>
+                        <small class="text-muted">@(isRtl ? "تحديث كلمة المرور وتأمين الحساب" : "Update password and secure account")</small>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <form>
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-muted">@(isRtl ? "كلمة المرور الحالية" : "Current Password")</label>
+                                <input type="password" class="form-control bg-light border-0" placeholder="********">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold small text-muted">@(isRtl ? "كلمة المرور الجديدة" : "New Password")</label>
+                                <input type="password" class="form-control bg-light border-0" placeholder="********">
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-gold text-dark fw-bold w-100 rounded-pill shadow-sm">
+                                    @(isRtl ? "تحديث كلمة المرور" : "Update Password")
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <hr class="my-4 opacity-10">
+
+                    <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-history text-muted me-3 fa-lg"></i>
+                            <div>
+                                <h6 class="mb-0 fw-bold text-dark small">@(isRtl ? "سجل النشاطات" : "Activity Log")</h6>
+                                <small class="text-muted" style="font-size: 0.7rem;">@(isRtl ? "آخر تسجيل دخول: اليوم 09:00 ص" : "Last login: Today 09:00 AM")</small>
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill">@(isRtl ? "عرض الكل" : "View All")</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

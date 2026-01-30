@@ -1,0 +1,169 @@
+﻿@using System.Globalization
+@using NabdAltamayyuz.Models
+@{
+    ViewData["Title"] = "لوحة تحكم الشركة";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+
+    var attendanceList = ViewBag.AttendanceList as List<Attendance>;
+    var pendingTasks = ViewBag.PendingTasks as List<WorkTask>;
+}
+
+<!-- تمت إضافة margin-top: 100px لتفادي التداخل مع الـ Navbar -->
+<div class="container py-5 animate-fade-in" style="margin-top: 100px;">
+    <!-- Quick Actions Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-5 gap-3">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">
+                <i class="fas fa-tachometer-alt text-gold me-2"></i> @(isRtl ? "لوحة المعلومات" : "Dashboard")
+            </h3>
+            <p class="text-muted small mb-0">@(isRtl ? "متابعة سير العمل وأداء الموظفين اليومي" : "Track workflow and daily employee performance")</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/Tasks/Create" class="btn btn-dark fw-bold shadow-sm rounded-pill">
+                <i class="fas fa-plus-circle me-2 text-gold"></i> @(isRtl ? "إسناد مهمة" : "Assign Task")
+            </a>
+            <a href="/Employees/Create" class="btn btn-outline-dark fw-bold shadow-sm rounded-pill">
+                <i class="fas fa-user-plus me-2"></i> @(isRtl ? "إضافة موظف" : "Add Employee")
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-white rounded-4 h-100 border-start border-5 border-gold">
+                <div class="card-body d-flex align-items-center p-4">
+                    <div class="icon-box bg-gold-light text-gold rounded-circle p-3 me-3 ms-3">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted text-uppercase small mb-1">@(isRtl ? "إجمالي الموظفين" : "Total Employees")</h6>
+                        <h3 class="fw-bold mb-0">@ViewBag.EmployeesCount</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-white rounded-4 h-100 border-start border-5 border-success">
+                <div class="card-body d-flex align-items-center p-4">
+                    <div class="icon-box bg-success bg-opacity-10 text-success rounded-circle p-3 me-3 ms-3">
+                        <i class="fas fa-user-check fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted text-uppercase small mb-1">@(isRtl ? "حضور اليوم" : "Present Today")</h6>
+                        <h3 class="fw-bold mb-0">@(attendanceList?.Count ?? 0)</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-white rounded-4 h-100 border-start border-5 border-warning">
+                <div class="card-body d-flex align-items-center p-4">
+                    <div class="icon-box bg-warning bg-opacity-10 text-warning rounded-circle p-3 me-3 ms-3">
+                        <i class="fas fa-clipboard-list fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted text-uppercase small mb-1">@(isRtl ? "مهام معلقة" : "Pending Tasks")</h6>
+                        <h3 class="fw-bold mb-0">@(pendingTasks?.Count ?? 0)</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Today's Attendance List -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-lg rounded-4 h-100 overflow-hidden">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-clock text-gold me-2"></i> @(isRtl ? "سجل الحضور اليومي" : "Today's Attendance")</h6>
+                    <a href="/Attendance" class="btn btn-sm btn-light text-muted small rounded-pill">@(isRtl ? "التفاصيل" : "Details") <i class="fas fa-arrow-left ms-1"></i></a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light small text-muted">
+                                <tr>
+                                    <th class="ps-4">@(isRtl ? "الموظف" : "Employee")</th>
+                                    <th>@(isRtl ? "دخول" : "In")</th>
+                                    <th>@(isRtl ? "خروج" : "Out")</th>
+                                    <th>@(isRtl ? "الحالة" : "Status")</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (attendanceList != null && attendanceList.Any())
+                                {
+                                    foreach (var item in attendanceList)
+                                    {
+                                        <tr>
+                                            <td class="ps-4 fw-bold">@item.Employee.FullName</td>
+                                            <td class="text-success ltr">@(item.TimeIn?.ToString("hh:mm tt"))</td>
+                                            <td class="text-danger ltr">@(item.TimeOut?.ToString("hh:mm tt") ?? "--")</td>
+                                            <td>
+                                                @if (item.TimeOut == null)
+                                                {
+                                                    <span class="badge bg-warning text-dark rounded-pill">@(isRtl ? "جاري العمل" : "Working")</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success rounded-pill">@(isRtl ? "مكتمل" : "Completed")</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">@(isRtl ? "لم يتم تسجيل أي حضور اليوم بعد" : "No attendance recorded today yet")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Pending Tasks -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-lg rounded-4 h-100 bg-dark text-white">
+                <div class="card-header bg-transparent py-3 border-secondary d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold text-gold"><i class="fas fa-tasks me-2"></i> @(isRtl ? "مهام عاجلة" : "Urgent Tasks")</h6>
+                    <a href="/Tasks" class="btn btn-sm btn-outline-gold rounded-pill" style="font-size: 0.7rem;">@(isRtl ? "الكل" : "All")</a>
+                </div>
+                <div class="card-body">
+                    @if (pendingTasks != null && pendingTasks.Any())
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var task in pendingTasks)
+                            {
+                                <li class="list-group-item bg-transparent text-white border-secondary px-0 py-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <h6 class="mb-0 fw-bold text-truncate" style="max-width: 70%;">@task.Title</h6>
+                                        <small class="text-gold">@task.DueDate.ToString("MMM dd")</small>
+                                    </div>
+                                    <p class="small text-white-50 mb-2 text-truncate">@task.Description</p>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-xs bg-secondary rounded-circle d-flex justify-content-center align-items-center me-2" style="width: 20px; height: 20px; font-size: 10px;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <small class="text-white-50">@task.AssignedTo?.FullName</small>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5 text-white-50">
+                            <i class="fas fa-check-circle fa-3x mb-3 text-gold opacity-50"></i>
+                            <p>@(isRtl ? "لا توجد مهام معلقة!" : "No pending tasks!")</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,100 @@
+﻿@model NabdAltamayyuz.Models.ApplicationUser
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "إضافة موظف جديد";
+    var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- تمت إضافة margin-top: 100px لتفادي التداخل مع الـ Navbar -->
+<div class="container py-5 animate-fade-in" style="margin-top: 100px;">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-dark text-white py-3 border-0 d-flex justify-content-between align-items-center px-4">
+                    <h5 class="mb-0 fw-bold text-gold">
+                        <i class="fas fa-user-plus me-2"></i> @(isRtl ? "إضافة موظف جديد" : "Add New Employee")
+                    </h5>
+                    <a href="/Employees" class="btn btn-sm btn-outline-light rounded-pill border-secondary text-white-50 hover-white">
+                        <i class="fas fa-times me-1"></i> @(isRtl ? "إلغاء" : "Cancel")
+                    </a>
+                </div>
+                <div class="card-body p-4 p-md-5 bg-white">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="row g-4">
+                            <!-- Full Name -->
+                            <div class="col-12">
+                                <label asp-for="FullName" class="form-label fw-bold text-muted small">@(isRtl ? "الاسم الكامل" : "Full Name")</label>
+                                <div class="input-group input-group-lg shadow-sm">
+                                    <span class="input-group-text bg-light border-end-0 text-gold"><i class="fas fa-user"></i></span>
+                                    <input asp-for="FullName" class="form-control bg-light border-start-0 fs-6" placeholder="@(isRtl ? "مثال: محمد أحمد علي" : "e.g. John Doe")" required />
+                                </div>
+                                <span asp-validation-for="FullName" class="text-danger small mt-1 d-block"></span>
+                            </div>
+
+                            <!-- Email -->
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label fw-bold text-muted small">@(isRtl ? "البريد الإلكتروني" : "Email Address")</label>
+                                <div class="input-group shadow-sm">
+                                    <span class="input-group-text bg-light border-end-0 text-gold"><i class="fas fa-envelope"></i></span>
+                                    <input asp-for="Email" type="email" class="form-control bg-light border-start-0" placeholder="name@company.com" required />
+                                </div>
+                                <span asp-validation-for="Email" class="text-danger small mt-1 d-block"></span>
+                            </div>
+
+                            <!-- Phone -->
+                            <div class="col-md-6">
+                                <label asp-for="PhoneNumber" class="form-label fw-bold text-muted small">@(isRtl ? "رقم الجوال" : "Phone Number")</label>
+                                <div class="input-group shadow-sm">
+                                    <span class="input-group-text bg-light border-end-0 text-gold"><i class="fas fa-phone"></i></span>
+                                    <input asp-for="PhoneNumber" class="form-control bg-light border-start-0" placeholder="05xxxxxxxx" required />
+                                </div>
+                                <span asp-validation-for="PhoneNumber" class="text-danger small mt-1 d-block"></span>
+                            </div>
+
+                            <!-- Job Title -->
+                            <div class="col-md-6">
+                                <label asp-for="JobTitle" class="form-label fw-bold text-muted small">@(isRtl ? "المسمى الوظيفي" : "Job Title")</label>
+                                <div class="input-group shadow-sm">
+                                    <span class="input-group-text bg-light border-end-0 text-gold"><i class="fas fa-briefcase"></i></span>
+                                    <input asp-for="JobTitle" class="form-control bg-light border-start-0" placeholder="@(isRtl ? "مثال: محاسب" : "e.g. Accountant")" required />
+                                </div>
+                                <span asp-validation-for="JobTitle" class="text-danger small mt-1 d-block"></span>
+                            </div>
+
+                            <!-- Default Password (Read Only) -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-muted small">@(isRtl ? "كلمة المرور الافتراضية" : "Default Password")</label>
+                                <div class="input-group shadow-sm bg-light rounded">
+                                    <span class="input-group-text bg-transparent border-0 text-muted"><i class="fas fa-lock"></i></span>
+                                    <input type="text" class="form-control bg-transparent border-0 fw-bold font-monospace text-dark" value="123456" readonly />
+                                    <span class="input-group-text bg-transparent border-0" data-bs-toggle="tooltip" title="@(isRtl ? "كلمة المرور الافتراضية، يمكن للموظف تغييرها لاحقاً" : "Default password, employee can change it later")">
+                                        <i class="fas fa-info-circle text-info"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-light border border-gold border-opacity-25 bg-gold bg-opacity-10 mt-4 rounded-3 d-flex align-items-center">
+                            <i class="fas fa-lightbulb text-gold me-3 fa-lg"></i>
+                            <div class="small text-muted">
+                                @(isRtl ? "سيتم إنشاء حساب للموظف بصلاحيات محدودة، ويمكنه تسجيل الدخول باستخدام البريد الإلكتروني وكلمة المرور الافتراضية." : "An employee account with limited access will be created. They can login using the email and default password.")
+                            </div>
+                        </div>
+
+                        <hr class="my-4 opacity-10">
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold px-5 py-2 rounded-pill hover-scale shadow-lg">
+                                <i class="fas fa-check me-2"></i> @(isRtl ? "حفظ البيانات" : "Save Employee")
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

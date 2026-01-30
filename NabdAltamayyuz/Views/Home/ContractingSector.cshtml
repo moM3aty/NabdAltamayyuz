@@ -1,0 +1,247 @@
+﻿@using System.Globalization
+@{
+    ViewData["Title"] = "قطاع المقاولات";
+    var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+}
+
+<!-- Hero Section -->
+<div class="hero-wrapper" style="background-image: url('https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1920&auto=format&fit=crop'); min-height: 60vh;">
+    <div class="hero-overlay"></div>
+    <div class="container hero-content text-center">
+        <h1 class="display-4 fw-bolder mb-3 animate-up text-white">
+            @(isRtl ? "نبض التميز الذهبي" : "Golden Pulse")
+        </h1>
+        <p class="lead text-white opacity-90 fs-3 animate-up delay-100 mb-5 fw-bold">
+            @(isRtl ? "نبني واقعكم بدقة هندسية وحلول متكاملة" : "Building your reality with engineering precision and integrated solutions")
+        </p>
+        <div class="animate-up delay-200">
+            <a href="#services" class="btn btn-premium btn-lg px-5">@(isRtl ? "خدماتنا الشاملة" : "Our Services")</a>
+        </div>
+    </div>
+</div>
+
+<!-- Intro Section -->
+<section class="section-padding bg-white">
+    <div class="container text-center">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="mb-4 text-gold animate-up">
+                    <i class="fas fa-hard-hat fa-3x"></i>
+                </div>
+                <h3 class="fw-bold mb-4 animate-up delay-100">@(isRtl ? "مقدمة" : "Introduction")</h3>
+                <p class="lead text-secondary animate-up delay-200 text-justify-center" style="line-height: 2;">
+                    @(isRtl ? "في شركة نبض التميز الذهبي، نقدم باقة متكاملة من خدمات المقاولات والتشطيبات التي تغطي كافة مراحل البناء. نحن نجمع بين خبرة التنفيذ الميداني والإشراف الهندسي الدقيق، لنضمن لكم جودة تدوم طويلاً وأسعاراً تنافسية تلبي تطلعاتكم." : "At Golden Pulse, we offer a comprehensive package of contracting and finishing services covering all construction stages. We combine field execution experience with precise engineering supervision to ensure long-lasting quality and competitive prices.")
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Services Grid -->
+<section id="services" class="section-padding bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h4 class="fw-bold text-dark">@(isRtl ? "نحن فخورون بتقديم خدماتنا في البنود التالية، مع التزامنا التام بـ كود البناء السعودي" : "We are proud to offer our services in the following items, fully committed to the Saudi Building Code")</h4>
+            <div class="mx-auto bg-gold mt-3" style="width: 80px; height: 4px; border-radius: 2px;"></div>
+        </div>
+
+        <div class="row g-4">
+            <!-- 1. Foundation -->
+            <div class="col-lg-6">
+                <div class="card-premium h-100">
+                    <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1000&auto=format&fit=crop" class="img-cover" alt="Foundation">
+                    <div class="p-4">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="icon-box-lg mb-0" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                                <i class="fas fa-dungeon"></i>
+                            </div>
+                            <h4 class="fw-bold ms-3 mb-0">@(isRtl ? "1. التأسيس والإنشاءات الأساسية" : "1. Foundation & Basic Construction")</h4>
+                        </div>
+                        <ul class="list-unstyled">
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <strong class="text-dark">@(isRtl ? "أعمال العظم:" : "Bone Work:")</strong>
+                                <span class="text-secondary d-block mt-1 ms-4">@(isRtl ? "تنفيذ الهياكل الإنشائية والخرسانية بدقة متناهية." : "Execution of structural and concrete frames with extreme precision.")</span>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <strong class="text-dark">@(isRtl ? "تأسيس السباكة والكهرباء:" : "Plumbing & Electrical:")</strong>
+                                <span class="text-secondary d-block mt-1 ms-4">@(isRtl ? "تمديدات ذكية ومدروسة تضمن كفاءة التشغيل وسهولة الصيانة مستقبلاً." : "Smart and calculated installations ensuring operational efficiency and future maintenance.")</span>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <strong class="text-dark">@(isRtl ? "عزل متكامل:" : "Integrated Insulation:")</strong>
+                                <span class="text-secondary d-block mt-1 ms-4">@(isRtl ? "حماية قصوى للحمامات، الخزانات، والأسطح باستخدام أفضل مواد العزل المعتمدة." : "Maximum protection for bathrooms, tanks, and roofs using the best approved insulation materials.")</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Finishing -->
+            <div class="col-lg-6">
+                <div class="card-premium h-100">
+                    <img src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=1000&auto=format&fit=crop" class="img-cover" alt="Finishing">
+                    <div class="p-4">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="icon-box-lg mb-0" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                                <i class="fas fa-paint-roller"></i>
+                            </div>
+                            <h4 class="fw-bold ms-3 mb-0">@(isRtl ? "2. التشطيبات الداخلية والجمالية" : "2. Interior Finishing")</h4>
+                        </div>
+                        <ul class="list-unstyled">
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <strong class="text-dark">@(isRtl ? "اللياسة والدهانات:" : "Plaster & Paint:")</strong>
+                                <span class="text-secondary d-block mt-1 ms-4">@(isRtl ? "تنفيذ أعمال اللياسة المستوية، والدهانات الداخلية والخارجية بأحدث التقنيات والألوان." : "Execution of level plastering, and interior/exterior paints with latest techniques.")</span>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <strong class="text-dark">@(isRtl ? "الأرضيات والإنترلوك:" : "Flooring & Interlock:")</strong>
+                                <span class="text-secondary d-block mt-1 ms-4">@(isRtl ? "توريد وتركيب كافة أنواع البلاط والإنترلوك للمساحات الداخلية والخارجية." : "Supply and installation of all types of tiles and interlock.")</span>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <strong class="text-dark">@(isRtl ? "الأسقف الديكورية:" : "Decorative Ceilings:")</strong>
+                                <span class="text-secondary d-block mt-1 ms-4">@(isRtl ? "تنفيذ أعمال الجيبسوم بورد بتصاميم عصرية تناسب كافة الأذواق." : "Execution of gypsum board works with modern designs.")</span>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <strong class="text-dark">@(isRtl ? "الديكورات الداخلية:" : "Interior Decor:")</strong>
+                                <span class="text-secondary d-block mt-1 ms-4">@(isRtl ? "لمسات إبداعية تحول المساحات الصامتة إلى لوحات فنية تنبض بالتميز." : "Creative touches transforming silent spaces into artistic masterpieces.")</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Exteriors -->
+            <div class="col-lg-6">
+                <div class="card-premium h-100">
+                    <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1000&auto=format&fit=crop" class="img-cover" alt="Exteriors">
+                    <div class="p-4">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="icon-box-lg mb-0" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <h4 class="fw-bold ms-3 mb-0">@(isRtl ? "3. الواجهات والحلول الخارجية" : "3. Facades & Exterior Solutions")</h4>
+                        </div>
+                        <ul class="list-unstyled">
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <strong class="text-dark">@(isRtl ? "واجهات فخمة:" : "Luxury Facades:")</strong>
+                                <span class="text-secondary d-block mt-1 ms-4">@(isRtl ? "تنفيذ أعمال الحجر والكلادنج التي تمنح المباني طابعاً معمارياً فريداً." : "Stone and cladding execution giving unique architectural character.")</span>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <strong class="text-dark">@(isRtl ? "الأبواب والفتحات:" : "Doors & Openings:")</strong>
+                                <span class="text-secondary d-block mt-1 ms-4">@(isRtl ? "توريد وتركيب الأبواب (حديد، ألومنيوم، وWPC الخشبي المقاوم للرطوبة)." : "Supply and installation of doors (Iron, Aluminum, moisture-resistant WPC).")</span>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <strong class="text-dark">@(isRtl ? "اللاندسكيب والزراعة:" : "Landscape:")</strong>
+                                <span class="text-secondary d-block mt-1 ms-4">@(isRtl ? "تصميم وتنسيق الحدائق والمساحات الخضراء لإضافة لمسة طبيعية للمنشأة." : "Garden design and landscaping adding a natural touch.")</span>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <strong class="text-dark">@(isRtl ? "أعمال المسابح:" : "Pool Works:")</strong>
+                                <span class="text-secondary d-block mt-1 ms-4">@(isRtl ? "إنشاء وتجهيز المسابح بأنظمة فلترة وتعقيم حديثة." : "Construction and equipping of pools with modern filtration systems.")</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Smart Systems -->
+            <div class="col-lg-6">
+                <div class="card-premium h-100">
+                    <!-- Updated Image for Modern Systems -->
+                    <img src="https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=1000&auto=format&fit=crop" class="img-cover" alt="Smart Systems & Comfort">
+                    <div class="p-4">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="icon-box-lg mb-0" style="width: 60px; height: 60px; font-size: 1.5rem;">
+                                <i class="fas fa-wifi"></i>
+                            </div>
+                            <h4 class="fw-bold ms-3 mb-0">@(isRtl ? "4. الأنظمة الحديثة والراحة" : "4. Modern Systems & Comfort")</h4>
+                        </div>
+                        <ul class="list-unstyled">
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <strong class="text-dark">@(isRtl ? "أعمال المكيفات:" : "AC Works:")</strong>
+                                <span class="text-secondary d-block mt-1 ms-4">@(isRtl ? "حلول تكييف متكاملة (مركزي، سبليت، كونسيلد) تضمن توزيعاً مثالياً للهواء." : "Integrated AC solutions (Central, Split, Concealed) ensuring optimal air distribution.")</span>
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <strong class="text-dark">@(isRtl ? "البيوت الذكية (Smart Home):" : "Smart Home:")</strong>
+                                <span class="text-secondary d-block mt-1 ms-4">@(isRtl ? "تجهيز المباني بأحدث أنظمة السمارت للتحكم في الإضاءة، الأمن، والأجهزة عن بُعد." : "Equipping buildings with latest smart systems for lighting, security, and remote control.")</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features / Why Us -->
+<section class="section-padding bg-dark text-white position-relative overflow-hidden">
+    <div class="position-absolute start-0 bottom-0 opacity-10">
+        <i class="fas fa-ruler-combined fa-10x" style="transform: rotate(15deg) translate(-20%, 20%);"></i>
+    </div>
+
+    <div class="container position-relative z-1">
+        <div class="text-center mb-5">
+            <h6 class="text-gold text-uppercase fw-bold">@(isRtl ? "لماذا نحن؟" : "WHY US")</h6>
+            <h2 class="fw-bold">@(isRtl ? "لماذا تسند مشروعك لـ \"نبض التميز الذهبي\"؟" : "Why Entrust Your Project to Golden Pulse?")</h2>
+        </div>
+
+        <div class="row g-4 text-center">
+            <div class="col-md-4">
+                <div class="p-4 rounded-4 border border-secondary h-100 hover-border-gold transition-all">
+                    <i class="fas fa-ruler-combined fa-2x text-gold mb-3"></i>
+                    <h5 class="fw-bold mb-2">@(isRtl ? "إشراف هندسي متخصص" : "Specialized Supervision")</h5>
+                    <p class="small text-white-50 mb-0">@(isRtl ? "كل بند من البنود المذكورة يتم تنفيذه واستلامه بمعايير هندسية تضمن سلامة البناء." : "Every item is executed and inspected with engineering standards ensuring safety.")</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4 rounded-4 border border-secondary h-100 hover-border-gold transition-all">
+                    <i class="fas fa-balance-scale fa-2x text-gold mb-3"></i>
+                    <h5 class="fw-bold mb-2">@(isRtl ? "توازن القيمة" : "Value Balance")</h5>
+                    <p class="small text-white-50 mb-0">@(isRtl ? "السعي لتقديم أقل الأسعار في السوق مع الحفاظ على جودة متميزة لا نساوم عليها." : "Striving to offer lowest market prices while maintaining uncompromising quality.")</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="p-4 rounded-4 border border-secondary h-100 hover-border-gold transition-all">
+                    <i class="fas fa-file-invoice fa-2x text-gold mb-3"></i>
+                    <h5 class="fw-bold mb-2">@(isRtl ? "الشفافية المطلقة" : "Absolute Transparency")</h5>
+                    <p class="small text-white-50 mb-0">@(isRtl ? "تقارير دورية تطلعكم على سير العمل في كل بند من بنود مشروعكم." : "Periodic reports keeping you updated on progress in every project item.")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="section-padding text-white text-center position-relative overflow-hidden" style="background: linear-gradient(rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1541888946425-d81bb19240f5?q=80&w=1920&auto=format&fit=crop'); background-size: cover; background-position: center; background-attachment: fixed;">
+    <div class="container position-relative z-1 py-4">
+        <h2 class="display-5 fw-bold mb-4">@(isRtl ? "تواصل مع خبراء التنفيذ" : "Contact Execution Experts")</h2>
+        <p class="lead text-white-50 mb-5">@(isRtl ? "يسعدنا تقديم الاستشارات الفنية وتسعير المقايسات لمشاريعكم (عظم أو تشطيب)." : "We are happy to provide technical consultations and pricing for your projects.")</p>
+        <div class="d-flex justify-content-center gap-3 align-items-center flex-wrap">
+            <a href="tel:0562056821" class="btn btn-premium btn-lg">
+                <i class="fas fa-phone-alt me-2"></i> 0562056821
+            </a>
+            <div class="d-flex gap-3">
+                <a href="mailto:info@nabd.com" class="btn btn-outline-light btn-lg rounded-pill">
+                    <i class="fas fa-envelope me-2"></i> @(isRtl ? "البريد الإلكتروني" : "Email")
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .hover-border-gold:hover {
+        border-color: var(--primary-gold) !important;
+        background: rgba(255,255,255,0.05);
+    }
+</style>

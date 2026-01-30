@@ -1,0 +1,185 @@
+﻿@using System.Globalization
+@{
+    ViewData["Title"] = "الرئيسية";
+    var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+}
+
+<!-- Hero Section -->
+<div class="hero-wrapper" style="background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1920&auto=format&fit=crop');">
+    <div class="hero-overlay"></div>
+    <div class="container hero-content text-center">
+        <h1 class="display-3 fw-bolder mb-4 animate-up">
+            @(isRtl ? "شريككم الاستراتيجي في" : "Your Strategic Partner in")
+            <br />
+            <span class="text-gradient-gold">@(isRtl ? "الإدارة والتشغيل الاحترافي" : "Professional Management & Operation")</span>
+        </h1>
+        <p class="lead mb-5 text-light opacity-75 animate-up delay-100 fs-5">
+            @(isRtl ? "نصيغ الحلول الإدارية المتكاملة، لتمكين شركتكم من التركيز على أهدافها الكبرى. ندير منصاتكم (قوى، التأمينات، مكتب العمل، مقيم، ابشر أعمال، مدد، تم، وغيرها من المنصات الحكومية) بدقة واحترافية." : "We craft integrated administrative solutions to empower your company to focus on its major goals. We manage your platforms (Qiwa, GOSI, Labor Office, Muqeem, Absher Business, Mudad, Tamm, etc.) with precision and professionalism.")
+        </p>
+        <div class="d-flex justify-content-center gap-3 animate-up delay-200 flex-wrap">
+            <a href="#services" class="btn btn-premium btn-lg">@(isRtl ? "اكتشف خدماتنا" : "Discover Services")</a>
+            <a href="https://wa.me/966562056821" class="btn btn-outline-premium btn-lg">@(isRtl ? "احصل على استشارة مجانية" : "Get Free Consultation")</a>
+        </div>
+    </div>
+</div>
+
+<!-- Why Us Section -->
+<section class="section-padding bg-white">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h6 class="text-gold text-uppercase fw-bold letter-spacing-2">@(isRtl ? "لماذا نحن؟" : "WHY US")</h6>
+            <h2 class="display-5 fw-bold mb-3">@(isRtl ? "قيمنا تضمن نجاحك" : "Our Values Ensure Success")</h2>
+            <div class="mx-auto bg-gold" style="width: 80px; height: 4px; border-radius: 2px;"></div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="card-premium p-4 text-center">
+                    <div class="icon-box-lg mx-auto">
+                        <i class="fas fa-check-double"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">@(isRtl ? "الدقة المتناهية" : "Absolute Accuracy")</h4>
+                    <p class="text-secondary small mb-0">@(isRtl ? "ندرك أن التفاصيل الإدارية هي محرك النمو، لذا نضمن لك امتثالاً كاملاً للأنظمة واللوائح." : "We realize administrative details drive growth, so we ensure full compliance with regulations.")</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card-premium p-4 text-center">
+                    <div class="icon-box-lg mx-auto">
+                        <i class="fas fa-laptop-house"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">@(isRtl ? "خبرة في المنصات الحكومية" : "Government Platforms Expertise")</h4>
+                    <p class="text-secondary small mb-0">@(isRtl ? "خبراؤنا يديرون حساباتكم في (قوى، التأمينات، مكتب العمل، مقيم، ابشر أعمال، مدد، تم) لضمان انسيابية العمل وتجنب الغرامات." : "Our experts manage your accounts in government platforms to ensure workflow smoothness and avoid fines.")</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card-premium p-4 text-center">
+                    <div class="icon-box-lg mx-auto">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">@(isRtl ? "التفرغ للإبداع" : "Focus on Creativity")</h4>
+                    <p class="text-secondary small mb-0">@(isRtl ? "نحن نهتم بالأوراق والعمليات الإدارية الروتينية، لنترك لك مساحة الابتكار والتوسع." : "We handle routine paperwork and admin processes, leaving you space for innovation and expansion.")</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card-premium p-4 text-center">
+                    <div class="icon-box-lg mx-auto">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">@(isRtl ? "توفير التكاليف" : "Cost Saving")</h4>
+                    <p class="text-secondary small mb-0">@(isRtl ? "توفير تكاليف التوظيف العالية." : "Saving high recruitment costs.")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Services Summary -->
+<section id="services" class="section-padding bg-light position-relative overflow-hidden">
+    <div class="position-absolute top-0 end-0 translate-middle rounded-circle bg-white opacity-50" style="width: 600px; height: 600px; z-index: 0;"></div>
+
+    <div class="container position-relative z-1">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0">
+                <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=1000&auto=format&fit=crop" class="img-fluid img-overlap w-100 shadow-lg" alt="Services">
+            </div>
+            <div class="col-lg-6 ps-lg-5">
+                <h6 class="text-gold fw-bold text-uppercase">@(isRtl ? "خدماتنا" : "Our Services")</h6>
+                <h2 class="display-5 fw-bold mb-4">@(isRtl ? "نحن نبني منظومة نجاحكم" : "We Build Your Success System")</h2>
+
+                <ul class="list-unstyled mt-4">
+                    <li class="d-flex mb-4">
+                        <div class="flex-shrink-0">
+                            <div class="bg-dark text-gold rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="text-secondary mb-0 fw-bold">@(isRtl ? "إدارة شاملة لمنصات الخدمات الحكومية للشركات والمؤسسات." : "Comprehensive management of government service platforms for companies.")</p>
+                        </div>
+                    </li>
+                    <li class="d-flex mb-4">
+                        <div class="flex-shrink-0">
+                            <div class="bg-dark text-gold rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="text-secondary mb-0 fw-bold">@(isRtl ? "إعادة تأهيل وهيكلة العمليات الإدارية والمالية لرفع كفاءة المنشأة." : "Restructuring admin and financial operations to increase facility efficiency.")</p>
+                        </div>
+                    </li>
+                    <li class="d-flex mb-4">
+                        <div class="flex-shrink-0">
+                            <div class="bg-dark text-gold rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <p class="text-secondary mb-0 fw-bold">@(isRtl ? "دعم إداري يضمن سير العمل دون انقطاع." : "Administrative support ensuring uninterrupted workflow.")</p>
+                        </div>
+                    </li>
+                </ul>
+
+                <div class="alert alert-light border-gold border-start border-4 bg-white shadow-sm mt-4">
+                    <p class="mb-0 text-dark fst-italic">"@(isRtl ? "نحن لا ندير معاملاتكم فحسب، نحن نبني منظومة نجاحكم." : "We don't just manage your transactions, we build your success system.")"</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Clients Section -->
+<section class="section-padding bg-white">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h5 class="text-dark fw-bold">@(isRtl ? "عملاء وضعوا ثقتهم بنا" : "Clients Who Trusted Us")</h5>
+            <div class="mx-auto bg-gold mt-2" style="width: 50px; height: 3px;"></div>
+        </div>
+
+        <!-- Clients Slider / Grid -->
+        <div class="row justify-content-center align-items-center g-4">
+            @for (int i = 1; i <= 5; i++)
+            {
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="client-logo-wrapper p-3 border rounded-3 hover-shadow transition-all text-center">
+                        <img src="~/images/@(i).jpg" class="img-fluid grayscale-hover" alt="Client @i" onerror="this.src='https://via.placeholder.com/150x100?text=Client+@i'">
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- Contact CTA -->
+<section class="py-5 bg-dark text-white text-center position-relative overflow-hidden" style="background: linear-gradient(rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.8)), url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1920&auto=format&fit=crop'); background-size: cover; background-attachment: fixed;">
+    <div class="position-absolute top-0 start-0 w-100 h-100 opacity-20"></div>
+    <div class="container position-relative z-1 py-4">
+        <h2 class="display-5 fw-bold mb-4">@(isRtl ? "جاهز لبدء رحلة النجاح؟" : "Ready to Start?")</h2>
+        <p class="lead text-white-50 mb-5">@(isRtl ? "تواصل معنا اليوم للحصول على استشارة مجانية وتحليل لاحتياجات منشأتك." : "Contact us today for a free consultation and analysis of your facility's needs.")</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="tel:0562056821" class="btn btn-premium btn-lg">
+                <i class="fas fa-phone-alt me-2"></i> 0562056821
+            </a>
+            <a href="https://wa.me/966562056821" style="padding: 10px 25px;" class="btn btn-outline-light btn-lg rounded-pill">
+                <i class="fab fa-whatsapp me-2"></i> WhatsApp
+            </a>
+        </div>
+    </div>
+</section>
+
+<style>
+    .grayscale-hover {
+        filter: grayscale(100%);
+        transition: filter 0.3s ease;
+        height: 150px;
+        object-fit: contain;
+    }
+
+    .client-logo-wrapper:hover .grayscale-hover {
+        filter: grayscale(0%);
+    }
+
+    .hover-shadow:hover {
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        border-color: var(--primary-gold) !important;
+    }
+</style>

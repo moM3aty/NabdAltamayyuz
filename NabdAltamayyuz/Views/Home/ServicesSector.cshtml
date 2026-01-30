@@ -1,0 +1,161 @@
+﻿@using System.Globalization
+@{
+    ViewData["Title"] = "قطاع الخدمات";
+    var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+}
+
+<!-- Hero Section -->
+<div class="hero-wrapper" style="background-image: url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1920&auto=format&fit=crop'); min-height: 60vh;">
+    <div class="hero-overlay"></div>
+    <div class="container hero-content text-center">
+        <h1 class="display-3 fw-bolder mb-3 animate-up text-white">
+            @(isRtl ? "نبض النقاء.. عناية فائقة بمساحاتكم السكنية" : "Pulse of Purity.. Superior Care for Your Living Spaces")
+        </h1>
+        <p class="lead text-white opacity-90 fs-4 animate-up delay-100 mb-5">
+            @(isRtl ? "بيئة صحية ومنظمة لعملائنا" : "A healthy and organized environment for our clients")
+        </p>
+        <div class="animate-up delay-200">
+            <a href="#details" class="btn btn-premium btn-lg px-5">@(isRtl ? "خدماتنا" : "Our Services")</a>
+        </div>
+    </div>
+</div>
+
+<!-- Intro Section -->
+<section id="details" class="section-padding bg-white">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 text-center">
+                <div class="mb-4">
+                    <i class="fas fa-leaf fa-3x text-gold"></i>
+                </div>
+                <h3 class="fw-bold mb-4">@(isRtl ? "في نبض التميز الذهبي" : "At Golden Pulse")</h3>
+                <p class="lead text-secondary">
+                    @(isRtl ?
+                                        "لا نقدم مجرد نظافة، بل نقدم بيئة صحية ومنظمة لعملائنا. نحن متخصصون في العناية بالمباني السكنية والمنازل بأيدي عمالة مدربة ومنظمة وفق أعلى معايير الجودة." :
+                                        "We don't just offer cleaning; we provide a healthy and organized environment. We specialize in caring for residential buildings and homes with trained workforce following the highest quality standards.")
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Services Details -->
+<section class="section-padding bg-light position-relative">
+    <div class="container">
+        <div class="row g-5">
+            <!-- Service 1: Residential Buildings -->
+            <div class="col-lg-6">
+                <div class="card-premium h-100">
+                    <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000&auto=format&fit=crop" class="img-cover" alt="Building Cleaning">
+                    <div class="p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="icon-box-lg" style="width: 50px; height: 50px; font-size: 1.2rem; margin-bottom: 0;">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <h4 class="fw-bold ms-3 mb-0">@(isRtl ? "نظافة المباني السكنية (العماير)" : "Residential Buildings Cleaning")</h4>
+                        </div>
+                        <ul class="list-unstyled mt-4">
+                            <li class="d-flex mb-3 align-items-center">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <span class="text-secondary">@(isRtl ? "نظافة المداخل والممرات والسلالم بشكل دوري." : "Periodic cleaning of entrances, corridors, and stairs.")</span>
+                            </li>
+                            <li class="d-flex mb-3 align-items-center">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <span class="text-secondary">@(isRtl ? "تلميع المصاعد والأسطح الزجاجية." : "Polishing elevators and glass surfaces.")</span>
+                            </li>
+                            <li class="d-flex mb-3 align-items-center">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <span class="text-secondary">@(isRtl ? "إدارة ونظافة مواقف السيارات ومحيط المبنى." : "Management and cleaning of parking lots and building surroundings.")</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service 2: Home Units -->
+            <div class="col-lg-6">
+                <div class="card-premium h-100">
+                    <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1000&auto=format&fit=crop" class="img-cover" alt="Home Cleaning">
+                    <div class="p-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="icon-box-lg" style="width: 50px; height: 50px; font-size: 1.2rem; margin-bottom: 0;">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <h4 class="fw-bold ms-3 mb-0">@(isRtl ? "نظافة الوحدات السكنية والمنازل" : "Home Units Cleaning")</h4>
+                        </div>
+                        <ul class="list-unstyled mt-4">
+                            <li class="d-flex mb-3 align-items-center">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <span class="text-secondary">@(isRtl ? "خدمات تنظيف عميق (Deep Cleaning)." : "Deep Cleaning services.")</span>
+                            </li>
+                            <li class="d-flex mb-3 align-items-center">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <span class="text-secondary">@(isRtl ? "العناية بالأرضيات والأسطح بمواد معتمدة." : "Care for floors and surfaces with approved materials.")</span>
+                            </li>
+                            <li class="d-flex mb-3 align-items-center">
+                                <i class="fas fa-check-circle text-gold me-2"></i>
+                                <span class="text-secondary">@(isRtl ? "تنظيم وجمع النفايات بشكل حضاري يحافظ على جمالية المبنى." : "Organized waste collection maintaining building aesthetics.")</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Why Us Box -->
+<section class="section-padding bg-dark text-white position-relative overflow-hidden">
+    <div class="position-absolute end-0 bottom-0 opacity-10">
+        <i class="fas fa-gem fa-10x" style="transform: rotate(-15deg) translate(20%, 20%);"></i>
+    </div>
+
+    <div class="container position-relative z-1">
+        <div class="text-center mb-5">
+            <h6 class="text-gold text-uppercase fw-bold">@(isRtl ? "لماذا نحن الخيار الأفضل؟" : "The Golden Pulse Edge")</h6>
+        </div>
+
+        <div class="row g-4 text-center">
+            <div class="col-6 col-md-3">
+                <div class="p-4 rounded-4 border border-secondary h-100 hover-border-gold transition-all">
+                    <i class="fas fa-user-shield fa-2x text-gold mb-3"></i>
+                    <h5 class="fw-bold mb-2">@(isRtl ? "عمالة نظامية" : "Legal Labor")</h5>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-4 rounded-4 border border-secondary h-100 hover-border-gold transition-all">
+                    <i class="fas fa-clock fa-2x text-gold mb-3"></i>
+                    <h5 class="fw-bold mb-2">@(isRtl ? "جدولة دقيقة" : "Precise Scheduling")</h5>
+                    <p class="small text-white-50 mb-0">@(isRtl ? "نلتزم بمواعيد الزيارات المحددة." : "Committed to scheduled visits.")</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-4 rounded-4 border border-secondary h-100 hover-border-gold transition-all">
+                    <i class="fas fa-eye fa-2x text-gold mb-3"></i>
+                    <h5 class="fw-bold mb-2">@(isRtl ? "إشراف مباشر" : "Direct Supervision")</h5>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-4 rounded-4 border border-secondary h-100 hover-border-gold transition-all">
+                    <i class="fas fa-tags fa-2x text-gold mb-3"></i>
+                    <h5 class="fw-bold mb-2">@(isRtl ? "أسعار تنافسية" : "Competitive Prices")</h5>
+                    <p class="small text-white-50 mb-0">@(isRtl ? "نقدم باقات مرنة بأسعار ممتازة." : "Flexible packages at excellent prices.")</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <h4 class="mb-3">@(isRtl ? "تواصل معنا" : "Contact Us")</h4>
+            <a href="tel:0562056821" class="btn btn-premium btn-lg rounded-pill px-5">
+                <i class="fas fa-phone-alt me-2"></i> 0562056821
+            </a>
+        </div>
+    </div>
+</section>
+
+<style>
+    .hover-border-gold:hover {
+        border-color: var(--primary-gold) !important;
+        background: rgba(255,255,255,0.05);
+    }
+</style>

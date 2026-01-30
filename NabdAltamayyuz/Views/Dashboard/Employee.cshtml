@@ -1,0 +1,145 @@
+﻿@model IEnumerable<NabdAltamayyuz.Models.WorkTask>
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "لوحة الموظف";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    bool isCheckedIn = ViewBag.IsCheckedIn ?? false;
+    bool isCheckedOut = ViewBag.IsCheckedOut ?? false;
+}
+
+<!-- تمت إضافة margin-top: 100px لتفادي التداخل مع الـ Navbar -->
+<div class="container py-5 animate-fade-in" style="margin-top: 100px;">
+    <!-- Welcome Section -->
+    <div class="row align-items-center mb-5">
+        <div class="col-md-8">
+            <h2 class="fw-bold text-dark mb-1">
+                @(isRtl ? "مرحباً بك،" : "Welcome,") <span class="text-gold">@User.Identity.Name</span>
+            </h2>
+            <p class="text-muted">@(isRtl ? "نتمنى لك يوم عمل مثمر ومليء بالإنجازات" : "Have a productive day ahead")</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="d-inline-flex align-items-center bg-white shadow-sm px-4 py-2 rounded-pill border border-gold">
+                <i class="far fa-calendar-alt text-gold me-2"></i>
+                <span class="fw-bold text-dark">@DateTime.Now.ToString("dd MMMM yyyy")</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Action Card -->
+    <div class="card border-0 shadow-lg mb-5 rounded-4 overflow-hidden bg-dark text-white position-relative">
+        <div class="position-absolute top-0 start-0 w-100 h-100 opacity-20" style="background: url('https://www.transparenttextures.com/patterns/cubes.png');"></div>
+        <div class="card-body p-4 p-lg-5 position-relative z-1 text-center">
+            <h4 class="fw-bold mb-4 text-gold"><i class="fas fa-fingerprint me-2"></i> @(isRtl ? "تسجيل الحضور اليومي" : "Daily Attendance Check")</h4>
+
+            <div class="d-flex justify-content-center gap-4 flex-wrap">
+                <!-- Check In Form -->
+                <form action="/Dashboard/CheckIn" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-lg rounded-4 p-4 shadow-lg hover-scale transition-all @(isCheckedIn ? "btn-secondary disabled" : "btn-success")" style="min-width: 200px;" @(isCheckedIn ? "disabled" : "")>
+                        <i class="fas fa-sign-in-alt fa-2x mb-3 d-block"></i>
+                        <span class="fw-bold fs-5">@(isRtl ? "تسجيل دخول" : "Check In")</span>
+                        @if (isCheckedIn)
+                        {
+                            <div class="small mt-2"><i class="fas fa-check me-1"></i> @(isRtl ? "تم التسجيل" : "Done")</div>
+                        }
+                    </button>
+                </form>
+
+                <!-- Check Out Form -->
+                <form action="/Dashboard/CheckOut" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-lg rounded-4 p-4 shadow-lg hover-scale transition-all @(isCheckedOut || !isCheckedIn ? "btn-secondary disabled" : "btn-danger")" style="min-width: 200px;" @(isCheckedOut || !isCheckedIn ? "disabled" : "")>
+                        <i class="fas fa-sign-out-alt fa-2x mb-3 d-block"></i>
+                        <span class="fw-bold fs-5">@(isRtl ? "تسجيل خروج" : "Check Out")</span>
+                        @if (isCheckedOut)
+                        {
+                            <div class="small mt-2"><i class="fas fa-check me-1"></i> @(isRtl ? "تم التسجيل" : "Done")</div>
+                        }
+                    </button>
+                </form>
+            </div>
+
+            <div class="mt-4 text-white-50 small">
+                @if (ViewBag.Message != null)
+                {
+                    <span class="badge bg-gold text-dark px-3 py-2 rounded-pill animate-fade-in">@ViewBag.Message</span>
+                }
+                else
+                {
+                    <i class="fas fa-info-circle me-1"></i> 
+                    @(isRtl ? "يرجى الالتزام بمواعيد الدوام الرسمي" : "Please adhere to official working hours")
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- My Tasks Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold text-dark border-start border-5 border-gold ps-3 mb-0">@(isRtl ? "المهام المسندة إلي" : "My Assigned Tasks")</h4>
+        <span class="badge bg-dark rounded-pill">@(Model?.Count() ?? 0) @(isRtl ? "نشطة" : "Active")</span>
+    </div>
+
+    <div class="row g-4">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var task in Model)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card border-0 shadow-sm h-100 rounded-4 hover-lift task-card bg-white">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span class="badge bg-gold text-dark rounded-pill px-3">@(isRtl ? "مهمة" : "Task")</span>
+                                <small class="text-danger fw-bold"><i class="far fa-clock me-1"></i> @task.DueDate.ToString("yyyy-MM-dd")</small>
+                            </div>
+                            <h5 class="card-title fw-bold text-dark mb-2">@task.Title</h5>
+                            <p class="card-text text-muted small mb-4 line-clamp-2">@task.Description</p>
+
+                            <hr class="border-secondary opacity-10">
+
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-dark btn-sm rounded-pill w-100" onclick="completeTask(@task.Id)">
+                                    <i class="fas fa-check me-2 text-gold"></i> @(isRtl ? "إنجاز" : "Complete")
+                                </button>
+                                @if (!string.IsNullOrEmpty(task.AttachmentPath))
+                                {
+                                    <a href="/uploads/@task.AttachmentPath" target="_blank" class="btn btn-outline-secondary btn-sm rounded-pill" title="Morfagat">
+                                        <i class="fas fa-paperclip"></i>
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center py-5 bg-light rounded-4 border border-dashed">
+                <i class="fas fa-mug-hot fa-3x text-muted mb-3 opacity-50"></i>
+                <h5 class="text-muted fw-bold">@(isRtl ? "لا توجد مهام حالياً" : "No tasks assigned")</h5>
+                <p class="small text-muted mb-0">@(isRtl ? "استمتع بوقتك!" : "Enjoy your free time!")</p>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function completeTask(id) {
+            if (confirm('@(isRtl ? "هل أنت متأكد من إتمام هذه المهمة؟" : "Are you sure you want to complete this task?")')) {
+                fetch('/Tasks/Complete/' + id, {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                });
+            }
+        }
+    </script>
+}

@@ -1,0 +1,68 @@
+﻿@using System.Globalization
+@{
+    ViewData["Title"] = "من نحن";
+    var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+}
+
+<!-- Hero Section -->
+<div class="hero-wrapper" style="background-image: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1920&auto=format&fit=crop'); min-height: 55vh;">
+    <div class="hero-overlay"></div>
+    <div class="container hero-content text-center">
+        <h1 class="display-3 fw-bolder mb-3 animate-up text-white">
+            @(isRtl ? "من نحن" : "About Us")
+        </h1>
+        <p class="lead text-white opacity-90 fs-4 animate-up delay-100 mb-0">
+            @(isRtl ? "خبراء الامتثال الإداري والحلول التشغيلية للموارد البشرية." : "Experts in Administrative Compliance and HR Operational Solutions.")
+        </p>
+    </div>
+</div>
+
+<!-- Story Section -->
+<section class="section-padding bg-white">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-5 mb-lg-0">
+                <div class="position-relative">
+                    <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1000&auto=format&fit=crop" class="img-fluid img-overlap w-100 shadow-lg" alt="Our Story">
+                    <div class="position-absolute bottom-0 end-0 bg-dark p-4 rounded-4 shadow-lg m-n4 d-none d-md-block text-white border-bottom border-gold border-4">
+                        <h3 class="fw-bold mb-0 text-gold">10+</h3>
+                        <small class="fw-bold text-uppercase letter-spacing-1">@(isRtl ? "سنوات من التميز" : "Years of Excellence")</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 ps-lg-5">
+                <h6 class="text-gold text-uppercase fw-bold letter-spacing-2">@(isRtl ? "عن الشركة" : "About Company")</h6>
+                <h2 class="display-5 fw-bold mb-4 text-dark">@(isRtl ? "نبض التميز الذهبي" : "Golden Pulse")</h2>
+                <p class="lead text-secondary mb-4">
+                    @(isRtl ?
+                                        "في شركة نبض التميز الذهبي ، نحن متخصصون في سد الفجوة بين طموح الشركات والمتطلبات الكثيرة لسوق العمل السعودي. دورنا يتجاوز الإدارة التقليدية؛ نحن نعمل كذراع تنفيذي متخصص في هيكلة الموارد البشرية وإدارة التحديات الإدارية والمالية المرتبطة بها." :
+                                        "At Golden Pulse, we specialize in bridging the gap between company ambitions and Saudi labor market requirements. Our role goes beyond traditional management; we serve as a specialized executive arm in HR structuring and managing related administrative and financial challenges.")
+                </p>
+                <p class="text-secondary">
+                    @(isRtl ?
+                                        "نحن ندرك أن \"منصات العمل\" و\"التأمينات\" و\"مكتب العمل\" ليست مجرد إجراءات، بل هي عصب المنشأة الذي يتطلب دقة قانونية ومالية عالية. لذا، كرسنا خبراتنا لنكون الشريك الذي يحل المشكلات الإدارية المعقدة، وينظم العلاقة بين المنشأة والموظف والجهات التنظيمية." :
+                                        "We understand that 'Labor Platforms', 'GOSI', and 'Labor Office' are not just procedures, but the backbone of the facility requiring high legal and financial accuracy. Thus, we dedicated our expertise to be the partner solving complex administrative problems, organizing relationships between the facility, employee, and regulatory bodies.")
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Vision Section -->
+<section class="section-padding text-white position-relative overflow-hidden" style="background: linear-gradient(rgba(15, 23, 42, 0.92), rgba(212, 175, 55, 0.15)), url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1920&auto=format&fit=crop'); background-size: cover; background-position: center; background-attachment: fixed;">
+    <div class="container position-relative z-1 text-center">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="icon-box-lg bg-transparent border border-gold text-gold mx-auto mb-4 rounded-circle scale-up-anim" style="width: 90px; height: 90px; line-height: 90px;">
+                    <i class="fas fa-eye fa-2x"></i>
+                </div>
+                <h2 class="fw-bold mb-4 display-5">@(isRtl ? "رؤيتنا" : "Our Vision")</h2>
+                <h3 class="fs-4 fst-italic fw-light mb-0 text-light opacity-90" style="line-height: 1.8;">
+                    "@(isRtl ?
+                                        "أن نكون المستشار الأول والمنظم الأكثر موثوقية لإدارة الموارد البشرية والعمليات المالية في المملكة، محولين التحديات الإدارية إلى فرص للاستقرار والنمو." :
+                                        "To be the premier consultant and most reliable organizer for HR and financial operations in the Kingdom, transforming administrative challenges into opportunities for stability and growth.")"
+                </h3>
+            </div>
+        </div>
+    </div>
+</section>
