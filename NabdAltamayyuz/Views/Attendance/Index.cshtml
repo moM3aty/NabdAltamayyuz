@@ -7,9 +7,56 @@
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
 }
 
-<div class="container py-5 animate-fade-in" style="margin-top: 100px;">
-    <!-- Header -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+<!-- تنسيقات خاصة بالطباعة -->
+<style>
+    @@media print {
+        @@page { size: A4 landscape; margin: 1cm; } /* الطباعة بالعرض */
+        body { background-color: white !important; font-family: 'Cairo', sans-serif; -webkit-print-color-adjust: exact; }
+        
+        /* إخفاء العناصر غير الضرورية */
+        .premium-navbar, footer, .btn, .card-header, .card-footer, form, .alert, .no-print { display: none !important; }
+        
+        /* تنسيق الحاوية */
+        .container { margin-top: 0 !important; padding: 0 !important; max-width: 100% !important; width: 100% !important; }
+        .card { border: none !important; box-shadow: none !important; }
+        .card-body { padding: 0 !important; }
+        .animate-fade-in { animation: none !important; opacity: 1 !important; transform: none !important; }
+
+        /* إظهار ترويسة التقرير */
+        .print-header { display: block !important; margin-bottom: 20px; border-bottom: 2px solid #D4AF37; padding-bottom: 10px; }
+        
+        /* تحسين الجدول */
+        .table-responsive { overflow: visible !important; }
+        table { width: 100% !important; border-collapse: collapse !important; font-size: 12px; }
+        th { background-color: #0F172A !important; color: white !important; border: 1px solid #000 !important; padding: 5px !important; }
+        td { border: 1px solid #ccc !important; padding: 5px !important; color: black !important; }
+        
+        /* تحسين البادجات في الطباعة */
+        .badge { border: 1px solid #000; background: transparent !important; color: black !important; padding: 2px 5px; }
+    }
+    .print-header { display: none; } /* مخفي في الشاشة العادية */
+</style>
+
+<div class="container py-5 animate-fade-in" style="margin-top: 120px;">
+    
+    <!-- ترويسة تظهر فقط في الطباعة -->
+    <div class="print-header text-center">
+        <div class="row align-items-center">
+            <div class="col-4 text-end">
+                <small>تاريخ الطباعة: @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</small>
+            </div>
+            <div class="col-4">
+                <h3 class="fw-bold mb-1">نبض التميز الذهبي</h3>
+                <h5 class="text-muted">تقرير الحضور والانصراف</h5>
+            </div>
+            <div class="col-4 text-start">
+                <small>المستخدم: @User.Identity.Name</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header (Screen) -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3 no-print">
         <div>
             <h3 class="fw-bold text-dark mb-1">
                 <i class="fas fa-clipboard-list text-gold me-2"></i> @(isRtl ? "سجل الحضور والانصراف" : "Attendance Sheet")
@@ -27,7 +74,7 @@
     </div>
 
     <!-- Filters -->
-    <div class="card border-0 shadow-lg mb-4 bg-white rounded-4 overflow-hidden">
+    <div class="card border-0 shadow-lg mb-4 bg-white rounded-4 overflow-hidden no-print">
         <div class="card-header bg-white py-3 border-bottom-0">
             <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-filter text-gold me-2"></i> @(isRtl ? "أدوات البحث والفلترة" : "Search & Filters")</h6>
         </div>
@@ -63,7 +110,7 @@
 
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success border-0 bg-success bg-opacity-10 text-success rounded-3 shadow-sm mb-4 fade show">
+        <div class="alert alert-success border-0 bg-success bg-opacity-10 text-success rounded-3 shadow-sm mb-4 fade show no-print">
             <i class="fas fa-check-circle me-2"></i> @TempData["Success"]
         </div>
     }
@@ -92,18 +139,18 @@
                                 <tr>
                                     <td class="text-start px-3">
                                         <div class="d-flex align-items-center">
-                                            <div class="avatar-circle bg-light text-gold rounded-circle d-flex align-items-center justify-content-center me-3 border border-gold" style="width: 40px; height: 40px;">
+                                            <div class="avatar-circle bg-light text-gold rounded-circle d-flex align-items-center justify-content-center me-3 border border-gold no-print" style="width: 40px; height: 40px;">
                                                 <span class="fw-bold">@item.Employee.FullName.Substring(0, 1).ToUpper()</span>
                                             </div>
                                             <div>
                                                 <div class="fw-bold text-dark">@item.Employee.FullName</div>
-                                                <small class="text-muted" style="font-size: 0.75rem;">@item.Employee.JobTitle</small>
+                                                <small class="text-muted no-print" style="font-size: 0.75rem;">@item.Employee.JobTitle</small>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center justify-content-center text-muted">
-                                            <i class="far fa-calendar me-2 small"></i>
+                                            <i class="far fa-calendar me-2 small no-print"></i>
                                             <span class="fw-bold">@item.Date.ToString("yyyy-MM-dd")</span>
                                         </div>
                                     </td>
@@ -133,10 +180,10 @@
                                         {
                                             <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">@(isRtl ? "مكتمل" : "Completed")</span>
                                         }
-
-                                        @if (item.IsManualEntry)
+                                        
+                                        @if(item.IsManualEntry)
                                         {
-                                            <span class="ms-1 text-info" data-bs-toggle="tooltip" title="@(isRtl ? "إدخال يدوي بواسطة المدير" : "Manual Entry by Admin")">
+                                            <span class="ms-1 text-info no-print" data-bs-toggle="tooltip" title="@(isRtl ? "إدخال يدوي بواسطة المدير" : "Manual Entry by Admin")">
                                                 <i class="fas fa-edit"></i>
                                             </span>
                                         }
@@ -149,7 +196,7 @@
                         {
                             <tr>
                                 <td colspan="7" class="py-5 text-center text-muted">
-                                    <div class="opacity-50 mb-3"><i class="fas fa-folder-open fa-3x text-gold"></i></div>
+                                    <div class="opacity-50 mb-3 no-print"><i class="fas fa-folder-open fa-3x text-gold"></i></div>
                                     <p class="mb-0 fw-bold">@(isRtl ? "لا توجد سجلات للعرض حالياً" : "No records found matching your criteria")</p>
                                 </td>
                             </tr>
@@ -158,14 +205,14 @@
                 </table>
             </div>
         </div>
-        <div class="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center">
+        <div class="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center no-print">
             <small class="text-muted">@(isRtl ? $"إجمالي السجلات: {Model?.Count() ?? 0}" : $"Total Records: {Model?.Count() ?? 0}")</small>
             <!-- Pagination could go here -->
         </div>
     </div>
 </div>
 
-<!-- Manual Entry Modal -->
+<!-- Manual Entry Modal (Same as before) -->
 <div class="modal fade" id="manualEntryModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
@@ -177,7 +224,7 @@
                 @Html.AntiForgeryToken()
                 <div class="modal-body p-4">
                     <div class="alert alert-warning border-0 bg-warning bg-opacity-10 text-dark small mb-4 rounded-3 d-flex">
-                        <i class="fas fa-info-circle me-2 mt-1 text-warning"></i>
+                        <i class="fas fa-info-circle me-2 mt-1 text-warning"></i> 
                         <div>@(isRtl ? "يستخدم هذا النموذج لتعديل أو إضافة سجل حضور في حال نسيان الموظف أو الأعذار." : "Use this form to correct or add records for missed punches or excuses.")</div>
                     </div>
 
@@ -215,7 +262,7 @@
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">@(isRtl ? "إلغاء" : "Cancel")</button>
-                    <button type="button" class="btn btn-gold bg-dark text-gold fw-bold rounded-pill px-4 shadow-sm hover-scale">
+                    <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold rounded-pill px-4 shadow-sm hover-scale">
                         <i class="fas fa-save me-2"></i> @(isRtl ? "حفظ السجل" : "Save Record")
                     </button>
                 </div>

@@ -1,0 +1,100 @@
+﻿@model IEnumerable<NabdAltamayyuz.Models.Company>
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "إدارة الشركات والفروع";
+    var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    bool isSuperAdmin = User.IsInRole("SuperAdmin");
+    bool isSubAdmin = User.IsInRole("SubAdmin");
+}
+
+<div class="container py-5 animate-fade-in" style="margin-top: 120px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark"><i class="fas fa-network-wired text-gold me-2"></i> @(isSuperAdmin ? (isRtl ? "كافة الشركات" : "All Companies") : (isRtl ? "الفروع والشركات التابعة" : "Sub-Companies"))</h3>
+            <p class="text-muted small">@(isRtl ? "إدارة ومتابعة الحسابات" : "Manage and track accounts")</p>
+        </div>
+
+        @if (!isSuperAdmin && !isSubAdmin)
+        {
+            <a href="/Companies/CreateSub" class="btn btn-gold bg-dark text-gold fw-bold rounded-pill px-4 shadow-sm hover-scale">
+                <i class="fas fa-plus-circle me-2"></i> @(isRtl ? "إضافة فرع جديد" : "Add New Branch")
+            </a>
+        }
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger border-0 bg-danger bg-opacity-10 text-danger rounded-3 mb-4">
+            <i class="fas fa-exclamation-triangle me-2"></i> @TempData["Error"]
+        </div>
+    }
+
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4">@(isRtl ? "اسم الشركة" : "Name")</th>
+                            <th>@(isRtl ? "السجل التجاري" : "CR Number")</th>
+                            <th>@(isRtl ? "المسؤول" : "Responsible")</th>
+                            <th>@(isRtl ? "الموظفين" : "Employees")</th>
+                            <th>@(isRtl ? "الحالة" : "Status")</th>
+                            <th class="text-end pe-4">@(isRtl ? "إجراءات" : "Actions")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="ps-4 fw-bold text-dark">
+                                        @item.Name
+                                        @if (item.ParentCompanyId != null)
+                                        {
+                                            <span class="badge bg-secondary ms-1" style="font-size:0.6rem;">فرع</span>
+                                        }
+                                    </td>
+                                    <td class="font-monospace text-muted">@item.RegistrationNumber</td>
+                                    <td>@item.ResponsiblePerson</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">
+                                            @(item.Employees?.Count ?? 0) / @item.AllowedEmployees
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (item.IsSuspended)
+                                        {
+                                            <span class="badge bg-danger">معلق</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">نشط</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <a href="/Companies/Details/@item.Id" class="btn btn-sm btn-outline-info rounded-circle"><i class="fas fa-eye"></i></a>
+                                            @if (!isSubAdmin)
+                                            {
+                                                <a href="/Companies/Edit/@item.Id" class="btn btn-sm btn-outline-primary rounded-circle"><i class="fas fa-edit"></i></a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="6" class="text-center py-5 text-muted">لا توجد شركات مسجلة</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

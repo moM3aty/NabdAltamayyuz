@@ -26,7 +26,8 @@ namespace NabdAltamayyuz.Controllers
             {
                 return RedirectToAction("SuperAdmin");
             }
-            else if (User.IsInRole(UserRole.CompanyAdmin.ToString()))
+            // المشرف الرئيسي والفرعي يذهبان لنفس اللوحة
+            else if (User.IsInRole(UserRole.CompanyAdmin.ToString()) || User.IsInRole(UserRole.SubAdmin.ToString()))
             {
                 return RedirectToAction("CompanyAdmin");
             }
@@ -40,42 +41,63 @@ namespace NabdAltamayyuz.Controllers
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> SuperAdmin()
         {
-            // Real Stats from DB
             ViewBag.CompaniesCount = await _context.Companies.CountAsync();
             ViewBag.EmployeesCount = await _context.Users.CountAsync();
-            // Fetch recent companies
-            var recentCompanies = await _context.Companies.OrderByDescending(c => c.CreatedAt).Take(5).ToListAsync();
+
+            // جلب الشركات مع ترتيب حسب تاريخ الإضافة
+            var recentCompanies = await _context.Companies
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
 
             return View(recentCompanies);
         }
 
-        // 2. Company Admin Dashboard
-        [Authorize(Roles = "CompanyAdmin")]
+        // 2. Company Admin & Sub Admin Dashboard
+        [Authorize(Roles = "CompanyAdmin,SubAdmin")]
         public async Task<IActionResult> CompanyAdmin()
         {
-            // Fetch stats related to the company (assuming multi-tenant logic or simple role filter)
-            // For now, fetching all employees as company structure is flat in this demo
-            var employeesCount = await _context.Users.CountAsync(u => u.Role == UserRole.Employee);
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var user = await _context.Users.Include(u => u.Company).FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user?.CompanyId == null) return RedirectToAction("AccessDenied", "Account");
+
+            // إحصائيات الموظفين للشركة
+            var employeesCount = await _context.Users.CountAsync(u => u.CompanyId == user.CompanyId && u.Role == UserRole.Employee);
             ViewBag.EmployeesCount = employeesCount;
 
-            // Get Today's Attendance
+            // سجل حضور اليوم للشركة
             var today = DateTime.Today;
-            var attendanceToday = await _context.Attendances
+            var attendanceList = await _context.Attendances
                 .Include(a => a.Employee)
-                .Where(a => a.Date == today)
+                .Where(a => a.Employee.CompanyId == user.CompanyId && a.Date == today)
+                .OrderByDescending(a => a.TimeIn)
                 .ToListAsync();
 
-            ViewBag.AttendanceList = attendanceToday;
+            ViewBag.AttendanceList = attendanceList;
 
-            // Get Pending Tasks
+            // المهام المعلقة لموظفي الشركة
             var pendingTasks = await _context.WorkTasks
                 .Include(t => t.AssignedTo)
-                .Where(t => !t.IsCompleted)
+                .Where(t => t.AssignedTo.CompanyId == user.CompanyId && !t.IsCompleted)
                 .OrderBy(t => t.DueDate)
-                .Take(5)
+                .Take(10)
                 .ToListAsync();
 
             ViewBag.PendingTasks = pendingTasks;
+
+            // التحقق من انتهاء الاشتراك
+            if (user.Company != null)
+            {
+                var daysLeft = (user.Company.SubscriptionEndDate - DateTime.Now).Days;
+                if (daysLeft < user.Company.NotificationDaysBeforeExpiry && daysLeft > 0)
+                {
+                    ViewBag.AlertMessage = $"تنبيه: اشتراك الشركة سينتهي خلال {daysLeft} يوم.";
+                }
+                else if (daysLeft <= 0)
+                {
+                    ViewBag.ErrorMessage = "تنبيه: اشتراك الشركة منتهي.";
+                }
+            }
 
             return View();
         }
@@ -87,14 +109,15 @@ namespace NabdAltamayyuz.Controllers
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var today = DateTime.Today;
 
-            // Check Attendance Status for Today
             var attendance = await _context.Attendances
                 .FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
 
             ViewBag.IsCheckedIn = attendance != null && attendance.TimeIn != null;
             ViewBag.IsCheckedOut = attendance != null && attendance.TimeOut != null;
 
-            // Fetch My Active Tasks
+            // رسالة للموظف في حالة تسجيل الدخول/الخروج
+            if (TempData["Success"] != null) ViewBag.Message = TempData["Success"];
+
             var myTasks = await _context.WorkTasks
                 .Where(t => t.AssignedToId == userId && !t.IsCompleted)
                 .OrderBy(t => t.DueDate)
@@ -103,17 +126,16 @@ namespace NabdAltamayyuz.Controllers
             return View(myTasks);
         }
 
-        // Action: Check In (For Employee)
+        // Actions: Check In/Out (Logic remains same, ensuring Authorize is correct)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Employee")]
+        [Authorize(Roles = "Employee,CompanyAdmin,SubAdmin")] // Admins might test attendance too
         public async Task<IActionResult> CheckIn()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var today = DateTime.Today;
 
-            var existingRecord = await _context.Attendances
-                .FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
+            var existingRecord = await _context.Attendances.FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
 
             if (existingRecord == null)
             {
@@ -121,6 +143,7 @@ namespace NabdAltamayyuz.Controllers
                 {
                     EmployeeId = userId,
                     Date = today,
+                    DayName = today.ToString("dddd", new System.Globalization.CultureInfo("ar-SA")),
                     TimeIn = DateTime.Now,
                     IsManualEntry = false
                 };
@@ -128,25 +151,18 @@ namespace NabdAltamayyuz.Controllers
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "تم تسجيل الدخول بنجاح";
             }
-            else
-            {
-                TempData["Warning"] = "لقد قمت بتسجيل الدخول مسبقاً اليوم";
-            }
-
-            return RedirectToAction("Employee");
+            return RedirectToAction("Index");
         }
 
-        // Action: Check Out (For Employee)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Employee")]
+        [Authorize(Roles = "Employee,CompanyAdmin,SubAdmin")]
         public async Task<IActionResult> CheckOut()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var today = DateTime.Today;
 
-            var record = await _context.Attendances
-                .FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
+            var record = await _context.Attendances.FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
 
             if (record != null && record.TimeOut == null)
             {
@@ -155,12 +171,7 @@ namespace NabdAltamayyuz.Controllers
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "تم تسجيل الخروج بنجاح";
             }
-            else
-            {
-                TempData["Error"] = "لا يوجد سجل دخول نشط لهذا اليوم";
-            }
-
-            return RedirectToAction("Employee");
+            return RedirectToAction("Index");
         }
     }
 }

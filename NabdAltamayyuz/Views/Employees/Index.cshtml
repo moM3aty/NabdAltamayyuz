@@ -7,41 +7,30 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<!-- تم إضافة الهامش العلوي هنا لحل مشكلة التداخل -->
-<div class="container py-5 animate-fade-in" style="margin-top: 100px;">
-    <!-- Header -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+<div class="container py-5 animate-fade-in" style="margin-top: 120px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h3 class="fw-bold text-dark mb-1">
-                <i class="fas fa-users text-gold me-2"></i> @(isRtl ? "إدارة الموظفين" : "Employee Management")
-            </h3>
-            <p class="text-muted small mb-0">@(isRtl ? "عرض وإدارة كافة الموظفين المسجلين في الشركة" : "View and manage all registered employees")</p>
+            <h3 class="fw-bold text-dark"><i class="fas fa-users text-gold me-2"></i> @(isRtl ? "سجل الموظفين" : "Employees Directory")</h3>
+            <p class="text-muted small">@(isRtl ? "إدارة وتصفح بيانات الموظفين" : "Manage and view employee data")</p>
         </div>
-        <a href="/Employees/Create" class="btn btn-gold bg-dark text-gold fw-bold shadow-sm hover-lift rounded-pill px-4">
-            <i class="fas fa-user-plus me-2"></i> @(isRtl ? "إضافة موظف جديد" : "Add New Employee")
+        <a href="/Employees/Create" class="btn btn-gold bg-dark text-gold fw-bold rounded-pill shadow-sm hover-scale px-4">
+            <i class="fas fa-user-plus me-2"></i> @(isRtl ? "موظف جديد" : "New Employee")
         </a>
     </div>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success border-0 bg-success bg-opacity-10 text-success rounded-3 shadow-sm mb-4 fade show">
-            <i class="fas fa-check-circle me-2"></i> @TempData["Success"]
-        </div>
-    }
-
-    <!-- Employees List -->
-    <div class="card border-0 shadow-lg overflow-hidden rounded-4">
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-dark text-white">
+                    <thead class="bg-light text-muted small text-uppercase">
                         <tr>
-                            <th class="py-3 px-4">@(isRtl ? "الاسم" : "Name")</th>
-                            <th class="py-3">@(isRtl ? "المسمى الوظيفي" : "Job Title")</th>
-                            <th class="py-3">@(isRtl ? "البريد الإلكتروني" : "Email")</th>
-                            <th class="py-3">@(isRtl ? "رقم الجوال" : "Phone")</th>
-                            <th class="py-3">@(isRtl ? "الحالة" : "Status")</th>
-                            <th class="py-3 text-end px-4">@(isRtl ? "إجراءات" : "Actions")</th>
+                            <th class="ps-4"> @(isRtl ? "الهوية" : " ID")</th>
+                            <th>@(isRtl ? "الاسم " : "Name")</th>
+                            <th>@(isRtl ? "الوظيفة" : "Job Title")</th>
+                            <th>@(isRtl ? "معلومات التواصل" : "Contact")</th>
+                            <th>@(isRtl ? "الحالة" : "Status")</th>
+                            <th>@(isRtl ? "المستندات" : "Docs")</th>
+                            <th class="text-end pe-4">@(isRtl ? "إجراءات" : "Actions")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -50,52 +39,53 @@
                             foreach (var item in Model)
                             {
                                 <tr>
-                                    <td class="px-4">
+                                    <td class="ps-4">
+                                        <div class="avatar-circle bg-gold-light text-gold fw-bold rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                        @item.Id
+                                        </div>
+                                    </td>
+                                    <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="avatar-circle bg-light text-gold fw-bold d-flex align-items-center justify-content-center me-3 border border-gold" style="width: 45px; height: 45px; border-radius: 50%;">
-                                                @item.FullName?.Substring(0, 1).ToUpper()
+                                            <div class="avatar-circle bg-gold-light text-gold fw-bold rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                                @item.FullName.Substring(0, 1).ToUpper()  
                                             </div>
                                             <div>
-                                                <h6 class="mb-0 fw-bold text-dark">@item.FullName</h6>
-                                                <small class="text-muted" style="font-size: 0.75rem;">ID: #@item.Id</small>
+                                                <div class="fw-bold text-dark">@item.FullName</div>
+                                                <small class="text-muted font-monospace">@item.NationalId</small>
                                             </div>
                                         </div>
                                     </td>
-                                    <td><span class="badge bg-light text-dark border rounded-pill px-3">@item.JobTitle</span></td>
-                                    <td class="text-muted small">@item.Email</td>
-                                    <td class="text-muted small ltr">@item.PhoneNumber</td>
-                                    <td><span class="badge bg-success bg-opacity-10 text-success px-3 py-1 rounded-pill">@(isRtl ? "نشط" : "Active")</span></td>
-                                    <td class="text-end px-4">
-                                        <div class="d-flex justify-content-end gap-2">
-                                            <a href="/Employees/Edit/@item.Id" class="btn btn-sm btn-outline-primary rounded-circle" title="@(isRtl ? "تعديل" : "Edit")">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <!-- Delete Button triggers Modal -->
-                                            <button type="button" class="btn btn-sm btn-outline-danger rounded-circle" data-bs-toggle="modal" data-bs-target="#deleteModal-@item.Id" title="@(isRtl ? "حذف" : "Delete")">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
+                                    <td><span class="badge bg-light text-dark border">@item.JobTitle</span></td>
+                                    <td>
+                                        <div class="d-flex flex-column small">
+                                            <span><i class="fas fa-envelope me-1 text-gold"></i> @item.Email</span>
+                                            <span><i class="fas fa-phone me-1 text-gold"></i> @item.PhoneNumber</span>
                                         </div>
-
-                                        <!-- Delete Confirmation Modal -->
-                                        <div class="modal fade" id="deleteModal-@item.Id" tabindex="-1" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content border-0 shadow-lg rounded-4">
-                                                    <div class="modal-body p-4 text-center">
-                                                        <div class="mb-3 text-danger opacity-75">
-                                                            <i class="fas fa-exclamation-circle fa-4x"></i>
-                                                        </div>
-                                                        <h5 class="fw-bold mb-2">@(isRtl ? "هل أنت متأكد؟" : "Are you sure?")</h5>
-                                                        <p class="text-muted small mb-4">@(isRtl ? $"سيتم حذف الموظف '{item.FullName}' نهائياً من النظام." : $"Employee '{item.FullName}' will be permanently deleted.")</p>
-                                                        <div class="d-flex justify-content-center gap-2">
-                                                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">@(isRtl ? "إلغاء" : "Cancel")</button>
-                                                            <form action="/Employees/Delete/@item.Id" method="post">
-                                                                @Html.AntiForgeryToken()
-                                                                <button type="submit" class="btn btn-danger rounded-pill px-4">@(isRtl ? "نعم، حذف" : "Yes, Delete")</button>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                    </td>
+                                    <td>
+                                        @if (item.Status == "Active")
+                                        {
+                                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill">نشط</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill">@item.Status</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.AttachmentPath))
+                                        {
+                                            <a href="/uploads/employees/@item.AttachmentPath" target="_blank" class="text-secondary hover-gold" title="عرض"><i class="fas fa-file-alt fa-lg"></i></a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted opacity-25">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <a href="/Employees/Edit/@item.Id" class="btn btn-sm btn-outline-primary rounded-circle"><i class="fas fa-edit"></i></a>
+                                            <a href="/Employees/Delete/@item.Id" class="btn btn-sm btn-outline-danger rounded-circle" onclick="return confirm('حذف الموظف نهائياً؟')"><i class="fas fa-trash-alt"></i></a>
                                         </div>
                                     </td>
                                 </tr>
@@ -104,10 +94,7 @@
                         else
                         {
                             <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">
-                                    <i class="fas fa-users-slash fa-3x mb-3 text-gold opacity-50"></i>
-                                    <p class="mb-0">@(isRtl ? "لا يوجد موظفين مسجلين حالياً" : "No employees registered yet")</p>
-                                </td>
+                                <td colspan="6" class="text-center py-5 text-muted">لا يوجد موظفين</td>
                             </tr>
                         }
                     </tbody>

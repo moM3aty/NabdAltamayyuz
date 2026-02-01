@@ -9,10 +9,56 @@
     var isEmployee = User.IsInRole(UserRole.Employee.ToString());
 }
 
-<!-- تمت إضافة margin-top: 100px لتفادي التداخل مع الـ Navbar -->
-<div class="container py-5 animate-fade-in" style="margin-top: 100px;">
-    <!-- Header -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+<!-- تنسيقات خاصة بالطباعة -->
+<style>
+    @@media print {
+        @@page { size: A4 landscape; margin: 1cm; } /* الطباعة بالعرض */
+        body { background-color: white !important; font-family: 'Cairo', sans-serif; -webkit-print-color-adjust: exact; }
+        
+        /* إخفاء العناصر غير الضرورية */
+        .premium-navbar, footer, .btn, .card-header, .card-footer, form, .alert, .no-print { display: none !important; }
+        
+        /* تنسيق الحاوية */
+        .container { margin-top: 0 !important; padding: 0 !important; max-width: 100% !important; width: 100% !important; }
+        .card { border: none !important; box-shadow: none !important; }
+        .card-body { padding: 0 !important; }
+        .animate-fade-in { animation: none !important; opacity: 1 !important; transform: none !important; }
+
+        /* إظهار ترويسة التقرير */
+        .print-header { display: block !important; margin-bottom: 20px; border-bottom: 2px solid #D4AF37; padding-bottom: 10px; }
+        
+        /* تحسين الجدول */
+        .table-responsive { overflow: visible !important; }
+        table { width: 100% !important; border-collapse: collapse !important; font-size: 12px; }
+        th { background-color: #0F172A !important; color: white !important; border: 1px solid #000 !important; padding: 5px !important; }
+        td { border: 1px solid #ccc !important; padding: 5px !important; color: black !important; }
+        
+        /* تحسين البادجات في الطباعة */
+        .badge { border: 1px solid #000; background: transparent !important; color: black !important; padding: 2px 5px; }
+    }
+    .print-header { display: none; } /* مخفي في الشاشة العادية */
+</style>
+
+<div class="container py-5 animate-fade-in" style="margin-top: 120px;">
+    
+    <!-- ترويسة تظهر فقط في الطباعة -->
+    <div class="print-header text-center">
+        <div class="row align-items-center">
+            <div class="col-4 text-end">
+                <small>تاريخ الطباعة: @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</small>
+            </div>
+            <div class="col-4">
+                <h3 class="fw-bold mb-1">نبض التميز الذهبي</h3>
+                <h5 class="text-muted">تقرير الحضور والانصراف</h5>
+            </div>
+            <div class="col-4 text-start">
+                <small>المستخدم: @User.Identity.Name</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header (Screen) -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3 no-print">
         <div>
             <h3 class="fw-bold text-dark mb-1">
                 <i class="fas fa-tasks text-gold me-2"></i> @(isRtl ? "إدارة المهام" : "Task Management")
@@ -97,7 +143,14 @@
                                         <a href="/Tasks/Edit/@task.Id" class="btn btn-sm btn-outline-primary rounded-pill me-1" title="@(isRtl ? "تعديل" : "Edit")">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <button class="btn btn-sm btn-outline-danger rounded-pill" title="@(isRtl ? "حذف" : "Delete")"><i class="fas fa-trash-alt"></i></button>
+                                        <!-- تم إصلاح زر الحذف: وضعه داخل فورم مع توكن الحماية -->
+                                        <form action="/Tasks/Delete" method="post" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@task.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill" title="@(isRtl ? "حذف" : "Delete")" onclick="return confirm('@(isRtl ? "هل أنت متأكد من حذف هذه المهمة؟" : "Are you sure you want to delete this task?")')">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
                                     }
                                 </div>
 
@@ -138,10 +191,16 @@
     <script>
         function completeTask(id) {
             if (confirm('@(isRtl ? "تأكيد إنجاز المهمة؟" : "Confirm task completion?")')) {
+                // التأكد من وجود توكن، إذا لم يوجد نبحث عن أول توكن في الصفحة
+                var token = $('input[name="__RequestVerificationToken"]').val();
+                if (!token) {
+                    token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                }
+
                 fetch('/Tasks/Complete/' + id, {
                     method: 'POST',
                     headers: {
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        'RequestVerificationToken': token
                     }
                 })
                 .then(res => res.json())

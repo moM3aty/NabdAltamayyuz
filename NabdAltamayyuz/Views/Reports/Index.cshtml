@@ -1,0 +1,82 @@
+﻿@using System.Globalization
+@using NabdAltamayyuz.Models
+@{
+    ViewData["Title"] = "التقارير";
+    var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var isEmployee = User.IsInRole(nameof(UserRole.Employee));
+}
+
+<div class="container py-5 animate-fade-in" style="margin-top: 120px;">
+    <div class="text-center mb-5">
+        <h3 class="fw-bold text-dark"><i class="fas fa-file-invoice text-gold me-2"></i> @(isRtl ? "مركز التقارير" : "Reports Center")</h3>
+        <p class="text-muted">@(isRtl ? "استخراج وطباعة تقارير الأداء والحضور والمهام" : "Export and print performance, attendance, and task reports")</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-dark text-white py-3 px-4">
+                    <h5 class="mb-0 fw-bold text-gold">@(isRtl ? "إعداد التقرير" : "Report Settings")</h5>
+                </div>
+                <div class="card-body p-4 bg-white">
+                    <form action="/Reports/Generate" method="get" target="_blank">
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-muted">@(isRtl ? "نوع التقرير" : "Report Type")</label>
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="type" id="typeAttend" value="attendance" checked>
+                                    <label class="btn btn-outline-light text-dark border-secondary w-100 rounded-3 py-3 hover-border-gold" for="typeAttend">
+                                        <i class="fas fa-clock d-block fa-2x mb-2 text-gold"></i>
+                                        @(isRtl ? "الحضور والانصراف" : "Attendance")
+                                    </label>
+                                </div>
+                                <div class="col-6">
+                                    <input type="radio" class="btn-check" name="type" id="typeTasks" value="tasks">
+                                    <label class="btn btn-outline-light text-dark border-secondary w-100 rounded-3 py-3 hover-border-gold" for="typeTasks">
+                                        <i class="fas fa-tasks d-block fa-2x mb-2 text-gold"></i>
+                                        @(isRtl ? (isEmployee ? "مهامي" : "حالة المهام") : (isEmployee ? "My Tasks" : "Tasks Status"))
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label class="form-label fw-bold small text-muted">@(isRtl ? "من تاريخ" : "From Date")</label>
+                                <input type="date" name="from" class="form-control bg-light" value="@DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd")">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold small text-muted">@(isRtl ? "إلى تاريخ" : "To Date")</label>
+                                <input type="date" name="to" class="form-control bg-light" value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                            </div>
+                        </div>
+
+                        @if (!isEmployee)
+                        {
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-muted">@(isRtl ? "بحث عن موظف (اختياري)" : "Search Employee (Optional)")</label>
+                                <input type="text" name="searchEmployee" class="form-control bg-light" placeholder="@(isRtl ? "اسم الموظف..." : "Employee name...")">
+                            </div>
+                        }
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold py-3 rounded-pill shadow-sm hover-scale">
+                                <i class="fas fa-print me-2"></i> @(isRtl ? "عرض وطباعة التقرير" : "View & Print Report")
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-check:checked + .btn {
+        background-color: #fdfbf4;
+        border-color: #D4AF37 !important;
+        box-shadow: 0 0 0 0.25rem rgba(212, 175, 55, 0.25);
+    }
+</style>

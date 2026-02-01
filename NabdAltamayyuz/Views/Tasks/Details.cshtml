@@ -1,0 +1,88 @@
+﻿@model NabdAltamayyuz.Models.WorkTask
+@using NabdAltamayyuz.Models
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "تفاصيل المهمة";
+    var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // Status Badge Logic - using full qualification for enum
+    string badgeClass = Model.Status switch
+    {
+        NabdAltamayyuz.Models.TaskStatus.Completed => "bg-success",
+        NabdAltamayyuz.Models.TaskStatus.Pending => "bg-warning text-dark",
+        NabdAltamayyuz.Models.TaskStatus.Delayed => "bg-info text-dark",
+        NabdAltamayyuz.Models.TaskStatus.Cancelled => "bg-danger",
+        _ => "bg-secondary"
+    };
+}
+
+<div class="container py-5 animate-fade-in" style="margin-top: 120px;">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Task Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <a href="/Tasks" class="btn btn-outline-secondary rounded-pill px-4">
+                    <i class="fas fa-arrow-right me-2 rtl-flip"></i> @(isRtl ? "عودة للقائمة" : "Back to List")
+                </a>
+                <span class="badge @badgeClass rounded-pill px-4 py-2 fs-6 shadow-sm">
+                    @Html.DisplayFor(model => model.Status)
+                </span>
+            </div>
+
+            <!-- Task Card -->
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
+                <div class="card-header bg-dark text-white p-4">
+                    <h4 class="mb-1 fw-bold text-gold">@Model.Title</h4>
+                    <div class="d-flex gap-3 text-white-50 small">
+                        <span><i class="far fa-calendar me-1"></i> @(isRtl ? "تاريخ الاستحقاق:" : "Due:") @Model.DueDate.ToString("yyyy-MM-dd")</span>
+                        <span><i class="fas fa-user-tag me-1"></i> @(isRtl ? "بواسطة:" : "By:") @Model.CreatedBy?.FullName</span>
+                    </div>
+                </div>
+                <div class="card-body p-4 bg-white">
+                    <h6 class="fw-bold text-muted text-uppercase small mb-3">@(isRtl ? "الوصف" : "Description")</h6>
+                    <p class="lead fs-6 mb-4" style="line-height: 1.8;">@Model.Description</p>
+
+                    @if (!string.IsNullOrEmpty(Model.AttachmentPath))
+                    {
+                        <div class="alert alert-light border border-gold d-flex align-items-center">
+                            <i class="fas fa-paperclip text-gold me-3 fa-lg"></i>
+                            <div>
+                                <h6 class="mb-0 fw-bold">@(isRtl ? "ملف مرفق" : "Attachment")</h6>
+                                <a href="/uploads/tasks/@Model.AttachmentPath" target="_blank" class="text-decoration-none small stretched-link">@(isRtl ? "تحميل / معاينة" : "Download / View")</a>
+                            </div>
+                        </div>
+                    }
+
+                    <hr class="my-4 opacity-10">
+
+                    <!-- Status Update Form -->
+                    <div class="bg-light p-4 rounded-3 border border-secondary border-opacity-10">
+                        <h5 class="fw-bold mb-3 text-dark">@(isRtl ? "تحديث الحالة" : "Update Status")</h5>
+                        <form asp-action="UpdateStatus" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">@(isRtl ? "الحالة الجديدة" : "New Status")</label>
+                                    <select name="status" class="form-select" asp-items="Html.GetEnumSelectList<NabdAltamayyuz.Models.TaskStatus>()"></select>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label small fw-bold">@(isRtl ? "ملاحظات / سبب التأجيل" : "Reason / Notes")</label>
+                                    <input type="text" name="reason" class="form-control" placeholder="@(isRtl ? "اكتب السبب هنا..." : "Enter reason here...")" value="@Model.StatusReason" />
+                                </div>
+                                <div class="col-12 text-end mt-3">
+                                    <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold px-4 rounded-pill">
+                                        <i class="fas fa-save me-2"></i> @(isRtl ? "حفظ التغيير" : "Save Changes")
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

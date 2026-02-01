@@ -1,95 +1,125 @@
 ﻿@model NabdAltamayyuz.Models.ApplicationUser
+@using NabdAltamayyuz.Models
 @using System.Globalization
 
 @{
-    ViewData["Title"] = "إضافة موظف جديد";
+    ViewData["Title"] = "إضافة مستخدم جديد";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
     Layout = "~/Views/Shared/_Layout.cshtml";
+
+    bool isSuperAdmin = User.IsInRole("SuperAdmin");
+    bool isCompanyAdmin = User.IsInRole("CompanyAdmin");
 }
 
-<!-- تمت إضافة margin-top: 100px لتفادي التداخل مع الـ Navbar -->
 <div class="container py-5 animate-fade-in" style="margin-top: 100px;">
     <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-7">
+        <div class="col-md-9">
             <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
                 <div class="card-header bg-dark text-white py-3 border-0 d-flex justify-content-between align-items-center px-4">
                     <h5 class="mb-0 fw-bold text-gold">
-                        <i class="fas fa-user-plus me-2"></i> @(isRtl ? "إضافة موظف جديد" : "Add New Employee")
+                        <i class="fas fa-user-plus me-2"></i> @(isRtl ? "إضافة مستخدم جديد" : "Add New User")
                     </h5>
                     <a href="/Employees" class="btn btn-sm btn-outline-light rounded-pill border-secondary text-white-50 hover-white">
                         <i class="fas fa-times me-1"></i> @(isRtl ? "إلغاء" : "Cancel")
                     </a>
                 </div>
                 <div class="card-body p-4 p-md-5 bg-white">
-                    <form asp-action="Create" method="post">
+
+                    <!-- منطقة عرض الأخطاء - مهمة جداً لمعرفة سبب المشكلة -->
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger shadow-sm rounded-3 mb-4">
+                            <h6 class="fw-bold"><i class="fas fa-exclamation-triangle me-2"></i> يرجى تصحيح الأخطاء التالية:</h6>
+                            <div asp-validation-summary="All" class="text-danger small mb-0 ps-3"></div>
+                        </div>
+                    }
+
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger text-center">@TempData["Error"]</div>
+                    }
+
+                    <form asp-action="Create" enctype="multipart/form-data" method="post">
                         @Html.AntiForgeryToken()
 
-                        <div class="row g-4">
-                            <!-- Full Name -->
-                            <div class="col-12">
-                                <label asp-for="FullName" class="form-label fw-bold text-muted small">@(isRtl ? "الاسم الكامل" : "Full Name")</label>
-                                <div class="input-group input-group-lg shadow-sm">
-                                    <span class="input-group-text bg-light border-end-0 text-gold"><i class="fas fa-user"></i></span>
-                                    <input asp-for="FullName" class="form-control bg-light border-start-0 fs-6" placeholder="@(isRtl ? "مثال: محمد أحمد علي" : "e.g. John Doe")" required />
+                        <!-- Role & Company Selection -->
+                        <div class="row g-4 mb-4 bg-light p-3 rounded-3 border border-secondary border-opacity-10">
+                            @if (isSuperAdmin)
+                            {
+                                <div class="col-md-6">
+                                    <label asp-for="CompanyId" class="form-label fw-bold small text-gold">الشركة التابع لها</label>
+                                    <select asp-for="CompanyId" class="form-select" asp-items="ViewBag.Companies">
+                                        <option value="">-- اختر الشركة --</option>
+                                    </select>
                                 </div>
-                                <span asp-validation-for="FullName" class="text-danger small mt-1 d-block"></span>
-                            </div>
+                            }
 
-                            <!-- Email -->
                             <div class="col-md-6">
-                                <label asp-for="Email" class="form-label fw-bold text-muted small">@(isRtl ? "البريد الإلكتروني" : "Email Address")</label>
-                                <div class="input-group shadow-sm">
-                                    <span class="input-group-text bg-light border-end-0 text-gold"><i class="fas fa-envelope"></i></span>
-                                    <input asp-for="Email" type="email" class="form-control bg-light border-start-0" placeholder="name@company.com" required />
-                                </div>
-                                <span asp-validation-for="Email" class="text-danger small mt-1 d-block"></span>
-                            </div>
-
-                            <!-- Phone -->
-                            <div class="col-md-6">
-                                <label asp-for="PhoneNumber" class="form-label fw-bold text-muted small">@(isRtl ? "رقم الجوال" : "Phone Number")</label>
-                                <div class="input-group shadow-sm">
-                                    <span class="input-group-text bg-light border-end-0 text-gold"><i class="fas fa-phone"></i></span>
-                                    <input asp-for="PhoneNumber" class="form-control bg-light border-start-0" placeholder="05xxxxxxxx" required />
-                                </div>
-                                <span asp-validation-for="PhoneNumber" class="text-danger small mt-1 d-block"></span>
-                            </div>
-
-                            <!-- Job Title -->
-                            <div class="col-md-6">
-                                <label asp-for="JobTitle" class="form-label fw-bold text-muted small">@(isRtl ? "المسمى الوظيفي" : "Job Title")</label>
-                                <div class="input-group shadow-sm">
-                                    <span class="input-group-text bg-light border-end-0 text-gold"><i class="fas fa-briefcase"></i></span>
-                                    <input asp-for="JobTitle" class="form-control bg-light border-start-0" placeholder="@(isRtl ? "مثال: محاسب" : "e.g. Accountant")" required />
-                                </div>
-                                <span asp-validation-for="JobTitle" class="text-danger small mt-1 d-block"></span>
-                            </div>
-
-                            <!-- Default Password (Read Only) -->
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold text-muted small">@(isRtl ? "كلمة المرور الافتراضية" : "Default Password")</label>
-                                <div class="input-group shadow-sm bg-light rounded">
-                                    <span class="input-group-text bg-transparent border-0 text-muted"><i class="fas fa-lock"></i></span>
-                                    <input type="text" class="form-control bg-transparent border-0 fw-bold font-monospace text-dark" value="123456" readonly />
-                                    <span class="input-group-text bg-transparent border-0" data-bs-toggle="tooltip" title="@(isRtl ? "كلمة المرور الافتراضية، يمكن للموظف تغييرها لاحقاً" : "Default password, employee can change it later")">
-                                        <i class="fas fa-info-circle text-info"></i>
-                                    </span>
-                                </div>
+                                <label class="form-label fw-bold small text-gold">نوع المستخدم (الصلاحية)</label>
+                                <select name="selectedRole" class="form-select">
+                                    <option value="@UserRole.Employee">موظف (Employee)</option>
+                                    @if (isSuperAdmin || isCompanyAdmin)
+                                    {
+                                        <option value="@UserRole.SubAdmin">مشرف فرعي (Sub Admin)</option>
+                                    }
+                                    @if (isSuperAdmin)
+                                    {
+                                        <option value="@UserRole.CompanyAdmin">مشرف رئيسي (Company Admin)</option>
+                                    }
+                                </select>
                             </div>
                         </div>
 
-                        <div class="alert alert-light border border-gold border-opacity-25 bg-gold bg-opacity-10 mt-4 rounded-3 d-flex align-items-center">
-                            <i class="fas fa-lightbulb text-gold me-3 fa-lg"></i>
-                            <div class="small text-muted">
-                                @(isRtl ? "سيتم إنشاء حساب للموظف بصلاحيات محدودة، ويمكنه تسجيل الدخول باستخدام البريد الإلكتروني وكلمة المرور الافتراضية." : "An employee account with limited access will be created. They can login using the email and default password.")
+                        <!-- Personal Info -->
+                        <h6 class="text-dark fw-bold mb-3 border-bottom pb-2">@(isRtl ? "البيانات الشخصية" : "Personal Info")</h6>
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="FullName" class="form-label fw-bold small">@(isRtl ? "الاسم الرباعي" : "Full Name")</label>
+                                <input asp-for="FullName" class="form-control" />
+                                <span asp-validation-for="FullName" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="NationalId" class="form-label fw-bold small">@(isRtl ? "رقم الهوية / الإقامة" : "National ID / Iqama")</label>
+                                <input asp-for="NationalId" class="form-control" />
+                                <span asp-validation-for="NationalId" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="PhoneNumber" class="form-label fw-bold small">@(isRtl ? "رقم الجوال" : "Phone Number")</label>
+                                <input asp-for="PhoneNumber" class="form-control" placeholder="05xxxxxxxx" />
+                                <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label fw-bold small">@(isRtl ? "البريد الإلكتروني" : "Email")</label>
+                                <input asp-for="Email" type="email" class="form-control" placeholder="user@company.com" />
+                                <span asp-validation-for="Email" class="text-danger small"></span>
                             </div>
                         </div>
 
-                        <hr class="my-4 opacity-10">
+                        <!-- Job Info -->
+                        <h6 class="text-dark fw-bold mb-3 border-bottom pb-2 pt-2">@(isRtl ? "بيانات الوظيفة" : "Job Details")</h6>
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="JobTitle" class="form-label fw-bold small">@(isRtl ? "المسمى الوظيفي" : "Job Title")</label>
+                                <input asp-for="JobTitle" class="form-control" />
+                                <span asp-validation-for="JobTitle" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted">@(isRtl ? "كلمة المرور الافتراضية" : "Default Password")</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="fas fa-lock"></i></span>
+                                    <input type="text" class="form-control bg-light text-muted border-0" value="123456" readonly />
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold small">@(isRtl ? "مرفقات (صورة الهوية / العقد)" : "Attachments")</label>
+                                <input type="file" name="attachment" class="form-control" />
+                                <div class="form-text small">@(isRtl ? "صيغ مسموحة: PDF, JPG, PNG" : "Allowed: PDF, JPG, PNG")</div>
+                            </div>
+                        </div>
 
-                        <div class="d-flex justify-content-end gap-2">
-                            <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold px-5 py-2 rounded-pill hover-scale shadow-lg">
-                                <i class="fas fa-check me-2"></i> @(isRtl ? "حفظ البيانات" : "Save Employee")
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold px-5 py-2 rounded-pill hover-scale shadow-sm">
+                                <i class="fas fa-check me-2"></i> @(isRtl ? "حفظ البيانات" : "Save Data")
                             </button>
                         </div>
                     </form>

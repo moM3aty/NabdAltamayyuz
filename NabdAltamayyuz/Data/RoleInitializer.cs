@@ -16,29 +16,51 @@ namespace NabdAltamayyuz.Models
             // 1. إنشاء قاعدة البيانات
             await context.Database.EnsureCreatedAsync();
 
-            // 2. التأكد من وجود شركة افتراضية وحفظها أولاً للحصول على ID
+            // 2. الشركة الافتراضية (تحديث لتشمل بيانات الاشتراك)
             var mainCompany = await context.Companies.FirstOrDefaultAsync();
             if (mainCompany == null)
             {
                 mainCompany = new Company
                 {
                     Name = "شركة نبض التميز (تجريبي)",
+                    UnifiedNumber = "7001234567",
                     RegistrationNumber = "1010101010",
-                    CreatedAt = DateTime.Now
+                    TaxNumber = "300123456700003",
+                    Email = "info@nabd.com",
+                    PhoneNumber = "0562056821",
+                    ResponsiblePerson = "المدير العام",
+                    NationalAddressShortCode = "RRRD2929",
+
+                    // بيانات الاشتراك (مهمة لظهور لوحة التحكم بشكل صحيح)
+                    SubscriptionStartDate = DateTime.Now,
+                    SubscriptionEndDate = DateTime.Now.AddYears(1), // اشتراك لمدة سنة
+                    PaymentTerm = PaymentTerm.Annual,
+                    NotificationDaysBeforeExpiry = 30,
+
+                    // الحدود
+                    AllowedEmployees = 50,
+                    AllowedSubAccounts = 5,
+
+                    // المالية
+                    PricePerEmployee = 100,
+                    TaxRate = 15,
+
+                    CreatedAt = DateTime.Now,
+                    IsSuspended = false
                 };
+
+                mainCompany.CalculateTotal(); // حساب الإجمالي
+
                 context.Companies.Add(mainCompany);
-                // مهم جداً: الحفظ هنا لتوليد ID للشركة قبل استخدامه مع الموظفين
                 await context.SaveChangesAsync();
-                Console.WriteLine("--> تم إنشاء الشركة الافتراضية بنجاح.");
+                Console.WriteLine("--> تم إنشاء الشركة الافتراضية مع بيانات الاشتراك.");
             }
 
-            // 3. إنشاء السوبر أدمن (المالك)
+            // 3. السوبر أدمن
             var adminEmail = "admin@nabd.com";
-            var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Email == adminEmail);
-
-            if (adminUser == null)
+            if (!await context.Users.AnyAsync(u => u.Email == adminEmail))
             {
-                adminUser = new ApplicationUser
+                var adminUser = new ApplicationUser
                 {
                     FullName = "المالك (Super Admin)",
                     Email = adminEmail,
@@ -47,13 +69,12 @@ namespace NabdAltamayyuz.Models
                     JobTitle = "Owner",
                     PhoneNumber = "0500000000",
                     CreatedAt = DateTime.Now,
-                    CompanyId = null // الأدمن غير مرتبط بشركة محددة
+                    Status = "Active"
                 };
                 context.Users.Add(adminUser);
-                Console.WriteLine("--> تم تجهيز حساب السوبر أدمن.");
             }
 
-            // 4. إنشاء مدير الشركة
+            // 4. مدير الشركة
             var managerEmail = "manager@company.com";
             if (!await context.Users.AnyAsync(u => u.Email == managerEmail))
             {
@@ -65,14 +86,15 @@ namespace NabdAltamayyuz.Models
                     Role = UserRole.CompanyAdmin,
                     JobTitle = "General Manager",
                     PhoneNumber = "0562056821",
+                    NationalId = "1010101010",
                     CreatedAt = DateTime.Now,
-                    CompanyId = mainCompany.Id // الآن الـ ID موجود بالتأكيد
+                    CompanyId = mainCompany.Id,
+                    Status = "Active"
                 };
                 context.Users.Add(companyAdmin);
-                Console.WriteLine("--> تم تجهيز حساب مدير الشركة.");
             }
 
-            // 5. إنشاء موظف عادي
+            // 5. موظف عادي
             var employeeEmail = "employee@company.com";
             if (!await context.Users.AnyAsync(u => u.Email == employeeEmail))
             {
@@ -84,18 +106,17 @@ namespace NabdAltamayyuz.Models
                     Role = UserRole.Employee,
                     JobTitle = "HR Specialist",
                     PhoneNumber = "0500000002",
+                    NationalId = "1020202020",
                     CreatedAt = DateTime.Now,
-                    CompanyId = mainCompany.Id
+                    CompanyId = mainCompany.Id,
+                    Status = "Active"
                 };
                 context.Users.Add(employee);
-                Console.WriteLine("--> تم تجهيز حساب الموظف.");
             }
 
-            // حفظ جميع المستخدمين دفعة واحدة
             if (context.ChangeTracker.HasChanges())
             {
                 await context.SaveChangesAsync();
-                Console.WriteLine("--> تم حفظ جميع بيانات المستخدمين في قاعدة البيانات.");
             }
         }
     }

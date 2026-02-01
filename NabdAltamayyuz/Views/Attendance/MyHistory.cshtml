@@ -1,0 +1,81 @@
+﻿@model IEnumerable<NabdAltamayyuz.Models.Attendance>
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "سجل حضوري";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+}
+
+<div class="container py-5 animate-fade-in" style="margin-top: 120px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark"><i class="fas fa-history text-gold me-2"></i> @(isRtl ? "سجل الحضور الشخصي" : "My Attendance History")</h3>
+            <p class="text-muted small">@(isRtl ? "عرض سجلات الدوام لآخر 30 يوم" : "Last 30 days records")</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary shadow-sm rounded-pill px-4" onclick="window.print()">
+                <i class="fas fa-print me-2"></i> @(isRtl ? "طباعة" : "Print")
+            </button>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead class="bg-dark text-white">
+                        <tr>
+                            <th class="py-3">التاريخ</th>
+                            <th class="py-3">اليوم</th>
+                            <th class="py-3">دخول</th>
+                            <th class="py-3">خروج</th>
+                            <th class="py-3">ساعات العمل</th>
+                            <th class="py-3">الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td><span class="fw-bold">@item.Date.ToString("yyyy-MM-dd")</span></td>
+                                    <td>@item.DayName</td>
+                                    <td class="text-success ltr font-monospace">@(item.TimeIn?.ToString("hh:mm tt") ?? "--")</td>
+                                    <td class="text-danger ltr font-monospace">@(item.TimeOut?.ToString("hh:mm tt") ?? "--")</td>
+                                    <td>
+                                        @if (item.TimeIn.HasValue && item.TimeOut.HasValue)
+                                        {
+                                            <span class="badge bg-light text-dark border">@((item.TimeOut.Value - item.TimeIn.Value).TotalHours.ToString("0.0")) س</span>
+                                        }
+                                        else
+                                        {
+                                            <span>--</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.TimeOut == null)
+                                        {
+                                            <span class="badge bg-warning bg-opacity-10 text-dark rounded-pill">جاري العمل</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill">مكتمل</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">لا يوجد سجلات حضور</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

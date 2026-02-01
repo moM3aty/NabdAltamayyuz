@@ -80,7 +80,7 @@
     <div class="container position-relative z-1">
         <div class="row align-items-center">
             <div class="col-lg-6 mb-5 mb-lg-0">
-                <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=1000&auto=format&fit=crop" class="img-fluid img-overlap w-100 shadow-lg" alt="Services">
+                <img src="~/images/22.jpg" class="img-fluid img-overlap w-100 shadow-lg" alt="Services">
             </div>
             <div class="col-lg-6 ps-lg-5">
                 <h6 class="text-gold fw-bold text-uppercase">@(isRtl ? "خدماتنا" : "Our Services")</h6>
@@ -128,23 +128,29 @@
 </section>
 
 <!-- Clients Section -->
-<section class="section-padding bg-white">
-    <div class="container">
+<section class="section-padding bg-white overflow-hidden">
+    <div class="container-fluid">
         <div class="text-center mb-5">
             <h5 class="text-dark fw-bold">@(isRtl ? "عملاء وضعوا ثقتهم بنا" : "Clients Who Trusted Us")</h5>
             <div class="mx-auto bg-gold mt-2" style="width: 50px; height: 3px;"></div>
         </div>
 
-        <!-- Clients Slider / Grid -->
-        <div class="row justify-content-center align-items-center g-4">
-            @for (int i = 1; i <= 5; i++)
-            {
-                <div class="col-6 col-md-4 col-lg-2">
-                    <div class="client-logo-wrapper p-3 border rounded-3 hover-shadow transition-all text-center">
-                        <img src="~/images/@(i).jpg" class="img-fluid grayscale-hover" alt="Client @i" onerror="this.src='https://via.placeholder.com/150x100?text=Client+@i'">
-                    </div>
-                </div>
-            }
+        <!-- Continuous Slider -->
+        <div class="clients-slider">
+            <div class="slide-track">
+                <!-- Loop twice to create seamless infinite scroll -->
+                @for (int j = 0; j < 2; j++)
+                {
+                    @for (int i = 1; i <= 8; i++)
+                    {
+                        <div class="slide">
+                            <div class="client-logo-wrapper">
+                                <img src="~/images/@(i).jpg" class="img-fluid grayscale-hover" alt="Client @i" onerror="this.src='https://via.placeholder.com/150x80?text=Client+@i'">
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
         </div>
     </div>
 </section>
@@ -166,20 +172,3 @@
     </div>
 </section>
 
-<style>
-    .grayscale-hover {
-        filter: grayscale(100%);
-        transition: filter 0.3s ease;
-        height: 150px;
-        object-fit: contain;
-    }
-
-    .client-logo-wrapper:hover .grayscale-hover {
-        filter: grayscale(0%);
-    }
-
-    .hover-shadow:hover {
-        box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-        border-color: var(--primary-gold) !important;
-    }
-</style>

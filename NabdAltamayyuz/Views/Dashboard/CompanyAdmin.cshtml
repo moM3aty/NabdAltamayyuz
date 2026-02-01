@@ -1,94 +1,111 @@
 ﻿@using System.Globalization
 @using NabdAltamayyuz.Models
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@inject NabdAltamayyuz.Data.ApplicationDbContext _context
+
 @{
     ViewData["Title"] = "لوحة تحكم الشركة";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
 
+    // استرجاع بيانات الشركة للمشرف الحالي
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    // التصحيح هنا: استخدام التضمين الصحيح بعد إضافة using Microsoft.EntityFrameworkCore
+    var user = _context.Users.Include(u => u.Company).FirstOrDefault(u => u.Id.ToString() == userId);
+    var company = user?.Company;
+
     var attendanceList = ViewBag.AttendanceList as List<Attendance>;
     var pendingTasks = ViewBag.PendingTasks as List<WorkTask>;
+
+    // حساب إحصائيات المهام للرسم البياني - التحقق من null للشركة
+    int totalTasks = 0;
+    int completedTasks = 0;
+    int openTasks = 0;
+
+    if (company != null)
+    {
+        totalTasks = _context.WorkTasks.Count(t => t.AssignedTo.CompanyId == company.Id);
+        completedTasks = _context.WorkTasks.Count(t => t.AssignedTo.CompanyId == company.Id && t.IsCompleted);
+        openTasks = totalTasks - completedTasks;
+    }
 }
 
-<!-- تمت إضافة margin-top: 100px لتفادي التداخل مع الـ Navbar -->
-<div class="container py-5 animate-fade-in" style="margin-top: 100px;">
-    <!-- Quick Actions Header -->
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-5 gap-3">
-        <div>
-            <h3 class="fw-bold text-dark mb-1">
-                <i class="fas fa-tachometer-alt text-gold me-2"></i> @(isRtl ? "لوحة المعلومات" : "Dashboard")
-            </h3>
-            <p class="text-muted small mb-0">@(isRtl ? "متابعة سير العمل وأداء الموظفين اليومي" : "Track workflow and daily employee performance")</p>
+<div class="container py-5 animate-fade-in" style="margin-top: 120px;">
+    <!-- Company Header -->
+    <div class="bg-dark text-white rounded-4 p-4 p-lg-5 mb-5 position-relative overflow-hidden shadow-lg">
+        <div class="position-absolute top-0 end-0 opacity-10 p-3">
+            <i style="font-size: 50px;margin: 0" class="fas fa-building fa-8x text-gold"></i>
         </div>
-        <div class="d-flex gap-2">
-            <a href="/Tasks/Create" class="btn btn-dark fw-bold shadow-sm rounded-pill">
-                <i class="fas fa-plus-circle me-2 text-gold"></i> @(isRtl ? "إسناد مهمة" : "Assign Task")
-            </a>
-            <a href="/Employees/Create" class="btn btn-outline-dark fw-bold shadow-sm rounded-pill">
-                <i class="fas fa-user-plus me-2"></i> @(isRtl ? "إضافة موظف" : "Add Employee")
-            </a>
+        <div class="position-relative z-1">
+            <div class="d-flex flex-wrap justify-content-between align-items-end">
+                <div>
+                    <h6 class="text-gold text-uppercase letter-spacing-1 mb-2">@(isRtl ? "لوحة الإدارة" : "Admin Dashboard")</h6>
+                    <h2 class="display-5 fw-bold mb-2">@company?.Name</h2>
+                    <p class="text-white-50 mb-0"><i class="fas fa-id-card me-2"></i> السجل التجاري: @company?.RegistrationNumber</p>
+                </div>
+                <div class="text-end mt-4 mt-lg-0">
+                    <div class="bg-white bg-opacity-10 rounded-3 p-3 text-center">
+                        <small class="text-gold d-block text-uppercase mb-1">الرصيد المتبقي (موظفين)</small>
+                        <h4 class="mb-0 fw-bold">@((company?.AllowedEmployees ?? 0) - (ViewBag.EmployeesCount ?? 0)) / @(company?.AllowedEmployees ?? 0)</h4>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Stats Overview -->
+    <!-- Quick Actions -->
     <div class="row g-4 mb-5">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm bg-white rounded-4 h-100 border-start border-5 border-gold">
-                <div class="card-body d-flex align-items-center p-4">
-                    <div class="icon-box bg-gold-light text-gold rounded-circle p-3 me-3 ms-3">
-                        <i class="fas fa-users fa-2x"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-muted text-uppercase small mb-1">@(isRtl ? "إجمالي الموظفين" : "Total Employees")</h6>
-                        <h3 class="fw-bold mb-0">@ViewBag.EmployeesCount</h3>
-                    </div>
+        <div class="col-md-3">
+            <a href="/Tasks/Create" class="card border-0 shadow-sm hover-lift text-decoration-none h-100 bg-white">
+                <div class="card-body text-center p-4">
+                    <div class="icon-box bg-primary bg-opacity-10 text-primary rounded-circle mx-auto mb-3 p-3"><i class="fas fa-plus-circle fa-2x"></i></div>
+                    <h6 class="fw-bold text-dark">إسناد مهمة</h6>
                 </div>
-            </div>
+            </a>
         </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm bg-white rounded-4 h-100 border-start border-5 border-success">
-                <div class="card-body d-flex align-items-center p-4">
-                    <div class="icon-box bg-success bg-opacity-10 text-success rounded-circle p-3 me-3 ms-3">
-                        <i class="fas fa-user-check fa-2x"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-muted text-uppercase small mb-1">@(isRtl ? "حضور اليوم" : "Present Today")</h6>
-                        <h3 class="fw-bold mb-0">@(attendanceList?.Count ?? 0)</h3>
-                    </div>
+        <div class="col-md-3">
+            <a href="/Employees/Create" class="card border-0 shadow-sm hover-lift text-decoration-none h-100 bg-white">
+                <div class="card-body text-center p-4">
+                    <div class="icon-box bg-success bg-opacity-10 text-success rounded-circle mx-auto mb-3 p-3"><i class="fas fa-user-plus fa-2x"></i></div>
+                    <h6 class="fw-bold text-dark">إضافة موظف</h6>
                 </div>
-            </div>
+            </a>
         </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm bg-white rounded-4 h-100 border-start border-5 border-warning">
-                <div class="card-body d-flex align-items-center p-4">
-                    <div class="icon-box bg-warning bg-opacity-10 text-warning rounded-circle p-3 me-3 ms-3">
-                        <i class="fas fa-clipboard-list fa-2x"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-muted text-uppercase small mb-1">@(isRtl ? "مهام معلقة" : "Pending Tasks")</h6>
-                        <h3 class="fw-bold mb-0">@(pendingTasks?.Count ?? 0)</h3>
-                    </div>
+        <div class="col-md-3">
+            <a href="/Attendance" class="card border-0 shadow-sm hover-lift text-decoration-none h-100 bg-white">
+                <div class="card-body text-center p-4">
+                    <div class="icon-box bg-warning bg-opacity-10 text-warning rounded-circle mx-auto mb-3 p-3"><i class="fas fa-clock fa-2x"></i></div>
+                    <h6 class="fw-bold text-dark">سجل الحضور</h6>
                 </div>
-            </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/Reports" class="card border-0 shadow-sm hover-lift text-decoration-none h-100 bg-white">
+                <div class="card-body text-center p-4">
+                    <div class="icon-box bg-info bg-opacity-10 text-info rounded-circle mx-auto mb-3 p-3"><i class="fas fa-file-alt fa-2x"></i></div>
+                    <h6 class="fw-bold text-dark">التقارير</h6>
+                </div>
+            </a>
         </div>
     </div>
 
     <div class="row g-4">
-        <!-- Today's Attendance List -->
+        <!-- Attendance Table -->
         <div class="col-lg-8">
-            <div class="card border-0 shadow-lg rounded-4 h-100 overflow-hidden">
+            <div class="card border-0 shadow-lg rounded-4 h-100">
                 <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 fw-bold"><i class="fas fa-clock text-gold me-2"></i> @(isRtl ? "سجل الحضور اليومي" : "Today's Attendance")</h6>
-                    <a href="/Attendance" class="btn btn-sm btn-light text-muted small rounded-pill">@(isRtl ? "التفاصيل" : "Details") <i class="fas fa-arrow-left ms-1"></i></a>
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-fingerprint text-gold me-2"></i> حضور اليوم</h6>
+                    <span class="badge bg-dark rounded-pill">@DateTime.Now.ToString("dd MMM")</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
-                            <thead class="bg-light small text-muted">
+                            <thead class="bg-light small">
                                 <tr>
-                                    <th class="ps-4">@(isRtl ? "الموظف" : "Employee")</th>
-                                    <th>@(isRtl ? "دخول" : "In")</th>
-                                    <th>@(isRtl ? "خروج" : "Out")</th>
-                                    <th>@(isRtl ? "الحالة" : "Status")</th>
+                                    <th class="ps-4">الموظف</th>
+                                    <th>وقت الدخول</th>
+                                    <th>الحالة</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -98,26 +115,14 @@
                                     {
                                         <tr>
                                             <td class="ps-4 fw-bold">@item.Employee.FullName</td>
-                                            <td class="text-success ltr">@(item.TimeIn?.ToString("hh:mm tt"))</td>
-                                            <td class="text-danger ltr">@(item.TimeOut?.ToString("hh:mm tt") ?? "--")</td>
-                                            <td>
-                                                @if (item.TimeOut == null)
-                                                {
-                                                    <span class="badge bg-warning text-dark rounded-pill">@(isRtl ? "جاري العمل" : "Working")</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-success rounded-pill">@(isRtl ? "مكتمل" : "Completed")</span>
-                                                }
-                                            </td>
+                                            <td class="text-success font-monospace">@(item.TimeIn?.ToString("hh:mm tt"))</td>
+                                            <td><span class="badge bg-success bg-opacity-10 text-success">حاضر</span></td>
                                         </tr>
                                     }
                                 }
                                 else
                                 {
-                                    <tr>
-                                        <td colspan="4" class="text-center py-4 text-muted">@(isRtl ? "لم يتم تسجيل أي حضور اليوم بعد" : "No attendance recorded today yet")</td>
-                                    </tr>
+                                    <tr><td colspan="3" class="text-center py-4 text-muted">لا يوجد حضور مسجل اليوم</td></tr>
                                 }
                             </tbody>
                         </table>
@@ -126,44 +131,73 @@
             </div>
         </div>
 
-        <!-- Recent Pending Tasks -->
+        <!-- Tasks Chart & Pending -->
         <div class="col-lg-4">
-            <div class="card border-0 shadow-lg rounded-4 h-100 bg-dark text-white">
-                <div class="card-header bg-transparent py-3 border-secondary d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 fw-bold text-gold"><i class="fas fa-tasks me-2"></i> @(isRtl ? "مهام عاجلة" : "Urgent Tasks")</h6>
-                    <a href="/Tasks" class="btn btn-sm btn-outline-gold rounded-pill" style="font-size: 0.7rem;">@(isRtl ? "الكل" : "All")</a>
+            <!-- Chart Card -->
+            <div class="card border-0 shadow-lg rounded-4 mb-4 overflow-hidden">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-chart-pie me-2 text-gold"></i> إحصائيات المهام</h6>
+                </div>
+                <div class="card-body d-flex justify-content-center">
+                    <div style="width: 200px; height: 200px;">
+                        <canvas id="tasksChart"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer bg-light text-center small text-muted">
+                    إجمالي المهام: @totalTasks
+                </div>
+            </div>
+
+            <!-- Urgent List -->
+            <div class="card border-0 shadow-lg rounded-4 bg-gold-light">
+                <div class="card-header bg-transparent py-3 border-bottom border-dark border-opacity-10">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-exclamation-circle me-2"></i> مهام متأخرة/معلقة</h6>
                 </div>
                 <div class="card-body">
                     @if (pendingTasks != null && pendingTasks.Any())
                     {
-                        <ul class="list-group list-group-flush">
-                            @foreach (var task in pendingTasks)
+                        <ul class="list-group list-group-flush bg-transparent">
+                            @foreach (var task in pendingTasks.Take(3))
                             {
-                                <li class="list-group-item bg-transparent text-white border-secondary px-0 py-3">
-                                    <div class="d-flex justify-content-between align-items-start mb-1">
-                                        <h6 class="mb-0 fw-bold text-truncate" style="max-width: 70%;">@task.Title</h6>
-                                        <small class="text-gold">@task.DueDate.ToString("MMM dd")</small>
+                                <li class="list-group-item bg-transparent border-bottom border-dark border-opacity-10 px-0">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-bold text-dark text-truncate" style="max-width: 60%;">@task.Title</span>
+                                        <small class="text-danger">@task.DueDate.ToString("dd/MM")</small>
                                     </div>
-                                    <p class="small text-white-50 mb-2 text-truncate">@task.Description</p>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-xs bg-secondary rounded-circle d-flex justify-content-center align-items-center me-2" style="width: 20px; height: 20px; font-size: 10px;">
-                                            <i class="fas fa-user"></i>
-                                        </div>
-                                        <small class="text-white-50">@task.AssignedTo?.FullName</small>
-                                    </div>
+                                    <small class="text-muted">@task.AssignedTo?.FullName</small>
                                 </li>
                             }
                         </ul>
                     }
                     else
                     {
-                        <div class="text-center py-5 text-white-50">
-                            <i class="fas fa-check-circle fa-3x mb-3 text-gold opacity-50"></i>
-                            <p>@(isRtl ? "لا توجد مهام معلقة!" : "No pending tasks!")</p>
-                        </div>
+                        <div class="text-center py-3 text-success small fw-bold">كل المهام منجزة!</div>
                     }
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var ctxTasks = document.getElementById('tasksChart').getContext('2d');
+        var tasksChart = new Chart(ctxTasks, {
+            type: 'doughnut',
+            data: {
+                labels: ['منجز', 'قيد التنفيذ'],
+                datasets: [{
+                    data: [@completedTasks, @openTasks],
+                    backgroundColor: ['#198754', '#ffc107'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '75%',
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    });
+</script>

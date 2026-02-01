@@ -1,0 +1,197 @@
+﻿@model IEnumerable<NabdAltamayyuz.Models.WorkTask>
+@using System.Globalization
+@using NabdAltamayyuz.Models
+@{
+    Layout = null;
+    var isRtl = true;
+}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>تقرير المهام والإنجاز</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #fff;
+            padding: 20px;
+            font-size: 14px;
+        }
+
+        .report-header {
+            border-bottom: 2px solid #D4AF37;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            color: #D4AF37;
+            font-weight: bold;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .report-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .meta-info {
+            text-align: left;
+            font-size: 13px;
+            color: #666;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th {
+            background-color: #0F172A;
+            color: white;
+            padding: 10px;
+            border: 1px solid #0F172A;
+            text-align: center;
+        }
+
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            vertical-align: middle;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .status-completed {
+            color: #198754;
+            font-weight: bold;
+        }
+
+        .status-pending {
+            color: #fd7e14;
+        }
+
+        .status-delayed {
+            color: #0dcaf0;
+        }
+
+        .status-cancelled {
+            color: #dc3545;
+        }
+
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            border-radius: 50px;
+            padding: 10px 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        @@media print {
+            .print-btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+
+    <div class="report-header">
+        <div>
+            <div class="logo">نبض التميز الذهبي</div>
+            <div class="report-title">تقرير حالة المهام</div>
+        </div>
+        <div class="meta-info">
+            <div><strong>تاريخ الاستخراج:</strong> @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</div>
+            <div><strong>الفترة:</strong> @ViewBag.FromDate إلى @ViewBag.ToDate</div>
+            <div><strong>عدد المهام:</strong> @Model.Count()</div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th width="20%">عنوان المهمة</th>
+                <th width="15%">الموظف المسؤول</th>
+                <th width="10%">تاريخ الاستحقاق</th>
+                <th width="10%">الحالة</th>
+                <th width="25%">ملاحظات / سبب الحالة</th>
+                <th width="15%">المشرف</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Any())
+            {
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td style="font-weight:bold;">@item.Title</td>
+                        <td>@item.AssignedTo?.FullName</td>
+                        <td style="text-align:center;">@item.DueDate.ToString("yyyy-MM-dd")</td>
+                        <td style="text-align:center;">
+                            @switch (item.Status)
+                            {
+                                case NabdAltamayyuz.Models.TaskStatus.Completed:
+                                    <span class="status-completed">منجز</span>
+                                    break;
+                                case NabdAltamayyuz.Models.TaskStatus.Pending:
+                                    <span class="status-pending">قيد الانتظار</span>
+                                    break;
+                                case NabdAltamayyuz.Models.TaskStatus.Delayed:
+                                    <span class="status-delayed">مؤجل</span>
+                                    break;
+                                case NabdAltamayyuz.Models.TaskStatus.Cancelled:
+                                    <span class="status-cancelled">ملغي</span>
+                                    break;
+                                default:
+                                    <span>@item.Status</span>
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.StatusReason))
+                            {
+                                @item.StatusReason
+                            }
+                            else
+                            {
+                                <span style="color:#ccc;">-</span>
+                            }
+                        </td>
+                        <td>@item.CreatedBy?.FullName</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="6" style="text-align:center; padding: 30px; color: #777;">لا توجد مهام مسجلة في هذه الفترة</td></tr>
+            }
+        </tbody>
+    </table>
+
+    <div style="margin-top: 40px; border-top: 1px solid #eee; pt-3; display: flex; justify-content: space-between;">
+        <div style="text-align: right;">
+            <strong>التوقيع / الاعتماد:</strong>
+            <br><br>
+            ..........................................
+        </div>
+        <div style="text-align: left; color: #888; font-size: 11px; align-self: flex-end;">
+            تم إصدار هذا التقرير آلياً من نظام نبض التميز الذهبي للإدارة والتشغيل
+        </div>
+    </div>
+
+    <button class="btn btn-dark print-btn" onclick="window.print()">طباعة التقرير</button>
+
+</body>
+</html>

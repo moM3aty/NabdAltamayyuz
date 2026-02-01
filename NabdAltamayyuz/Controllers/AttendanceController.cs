@@ -5,11 +5,12 @@ using NabdAltamayyuz.Data;
 using NabdAltamayyuz.Models;
 using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace NabdAltamayyuz.Controllers
 {
-    [Authorize(Roles = "CompanyAdmin,SuperAdmin")]
+    [Authorize]
     public class AttendanceController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -19,48 +20,58 @@ namespace NabdAltamayyuz.Controllers
             _context = context;
         }
 
-        // GET: Attendance Sheet
+        // GET: Attendance/MyHistory (للموظف)
+        public async Task<IActionResult> MyHistory()
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            var history = await _context.Attendances
+                .Where(a => a.EmployeeId == userId)
+                .OrderByDescending(a => a.Date)
+                .Take(30) // آخر 30 يوم
+                .ToListAsync();
+
+            return View(history);
+        }
+
+        // GET: Attendance Sheet (للمدراء)
+        [Authorize(Roles = "CompanyAdmin,SuperAdmin,SubAdmin")]
         public async Task<IActionResult> Index(string searchEmployee, DateTime? startDate, DateTime? endDate)
         {
             var query = _context.Attendances
                 .Include(a => a.Employee)
                 .AsQueryable();
 
-            // Filter by Name
+            if (!User.IsInRole("SuperAdmin"))
+            {
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var user = await _context.Users.FindAsync(userId);
+                query = query.Where(a => a.Employee.CompanyId == user.CompanyId);
+            }
+
             if (!string.IsNullOrEmpty(searchEmployee))
-            {
                 query = query.Where(a => a.Employee.FullName.Contains(searchEmployee));
-            }
 
-            // Filter by Date Range
-            if (startDate.HasValue)
-            {
-                query = query.Where(a => a.Date >= startDate.Value);
-                ViewBag.StartDate = startDate.Value.ToString("yyyy-MM-dd");
-            }
-            if (endDate.HasValue)
-            {
-                query = query.Where(a => a.Date <= endDate.Value);
-                ViewBag.EndDate = endDate.Value.ToString("yyyy-MM-dd");
-            }
+            if (startDate.HasValue) query = query.Where(a => a.Date >= startDate.Value);
+            if (endDate.HasValue) query = query.Where(a => a.Date <= endDate.Value);
 
-            // Order by most recent
             var data = await query.OrderByDescending(a => a.Date).ToListAsync();
-
             return View(data);
         }
 
-        // POST: Attendance/ManualEntry (For Admins to fix/add records)
+        // POST: Attendance/ManualEntry (للمدراء)
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "CompanyAdmin,SuperAdmin,SubAdmin")]
         public async Task<IActionResult> ManualEntry(int employeeId, DateTime date, DateTime timeIn, DateTime? timeOut, string notes)
         {
+
+
             var existingRecord = await _context.Attendances
                 .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.Date == date.Date);
 
             if (existingRecord != null)
             {
-                // Update existing
                 existingRecord.TimeIn = timeIn;
                 existingRecord.TimeOut = timeOut;
                 existingRecord.Notes = notes + " (تعديل يدوي)";
@@ -69,11 +80,11 @@ namespace NabdAltamayyuz.Controllers
             }
             else
             {
-                // Create new
                 var attendance = new Attendance
                 {
                     EmployeeId = employeeId,
                     Date = date.Date,
+                    DayName = date.ToString("dddd", new System.Globalization.CultureInfo("ar-SA")),
                     TimeIn = timeIn,
                     TimeOut = timeOut,
                     Notes = notes,
@@ -84,7 +95,7 @@ namespace NabdAltamayyuz.Controllers
 
             await _context.SaveChangesAsync();
             TempData["Success"] = "تم حفظ سجل الحضور";
-            return RedirectToAction(nameof(Index)); // Or redirect to Dashboard
+            return RedirectToAction(nameof(Index));
         }
     }
 }

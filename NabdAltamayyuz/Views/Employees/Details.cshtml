@@ -1,0 +1,106 @@
+﻿@model NabdAltamayyuz.Models.ApplicationUser
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "تفاصيل الموظف";
+    var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-5 animate-fade-in" style="margin-top: 120px;">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header bg-dark text-white p-4 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-gold"><i class="fas fa-id-card me-2"></i> @(isRtl ? "بطاقة الموظف" : "Employee Card")</h5>
+                    <div>
+                        <a href="/Employees/Edit/@Model.Id" class="btn btn-sm btn-gold text-dark fw-bold rounded-pill px-3">
+                            <i class="fas fa-edit me-1"></i> @(isRtl ? "تعديل" : "Edit")
+                        </a>
+                        <a href="/Employees" class="btn btn-sm btn-outline-light rounded-pill ms-1">
+                            <i class="fas fa-arrow-left me-1"></i> @(isRtl ? "عودة" : "Back")
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body p-4 p-md-5 bg-white">
+                    <div class="text-center mb-5">
+                        <div class="avatar-circle bg-gold-light text-gold fw-bold d-inline-flex align-items-center justify-content-center border border-gold mb-3 shadow-sm" style="width: 100px; height: 100px; border-radius: 50%; font-size: 2.5rem;">
+                            @Model.FullName.Substring(0, 1).ToUpper()
+                        </div>
+                        <h3 class="fw-bold text-dark mb-1">@Model.FullName</h3>
+                        <span class="badge bg-dark text-gold px-3 py-2 rounded-pill shadow-sm">@Model.JobTitle</span>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <small class="text-muted d-block text-uppercase mb-1">معلومات الاتصال</small>
+                                <div class="mb-2"><i class="fas fa-envelope text-gold me-2"></i> @Model.Email</div>
+                                <div><i class="fas fa-phone text-gold me-2"></i> @Model.PhoneNumber</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3 border h-100">
+                                <small class="text-muted d-block text-uppercase mb-1">بيانات النظام</small>
+                                <div class="mb-2">
+                                    <i class="fas fa-id-badge text-gold me-2"></i> الهوية: <span class="font-monospace">@Model.NationalId</span>
+                                </div>
+                                <div>
+                                    <i class="fas fa-toggle-on text-gold me-2"></i> الحالة:
+                                    @if (Model.Status == "Active")
+                                    {
+                                        <span class="text-success fw-bold">نشط</span>
+                                    }
+                                    else
+                                    {
+
+                                        <span class="text-danger fw-bold">@Model.Status</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (Model.Company != null)
+                        {
+                            <div class="col-12">
+                                <div class="p-3 bg-light rounded-3 border d-flex align-items-center">
+                                    <i class="fas fa-building text-gold fa-2x me-3 opacity-50"></i>
+                                    <div>
+                                        <small class="text-muted d-block text-uppercase">الشركة التابع لها</small>
+                                        <h6 class="mb-0 fw-bold">@Model.Company.Name</h6>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <hr class="my-5 opacity-10">
+
+                    <h6 class="text-gold fw-bold mb-3"><i class="fas fa-folder-open me-2"></i> @(isRtl ? "المستندات والمرفقات" : "Documents & Attachments")</h6>
+                    @if (!string.IsNullOrEmpty(Model.AttachmentPath))
+                    {
+                        <div class="d-flex align-items-center p-3 border rounded-3 bg-white hover-shadow transition-all">
+                            <div class="icon-box bg-danger bg-opacity-10 text-danger rounded-circle p-2 me-3">
+                                <i class="fas fa-file-pdf fa-lg"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0 fw-bold text-dark">مستندات الموظف</h6>
+                                <small class="text-muted">صورة الهوية / العقد</small>
+                            </div>
+                            <a href="/uploads/employees/@Model.AttachmentPath" target="_blank" class="btn btn-outline-dark rounded-pill px-4">
+                                <i class="fas fa-download me-2"></i> @(isRtl ? "تحميل / عرض" : "Download / View")
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 bg-light rounded-3 border border-dashed">
+                            <p class="text-muted mb-0 small">لا توجد مستندات مرفقة لهذا الموظف</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
