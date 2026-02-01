@@ -7,6 +7,7 @@ using System.IO;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Linq;
+using System;
 
 namespace NabdAltamayyuz.Controllers
 {
@@ -74,43 +75,43 @@ namespace NabdAltamayyuz.Controllers
             return View();
         }
 
-            
-       [HttpPost]
+        // POST: Companies/Create
+        [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> Create(Company company, IFormFile? attachment)
+        public async Task<IActionResult> Create(Company company, IFormFile? attachment, string? adminPassword)
         {
             company.CalculateTotal();
 
-
-            ModelState.Remove("Employees");
-            ModelState.Remove("SubCompanies");
+            if (string.IsNullOrEmpty(company.NationalAddressShortCode)) company.NationalAddressShortCode = "-";
+            if (string.IsNullOrEmpty(company.PhoneNumber)) company.PhoneNumber = "-";
+            ModelState.Remove(nameof(company.Employees));
+            ModelState.Remove(nameof(company.SubCompanies));
             if (ModelState.IsValid)
             {
-                // 1. إضافة الشركة
                 await HandleAttachment(company, attachment);
                 _context.Add(company);
-                await _context.SaveChangesAsync(); // حفظ الشركة للحصول على ID
+                await _context.SaveChangesAsync();
 
-                // 2. إنشاء حساب مستخدم (مدير للشركة) تلقائياً
                 if (!string.IsNullOrEmpty(company.Email))
                 {
+                    string passwordToUse = !string.IsNullOrEmpty(adminPassword) ? adminPassword : "123456";
+
                     var adminUser = new ApplicationUser
                     {
                         FullName = company.ResponsiblePerson ?? "مدير النظام",
-                        Email = company.Email, // استخدام بريد الشركة للدخول
-                        PasswordHash = "123456", // كلمة المرور الافتراضية
+                        Email = company.Email,
+                        PasswordHash = passwordToUse,
                         Role = UserRole.CompanyAdmin,
                         JobTitle = "المدير العام",
                         PhoneNumber = company.PhoneNumber,
-                        NationalId = "-", // قيمة افتراضية
+                        NationalId = "-",
                         CreatedAt = DateTime.Now,
-                        CompanyId = company.Id, // ربط المستخدم بالشركة الجديدة
+                        CompanyId = company.Id,
                         Status = "Active",
                         IsSuspended = false
                     };
 
-                    // التحقق من عدم وجود البريد مسبقاً في جدول المستخدمين
                     if (!await _context.Users.AnyAsync(u => u.Email == adminUser.Email))
                     {
                         _context.Users.Add(adminUser);
@@ -118,7 +119,7 @@ namespace NabdAltamayyuz.Controllers
                     }
                 }
 
-                TempData["Success"] = "تم إضافة الشركة وإنشاء حساب المدير بنجاح (كلمة المرور: 123456)";
+                TempData["Success"] = "تم إضافة الشركة وإنشاء حساب المدير بنجاح";
                 return RedirectToAction("Index", "Dashboard");
             }
             return View(company);
@@ -147,7 +148,7 @@ namespace NabdAltamayyuz.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "CompanyAdmin")]
-        public async Task<IActionResult> CreateSub(Company company, IFormFile? attachment)
+        public async Task<IActionResult> CreateSub(Company company, IFormFile? attachment, string? adminPassword)
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var user = await _context.Users.Include(u => u.Company).FirstOrDefaultAsync(u => u.Id == userId);
@@ -167,7 +168,34 @@ namespace NabdAltamayyuz.Controllers
                 await HandleAttachment(company, attachment);
                 _context.Add(company);
                 await _context.SaveChangesAsync();
-                TempData["Success"] = "تم إضافة الفرع بنجاح";
+
+                if (!string.IsNullOrEmpty(company.Email))
+                {
+                    string passwordToUse = !string.IsNullOrEmpty(adminPassword) ? adminPassword : "123456";
+
+                    var subAdminUser = new ApplicationUser
+                    {
+                        FullName = company.ResponsiblePerson ?? "مدير الفرع",
+                        Email = company.Email,
+                        PasswordHash = passwordToUse,
+                        Role = UserRole.SubAdmin,
+                        JobTitle = "مدير فرع",
+                        PhoneNumber = company.PhoneNumber,
+                        NationalId = "-",
+                        CreatedAt = DateTime.Now,
+                        CompanyId = company.Id,
+                        Status = "Active",
+                        IsSuspended = false
+                    };
+
+                    if (!await _context.Users.AnyAsync(u => u.Email == subAdminUser.Email))
+                    {
+                        _context.Users.Add(subAdminUser);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                TempData["Success"] = "تم إضافة الفرع وإنشاء حساب المدير بنجاح";
                 return RedirectToAction(nameof(Index));
             }
             return View(company);
@@ -185,7 +213,6 @@ namespace NabdAltamayyuz.Controllers
             {
                 var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 var user = await _context.Users.FindAsync(userId);
-                // يسمح للمشرف بتعديل الشركات الفرعية التابعة له أو شركته (حسب متطلباتك، هنا نقتصر على الفرعية أو الشركة نفسها)
                 if (company.Id != user.CompanyId && company.ParentCompanyId != user.CompanyId) return Forbid();
             }
 
@@ -196,31 +223,33 @@ namespace NabdAltamayyuz.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "SuperAdmin,CompanyAdmin")]
-        public async Task<IActionResult> Edit(int id, Company company, IFormFile? attachment)
+        public async Task<IActionResult> Edit(int id, Company company, IFormFile? attachment, string? adminPassword)
         {
             if (id != company.Id) return NotFound();
 
             var existingCompany = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
             if (existingCompany == null) return NotFound();
 
-            // الحفاظ على القيم الثابتة
             company.CreatedAt = existingCompany.CreatedAt;
             company.ParentCompanyId = existingCompany.ParentCompanyId;
-            company.IsSuspended = existingCompany.IsSuspended; // الحالة يتم تغييرها من زر التعليق فقط
+            company.IsSuspended = existingCompany.IsSuspended;
 
-            // التعامل مع المرفق
+            if (string.IsNullOrEmpty(company.NationalAddressShortCode))
+                company.NationalAddressShortCode = existingCompany.NationalAddressShortCode ?? "-";
+            if (string.IsNullOrEmpty(company.PhoneNumber))
+                company.PhoneNumber = existingCompany.PhoneNumber ?? "-";
+
             if (string.IsNullOrEmpty(company.AttachmentPath))
-            {
                 company.AttachmentPath = existingCompany.AttachmentPath;
-            }
 
-            // إعادة حساب الإجمالي إذا تغير السعر
             company.CalculateTotal();
 
-            // تنظيف الـ ModelState
+            ModelState.Remove(nameof(company.NationalAddressShortCode));
+            ModelState.Remove(nameof(company.PhoneNumber));
             ModelState.Remove(nameof(company.AttachmentPath));
-            ModelState.Remove("Employees");
-            ModelState.Remove("SubCompanies");
+            ModelState.Remove(nameof(company.Employees));
+            ModelState.Remove(nameof(company.SubCompanies));
+
             if (ModelState.IsValid)
             {
                 try
@@ -230,7 +259,21 @@ namespace NabdAltamayyuz.Controllers
                         await HandleAttachment(company, attachment);
                     }
 
+                    // تحديث بيانات الشركة
                     _context.Update(company);
+
+                    // تحديث كلمة مرور المدير إذا تم إدخالها (للمالك فقط)
+                    if (!string.IsNullOrEmpty(adminPassword) && User.IsInRole("SuperAdmin"))
+                    {
+                        // البحث عن مدير هذه الشركة (CompanyAdmin أو SubAdmin)
+                        var adminUser = await _context.Users.FirstOrDefaultAsync(u => u.CompanyId == id && (u.Role == UserRole.CompanyAdmin || u.Role == UserRole.SubAdmin));
+                        if (adminUser != null)
+                        {
+                            adminUser.PasswordHash = adminPassword;
+                            _context.Update(adminUser);
+                        }
+                    }
+
                     await _context.SaveChangesAsync();
                     TempData["Success"] = "تم تحديث بيانات الشركة بنجاح";
                 }
@@ -238,6 +281,11 @@ namespace NabdAltamayyuz.Controllers
                 {
                     if (!await _context.Companies.AnyAsync(e => e.Id == id)) return NotFound();
                     else throw;
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", "حدث خطأ أثناء الحفظ: " + ex.Message);
+                    return View(company);
                 }
 
                 if (User.IsInRole("SuperAdmin")) return RedirectToAction("Details", new { id = company.Id });
@@ -262,7 +310,6 @@ namespace NabdAltamayyuz.Controllers
             }
         }
 
-        // POST: Suspend (تم تحديث الصلاحيات وإصلاح المنطق)
         [HttpPost]
         [Authorize(Roles = "SuperAdmin,CompanyAdmin")]
         public async Task<IActionResult> Suspend(int id)
@@ -270,13 +317,10 @@ namespace NabdAltamayyuz.Controllers
             var company = await _context.Companies.FindAsync(id);
             if (company == null) return NotFound();
 
-            // التحقق من الصلاحية: هل يحق للمستخدم تعليق هذه الشركة؟
             if (!User.IsInRole("SuperAdmin"))
             {
                 var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 var user = await _context.Users.FindAsync(userId);
-
-                // يسمح للمشرف بتعليق الشركات الفرعية التابعة له فقط
                 if (company.ParentCompanyId != user.CompanyId)
                 {
                     return Forbid();
@@ -292,12 +336,43 @@ namespace NabdAltamayyuz.Controllers
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
-            var company = await _context.Companies.FindAsync(id);
+            var company = await _context.Companies
+                .Include(c => c.Employees)
+                .Include(c => c.SubCompanies)
+                    .ThenInclude(sc => sc.Employees)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
             if (company != null)
             {
+                async Task DeleteCompanyUsers(IEnumerable<ApplicationUser> users)
+                {
+                    if (users == null || !users.Any()) return;
+                    var userIds = users.Select(u => u.Id).ToList();
+
+                    var tasks = _context.WorkTasks.Where(t => userIds.Contains(t.AssignedToId) || userIds.Contains(t.CreatedById));
+                    _context.WorkTasks.RemoveRange(tasks);
+
+                    var attendances = _context.Attendances.Where(a => userIds.Contains(a.EmployeeId));
+                    _context.Attendances.RemoveRange(attendances);
+
+                    _context.Users.RemoveRange(users);
+                    await Task.CompletedTask;
+                }
+
+                if (company.SubCompanies != null && company.SubCompanies.Any())
+                {
+                    foreach (var sub in company.SubCompanies)
+                    {
+                        await DeleteCompanyUsers(sub.Employees);
+                        _context.Companies.Remove(sub);
+                    }
+                }
+
+                await DeleteCompanyUsers(company.Employees);
                 _context.Companies.Remove(company);
+
                 await _context.SaveChangesAsync();
-                TempData["Success"] = "تم حذف الشركة";
+                TempData["Success"] = "تم حذف الشركة وكافة البيانات المرتبطة بنجاح";
             }
             return RedirectToAction("Index", "Dashboard");
         }

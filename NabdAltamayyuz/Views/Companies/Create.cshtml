@@ -6,7 +6,7 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container py-5 animate-fade-in" style="margin-top: 120px;">
+<div class="container py-5 animate-fade-in" style="margin-top: 100px;">
     <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
         <div class="card-header bg-dark text-white py-3 px-4 d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold text-gold"><i class="fas fa-building me-2"></i> @(isRtl ? "إضافة شركة متعاقدة" : "Add Contracted Company")</h5>
@@ -42,12 +42,16 @@
                         <input asp-for="ResponsiblePerson" class="form-control bg-light" />
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="Email" class="form-label small fw-bold">البريد الإلكتروني</label>
+                        <label asp-for="Email" class="form-label small fw-bold">البريد الإلكتروني (دخول المدير)</label>
                         <input asp-for="Email" class="form-control bg-light" type="email" />
                     </div>
                     <div class="col-md-4">
                         <label asp-for="PhoneNumber" class="form-label small fw-bold">رقم التواصل</label>
                         <input asp-for="PhoneNumber" class="form-control bg-light" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold text-dark">كلمة المرور للمدير</label>
+                        <input type="text" name="adminPassword" class="form-control bg-white border-gold" placeholder="اتركها فارغة لتعيين الافتراضي (123456)" />
                     </div>
                 </div>
 
@@ -115,6 +119,7 @@
 
 @section Scripts {
     <script>
+        // حسبة تلقائية للإجمالي
         const priceInput = document.getElementById('priceInput');
         const taxInput = document.getElementById('taxInput');
         const totalOutput = document.getElementById('totalOutput');
