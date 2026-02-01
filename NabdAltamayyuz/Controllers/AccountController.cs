@@ -57,7 +57,7 @@ namespace NabdAltamayyuz.Controllers
             // 3. التحقق من كلمة المرور
             if (user.PasswordHash != password)
             {
-                ViewBag.Error = "كلمة المرور غير صحيحة. كلمة المرور الافتراضية هي 123456";
+                ViewBag.Error = "كلمة المرور غير صحيحة.";
                 return View();
             }
 

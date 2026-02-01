@@ -74,6 +74,7 @@ wwwroot\uploads\6c10d676-e726-48ea-869b-4baf1e659483_photo-1618221195710-dd6b41f
 wwwroot\uploads\companies\63810160-2d22-4bc7-adf9-64aaf651bf89_1.jpg
 wwwroot\uploads\companies\96bd2227-c5d3-4a1f-9ae4-73b9517cc7ae_1.jpg
 wwwroot\uploads\companies\d4115fb9-7451-4998-8e7b-b3fca6749b23_009 7 Point Inspection Form.pdf
+wwwroot\uploads\employees\1a672a80-ec01-47ba-a5d5-ab5e0e5efbc4_photo-1618221195710-dd6b41faaea6.pdf
 wwwroot\uploads\employees\1e5fbbaa-7c68-4ac8-b1e9-e06ce392f1b7_logo.png
 wwwroot\uploads\employees\8004db37-834e-463c-99ba-eac0f49b966b_009 7 Point Inspection Form.pdf
 wwwroot\uploads\employees\8cbab8f6-9bee-4a96-bcc2-ad2fd8635018_009 7 Point Inspection Form.pdf
@@ -81,3 +82,5 @@ wwwroot\uploads\employees\c006d6c2-2c31-469d-ac40-1587ff6331db_009 7 Point Inspe
 wwwroot\uploads\tasks\38f1d042-4d14-409c-9683-7920d7c4a9d6_528618683_2900083920186244_956370499369716946_n.jpg
 wwwroot\uploads\tasks\68863b84-1464-440d-95a2-be0b88e04768_528618683_2900083920186244_956370499369716946_n.jpg
 wwwroot\uploads\tasks\939596a3-d157-4681-b861-c8ee6951dc03_528618683_2900083920186244_956370499369716946_n.jpg
+wwwroot\uploads\tasks\9cd1fbb3-514d-4504-95f5-56e7542b3e55_photo-1555041469-a586c61ea9bc.pdf
+wwwroot\uploads\tasks\d3f9052a-c3fb-448e-a0b9-3f4b7365d615_1.jpg

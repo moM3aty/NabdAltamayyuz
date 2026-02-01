@@ -160,8 +160,15 @@ namespace NabdAltamayyuz.Controllers
 
             if (string.IsNullOrEmpty(company.NationalAddressShortCode)) company.NationalAddressShortCode = "-";
             if (string.IsNullOrEmpty(company.PhoneNumber)) company.PhoneNumber = "-";
+            if (string.IsNullOrEmpty(company.TaxNumber)) company.TaxNumber = "-"; 
+            if (string.IsNullOrEmpty(company.UnifiedNumber)) company.UnifiedNumber = "-";
 
             ModelState.Remove("ParentCompany");
+            ModelState.Remove("Employees");
+            ModelState.Remove("TaxNumber");
+            ModelState.Remove("SubCompanies");
+            ModelState.Remove("UnifiedNumber");
+            ModelState.Remove("NationalAddressShortCode");
 
             if (ModelState.IsValid)
             {
