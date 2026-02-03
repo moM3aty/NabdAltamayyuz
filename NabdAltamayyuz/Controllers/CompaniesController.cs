@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Linq;
 using System;
+using System.Collections.Generic;
 
 namespace NabdAltamayyuz.Controllers
 {
@@ -23,24 +24,59 @@ namespace NabdAltamayyuz.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        // GET: Companies/Index
-        public async Task<IActionResult> Index()
+        // GET: Companies/Index (مع البحث والفلترة)
+        public async Task<IActionResult> Index(string searchString, string statusFilter)
         {
+            ViewBag.CurrentFilter = searchString;
+            ViewBag.StatusFilter = statusFilter;
+
+            var query = _context.Companies
+                .Include(c => c.SubCompanies) // تضمين الفروع
+                .ThenInclude(s => s.Employees) // لتعداد موظفي الفروع
+                .Include(c => c.Employees)
+                .AsQueryable();
+
             if (User.IsInRole("SuperAdmin"))
             {
-                return View(await _context.Companies.Include(c => c.SubCompanies).ToListAsync());
+                // المالك يرى الشركات الرئيسية (الجذور) فقط في القائمة الأساسية
+                // الفروع ستظهر داخل الشركات الرئيسية
+                query = query.Where(c => c.ParentCompanyId == null);
             }
             else
             {
+                // المشرف يرى الفروع التابعة لشركته
                 var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 var user = await _context.Users.FindAsync(userId);
-
-                var subCompanies = await _context.Companies
-                    .Where(c => c.ParentCompanyId == user.CompanyId)
-                    .ToListAsync();
-
-                return View(subCompanies);
+                query = query.Where(c => c.ParentCompanyId == user.CompanyId);
             }
+
+            // 1. البحث
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                // البحث في اسم الشركة أو الرقم الموحد
+                query = query.Where(c => c.Name.Contains(searchString) || c.UnifiedNumber.Contains(searchString));
+            }
+
+            // 2. الفلترة
+            if (!string.IsNullOrEmpty(statusFilter))
+            {
+                var today = DateTime.Now;
+                switch (statusFilter)
+                {
+                    case "Suspended":
+                        query = query.Where(c => c.IsSuspended);
+                        break;
+                    case "Active":
+                        query = query.Where(c => !c.IsSuspended && c.SubscriptionEndDate > today);
+                        break;
+                    case "Expired":
+                        query = query.Where(c => !c.IsSuspended && c.SubscriptionEndDate <= today);
+                        break;
+                }
+            }
+
+            var companies = await query.OrderByDescending(c => c.CreatedAt).ToListAsync();
+            return View(companies);
         }
 
         // GET: Companies/Details/5
@@ -85,8 +121,9 @@ namespace NabdAltamayyuz.Controllers
 
             if (string.IsNullOrEmpty(company.NationalAddressShortCode)) company.NationalAddressShortCode = "-";
             if (string.IsNullOrEmpty(company.PhoneNumber)) company.PhoneNumber = "-";
-            ModelState.Remove(nameof(company.Employees));
+            if (string.IsNullOrEmpty(company.TaxNumber)) company.TaxNumber = "-";
             ModelState.Remove(nameof(company.SubCompanies));
+            ModelState.Remove(nameof(company.Employees));
             if (ModelState.IsValid)
             {
                 await HandleAttachment(company, attachment);
@@ -119,8 +156,8 @@ namespace NabdAltamayyuz.Controllers
                     }
                 }
 
-                TempData["Success"] = "تم إضافة الشركة وإنشاء حساب المدير بنجاح";
-                return RedirectToAction("Index", "Dashboard");
+                TempData["Success"] = "تم إضافة الشركة بنجاح";
+                return RedirectToAction("Index"); // العودة لصفحة الشركات بدلاً من الداشبورد
             }
             return View(company);
         }
@@ -160,15 +197,10 @@ namespace NabdAltamayyuz.Controllers
 
             if (string.IsNullOrEmpty(company.NationalAddressShortCode)) company.NationalAddressShortCode = "-";
             if (string.IsNullOrEmpty(company.PhoneNumber)) company.PhoneNumber = "-";
-            if (string.IsNullOrEmpty(company.TaxNumber)) company.TaxNumber = "-"; 
+            if (string.IsNullOrEmpty(company.TaxNumber)) company.TaxNumber = "-";
             if (string.IsNullOrEmpty(company.UnifiedNumber)) company.UnifiedNumber = "-";
 
             ModelState.Remove("ParentCompany");
-            ModelState.Remove("Employees");
-            ModelState.Remove("TaxNumber");
-            ModelState.Remove("SubCompanies");
-            ModelState.Remove("UnifiedNumber");
-            ModelState.Remove("NationalAddressShortCode");
 
             if (ModelState.IsValid)
             {
@@ -239,12 +271,14 @@ namespace NabdAltamayyuz.Controllers
 
             company.CreatedAt = existingCompany.CreatedAt;
             company.ParentCompanyId = existingCompany.ParentCompanyId;
-            company.IsSuspended = existingCompany.IsSuspended;
+            company.IsSuspended = existingCompany.IsSuspended; // الحالة لا تتغير من هنا
 
             if (string.IsNullOrEmpty(company.NationalAddressShortCode))
                 company.NationalAddressShortCode = existingCompany.NationalAddressShortCode ?? "-";
             if (string.IsNullOrEmpty(company.PhoneNumber))
                 company.PhoneNumber = existingCompany.PhoneNumber ?? "-";
+            if (string.IsNullOrEmpty(company.TaxNumber))
+                company.TaxNumber = existingCompany.TaxNumber ?? "-";
 
             if (string.IsNullOrEmpty(company.AttachmentPath))
                 company.AttachmentPath = existingCompany.AttachmentPath;
@@ -253,9 +287,10 @@ namespace NabdAltamayyuz.Controllers
 
             ModelState.Remove(nameof(company.NationalAddressShortCode));
             ModelState.Remove(nameof(company.PhoneNumber));
+            ModelState.Remove(nameof(company.TaxNumber));
             ModelState.Remove(nameof(company.AttachmentPath));
-            ModelState.Remove(nameof(company.Employees));
             ModelState.Remove(nameof(company.SubCompanies));
+            ModelState.Remove(nameof(company.Employees));
 
             if (ModelState.IsValid)
             {
@@ -266,13 +301,10 @@ namespace NabdAltamayyuz.Controllers
                         await HandleAttachment(company, attachment);
                     }
 
-                    // تحديث بيانات الشركة
                     _context.Update(company);
 
-                    // تحديث كلمة مرور المدير إذا تم إدخالها (للمالك فقط)
                     if (!string.IsNullOrEmpty(adminPassword) && User.IsInRole("SuperAdmin"))
                     {
-                        // البحث عن مدير هذه الشركة (CompanyAdmin أو SubAdmin)
                         var adminUser = await _context.Users.FirstOrDefaultAsync(u => u.CompanyId == id && (u.Role == UserRole.CompanyAdmin || u.Role == UserRole.SubAdmin));
                         if (adminUser != null)
                         {
@@ -289,13 +321,8 @@ namespace NabdAltamayyuz.Controllers
                     if (!await _context.Companies.AnyAsync(e => e.Id == id)) return NotFound();
                     else throw;
                 }
-                catch (Exception ex)
-                {
-                    ModelState.AddModelError("", "حدث خطأ أثناء الحفظ: " + ex.Message);
-                    return View(company);
-                }
 
-                if (User.IsInRole("SuperAdmin")) return RedirectToAction("Details", new { id = company.Id });
+                // تعديل التوجيه: العودة إلى صفحة الشركات بدلاً من التفاصيل
                 return RedirectToAction("Index");
             }
             return View(company);
@@ -328,6 +355,7 @@ namespace NabdAltamayyuz.Controllers
             {
                 var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 var user = await _context.Users.FindAsync(userId);
+                // يسمح للمشرف بتعليق فروعه
                 if (company.ParentCompanyId != user.CompanyId)
                 {
                     return Forbid();
@@ -381,7 +409,7 @@ namespace NabdAltamayyuz.Controllers
                 await _context.SaveChangesAsync();
                 TempData["Success"] = "تم حذف الشركة وكافة البيانات المرتبطة بنجاح";
             }
-            return RedirectToAction("Index", "Dashboard");
+            return RedirectToAction("Index");
         }
     }
 }

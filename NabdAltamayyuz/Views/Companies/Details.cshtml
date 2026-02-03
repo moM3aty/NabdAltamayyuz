@@ -7,10 +7,10 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container py-5 animate-fade-in" style="margin-top: 120px;">
+<div class="container py-5 animate-fade-in" style="margin-top: 100px;">
     <!-- Header Actions -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="/Dashboard" class="btn btn-outline-secondary rounded-pill">
+        <a href="/Dashboard/SuperAdmin" class="btn btn-outline-secondary rounded-pill">
             <i class="fas fa-arrow-right me-2 rtl-flip"></i> @(isRtl ? "عودة للوحة التحكم" : "Back to Dashboard")
         </a>
         <div class="d-flex gap-2">
@@ -186,9 +186,7 @@
             <!-- Financial Card -->
             <div class="card border-0 shadow-lg rounded-4 mb-4 bg-dark text-white">
                 <div class="card-body p-4 position-relative overflow-hidden">
-                    <div class="position-absolute top-0 end-0 opacity-10 p-3">
-                        <i style="font-size: 50px;  margin: 0 15px;" class="fas fa-coins fa-5x text-gold"></i>
-                    </div>
+                    <div class="position-absolute top-0 end-0 opacity-10 p-3"><i class="fas fa-coins fa-5x text-gold"></i></div>
                     <h6 class="text-gold text-uppercase letter-spacing-1 mb-4">@(isRtl ? "البيانات المالية" : "Financials")</h6>
 
                     <div class="d-flex justify-content-between mb-2">
@@ -224,8 +222,8 @@
                                 <i class="fas fa-file-pdf fa-lg"></i>
                             </div>
                             <div class="flex-grow-1 overflow-hidden">
-                                <h6 class="mb-0 fw-bold text-truncate">ملف العقد / السجل</h6>
-                                <small class="text-muted">PDF Document</small>
+                                <h6 class="mb-0 fw-bold text-truncate" title="@Model.AttachmentPath">ملف العقد / السجل</h6>
+                                <small class="text-muted">مرفق</small>
                             </div>
                             <a href="/uploads/companies/@Model.AttachmentPath" target="_blank" class="btn btn-sm btn-outline-dark rounded-pill px-3">
                                 @(isRtl ? "فتح" : "Open")

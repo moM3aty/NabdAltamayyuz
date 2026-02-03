@@ -2,48 +2,83 @@
 @using System.Globalization
 
 @{
-    ViewData["Title"] = "إدارة الشركات والفروع";
+    ViewData["Title"] = "إدارة الشركات";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
     Layout = "~/Views/Shared/_Layout.cshtml";
-
     bool isSuperAdmin = User.IsInRole("SuperAdmin");
-    bool isSubAdmin = User.IsInRole("SubAdmin");
+    string currentFilter = ViewBag.CurrentFilter as string;
+    string statusFilter = ViewBag.StatusFilter as string;
 }
 
-<div class="container py-5 animate-fade-in" style="margin-top: 120px;">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="container py-5 animate-fade-in" style="margin-top: 100px;">
+    
+    <!-- Title & Export -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
-            <h3 class="fw-bold text-dark"><i class="fas fa-network-wired text-gold me-2"></i> @(isSuperAdmin ? (isRtl ? "كافة الشركات" : "All Companies") : (isRtl ? "الفروع والشركات التابعة" : "Sub-Companies"))</h3>
-            <p class="text-muted small">@(isRtl ? "إدارة ومتابعة الحسابات" : "Manage and track accounts")</p>
+            <h3 class="fw-bold text-dark"><i class="fas fa-building text-gold me-2"></i> @(isRtl ? "إدارة الشركات والاشتراكات" : "Companies Management")</h3>
+            <p class="text-muted small mb-0">@(isRtl ? "إدارة السجلات الرئيسية والفرعية" : "Manage main and sub records")</p>
         </div>
-
-        @if (!isSuperAdmin && !isSubAdmin)
-        {
-            <a href="/Companies/CreateSub" class="btn btn-gold bg-dark text-gold fw-bold rounded-pill px-4 shadow-sm hover-scale">
-                <i class="fas fa-plus-circle me-2"></i> @(isRtl ? "إضافة فرع جديد" : "Add New Branch")
-            </a>
-        }
+        <div class="d-flex gap-2">
+            <!-- Export Buttons -->
+            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm rounded-pill px-3"><i class="fas fa-print me-1"></i> طباعة</button>
+            <button onclick="exportToExcel('companiesTable')" class="btn btn-outline-success btn-sm rounded-pill px-3"><i class="fas fa-file-excel me-1"></i> Excel</button>
+            
+            @if (isSuperAdmin)
+            {
+                <a href="/Companies/Create" class="btn btn-gold bg-dark text-gold fw-bold rounded-pill px-4 shadow-sm hover-scale">
+                    <i class="fas fa-plus-circle me-2"></i> @(isRtl ? "إضافة شركة" : "Add Company")
+                </a>
+            }
+        </div>
     </div>
 
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger border-0 bg-danger bg-opacity-10 text-danger rounded-3 mb-4">
-            <i class="fas fa-exclamation-triangle me-2"></i> @TempData["Error"]
+    <!-- Search & Filter Bar -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white no-print">
+        <div class="card-body p-3">
+            <form method="get" action="/Companies/Index" class="row g-2 align-items-center">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" name="searchString" class="form-control bg-light border-0" placeholder="@(isRtl ? "بحث باسم الشركة..." : "Search company name...")" value="@currentFilter">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="statusFilter" class="form-select bg-light border-0">
+                        <option value="">@(isRtl ? "-- كل الحالات --" : "-- All Statuses --")</option>
+                        <option value="Active" selected="@(statusFilter == "Active")">@(isRtl ? "نشط" : "Active")</option>
+                        <option value="Suspended" selected="@(statusFilter == "Suspended")">@(isRtl ? "معلق" : "Suspended")</option>
+                        <option value="Expired" selected="@(statusFilter == "Expired")">@(isRtl ? "منتهي" : "Expired")</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-dark w-100 rounded-pill">@(isRtl ? "بحث" : "Search")</button>
+                </div>
+                <div class="col-md-2">
+                    <a href="/Companies/Index" class="btn btn-light w-100 rounded-pill border">@(isRtl ? "إلغاء" : "Clear")</a>
+                </div>
+            </form>
         </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success border-0 bg-success bg-opacity-10 text-success rounded-3 mb-4"><i class="fas fa-check-circle me-2"></i> @TempData["Success"]</div>
     }
 
+    <!-- Companies Table -->
     <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table id="companiesTable" class="table table-hover align-middle mb-0">
                     <thead class="bg-light text-muted small text-uppercase">
                         <tr>
-                            <th class="ps-4">@(isRtl ? "اسم الشركة" : "Name")</th>
-                            <th>@(isRtl ? "السجل التجاري" : "CR Number")</th>
+                            <th class="ps-4 no-export" style="width: 40px;"></th> <!-- Expand Icon -->
+                            <th>@(isRtl ? "اسم الشركة" : "Company Name")</th>
+                            <th>@(isRtl ? "السجل التجاري" : "CR No")</th>
                             <th>@(isRtl ? "المسؤول" : "Responsible")</th>
-                            <th>@(isRtl ? "الموظفين" : "Employees")</th>
+                            <th>@(isRtl ? "نهاية الاشتراك" : "Expiry Date")</th>
                             <th>@(isRtl ? "الحالة" : "Status")</th>
-                            <th class="text-end pe-4">@(isRtl ? "إجراءات" : "Actions")</th>
+                            <th class="text-end pe-4 no-export">@(isRtl ? "الإجراءات" : "Actions")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -51,46 +86,81 @@
                         {
                             foreach (var item in Model)
                             {
-                                <tr>
-                                    <td class="ps-4 fw-bold text-dark">
-                                        @item.Name
-                                        @if (item.ParentCompanyId != null)
+                                var daysLeft = (item.SubscriptionEndDate - DateTime.Now).Days;
+                                var statusClass = item.IsSuspended ? "bg-danger" : (daysLeft < 0 ? "bg-secondary" : "bg-success");
+                                var statusLabel = item.IsSuspended ? "معلق" : (daysLeft < 0 ? "منتهي" : "نشط");
+                                var hasBranches = item.SubCompanies != null && item.SubCompanies.Any();
+
+                                <!-- Main Company Row -->
+                                <tr class="bg-white">
+                                    <td class="ps-4 no-export">
+                                        @if (hasBranches)
                                         {
-                                            <span class="badge bg-secondary ms-1" style="font-size:0.6rem;">فرع</span>
+                                            <button class="btn btn-sm btn-light rounded-circle text-gold fw-bold toggle-btn" type="button" data-bs-toggle="collapse" data-bs-target="#sub-@item.Id" aria-expanded="false">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
                                         }
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark">@item.Name</div>
+                                        @if(hasBranches) { <small class="text-muted no-export" style="font-size:0.7rem;">(@item.SubCompanies.Count فروع)</small> }
                                     </td>
                                     <td class="font-monospace text-muted">@item.RegistrationNumber</td>
-                                    <td>@item.ResponsiblePerson</td>
                                     <td>
-                                        <span class="badge bg-light text-dark border">
-                                            @(item.Employees?.Count ?? 0) / @item.AllowedEmployees
-                                        </span>
+                                        <div class="small">@item.ResponsiblePerson</div>
+                                        <small class="text-muted"><i class="fas fa-phone me-1"></i> @item.PhoneNumber</small>
                                     </td>
                                     <td>
-                                        @if (item.IsSuspended)
-                                        {
-                                            <span class="badge bg-danger">معلق</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-success">نشط</span>
-                                        }
+                                        <span class="@(daysLeft < 30 ? "text-danger fw-bold" : "")">@item.SubscriptionEndDate.ToString("yyyy-MM-dd")</span>
                                     </td>
-                                    <td class="text-end pe-4">
-                                        <div class="d-flex justify-content-end gap-2">
-                                            <a href="/Companies/Details/@item.Id" class="btn btn-sm btn-outline-info rounded-circle"><i class="fas fa-eye"></i></a>
-                                            @if (!isSubAdmin)
-                                            {
-                                                <a href="/Companies/Edit/@item.Id" class="btn btn-sm btn-outline-primary rounded-circle"><i class="fas fa-edit"></i></a>
+                                    <td><span class="badge @statusClass rounded-pill px-3">@statusLabel</span></td>
+                                    <td class="text-end pe-4 no-export">
+                                        <div class="btn-group">
+                                            <a href="/Companies/Edit/@item.Id" class="btn btn-sm btn-outline-primary rounded-start" title="تعديل"><i class="fas fa-edit"></i></a>
+                                            <button onclick="suspendCompany(@item.Id)" class="btn btn-sm btn-outline-warning" title="@(item.IsSuspended ? "تفعيل" : "تعليق")"><i class="fas @(item.IsSuspended ? "fa-play" : "fa-pause")"></i></button>
+                                            @if(isSuperAdmin) {
+                                                <a href="/Companies/Delete/@item.Id" class="btn btn-sm btn-outline-danger rounded-end" title="حذف" onclick="return confirm('حذف الشركة؟')"><i class="fas fa-trash"></i></a>
                                             }
                                         </div>
                                     </td>
                                 </tr>
+
+                                <!-- Sub Companies (Collapsible Row) -->
+                                @if (hasBranches)
+                                {
+                                    <tr class="collapse bg-light border-bottom no-export" id="sub-@item.Id">
+                                        <td colspan="7" class="p-0">
+                                            <div class="p-3 ps-5">
+                                                <h6 class="text-gold small fw-bold mb-3"><i class="fas fa-code-branch me-2"></i> الفروع المسجلة:</h6>
+                                                <table class="table table-sm table-borderless mb-0">
+                                                    <tbody>
+                                                        @foreach (var sub in item.SubCompanies)
+                                                        {
+                                                            var subStatus = sub.IsSuspended ? "bg-danger" : "bg-success";
+                                                            <tr>
+                                                                <td class="ps-4" width="25%"><i class="fas fa-level-up-alt fa-rotate-90 text-muted me-2"></i> @sub.Name</td>
+                                                                <td width="20%" class="small text-muted">@sub.RegistrationNumber</td>
+                                                                <td width="20%" class="small">@sub.ResponsiblePerson</td>
+                                                                <td width="15%"><span class="badge @subStatus rounded-pill" style="font-size:0.65rem;">@(sub.IsSuspended ? "معلق" : "نشط")</span></td>
+                                                                <td width="20%" class="text-end">
+                                                                    <a href="/Companies/Edit/@sub.Id" class="text-primary small me-2 text-decoration-none"><i class="fas fa-edit"></i> تعديل</a>
+                                                                    @if(isSuperAdmin) {
+                                                                        <a href="/Companies/Delete/@sub.Id" class="text-danger small text-decoration-none" onclick="return confirm('حذف الفرع؟')"><i class="fas fa-trash"></i> حذف</a>
+                                                                    }
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
                             }
                         }
                         else
                         {
-                            <tr><td colspan="6" class="text-center py-5 text-muted">لا توجد شركات مسجلة</td></tr>
+                            <tr><td colspan="7" class="text-center py-5 text-muted">لا توجد شركات مسجلة</td></tr>
                         }
                     </tbody>
                 </table>
@@ -98,3 +168,56 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        // دالة تعليق الحساب
+        function suspendCompany(id) {
+            if(confirm('هل أنت متأكد من تغيير حالة الحساب؟')) {
+                $.post('/Companies/Suspend/' + id, {
+                    '__RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                }, function(data) {
+                    if(data.success) location.reload();
+                    else alert('حدث خطأ');
+                });
+            }
+        }
+
+        // دالة التصدير للإكسيل (محسنة لدعم العربية)
+        function exportToExcel(tableId) {
+            var table = document.getElementById(tableId);
+            
+            // إنشاء نسخة من الجدول لتعديله قبل التصدير (إزالة أعمدة الإجراءات والأيقونات)
+            var clone = table.cloneNode(true);
+            
+            // إزالة الأعمدة التي تحتوي على الكلاس 'no-export'
+            var rows = clone.rows;
+            for (var i = 0; i < rows.length; i++) {
+                var cells = rows[i].cells;
+                for (var j = cells.length - 1; j >= 0; j--) {
+                    if (cells[j].classList.contains('no-export')) {
+                        rows[i].deleteCell(j);
+                    }
+                }
+            }
+
+            var html = clone.outerHTML;
+            
+            // إضافة BOM لضمان دعم اللغة العربية
+            var blob = new Blob(['\ufeff', html], {
+                type: 'application/vnd.ms-excel;charset=utf-8'
+            });
+            
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'Companies_Report.xls';
+            a.click();
+        }
+
+        // تبديل أيقونة الـ Collapse
+        $('.toggle-btn').click(function() {
+            $(this).find('i').toggleClass('fa-plus fa-minus');
+        });
+    </script>
+}

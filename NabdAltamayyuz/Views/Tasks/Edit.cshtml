@@ -5,100 +5,75 @@
     ViewData["Title"] = "تعديل المهمة";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
     Layout = "~/Views/Shared/_Layout.cshtml";
+    bool isSuperAdmin = User.IsInRole("SuperAdmin");
 }
 
-<!-- تمت إضافة margin-top: 100px لتفادي التداخل مع الـ Navbar -->
-<div class="container py-5 animate-fade-in" style="margin-top: 120px;">
+<div class="container py-5 animate-fade-in" style="margin-top: 100px;">
     <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-7">
+        <div class="col-md-9">
             <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-                <div class="card-header bg-dark text-white py-3 border-0 d-flex justify-content-between align-items-center px-4">
-                    <h5 class="mb-0 fw-bold text-gold">
-                        <i class="fas fa-edit me-2"></i> @(isRtl ? "تعديل المهمة" : "Edit Task")
-                    </h5>
-                    <a href="/Tasks" class="btn btn-sm btn-outline-light rounded-pill border-secondary text-white-50 hover-white">
-                        <i class="fas fa-times me-1"></i> @(isRtl ? "إلغاء" : "Cancel")
-                    </a>
+                <div class="card-header bg-dark text-white py-3 px-4 d-flex justify-content-between">
+                    <h5 class="mb-0 fw-bold text-gold"><i class="fas fa-edit me-2"></i> تعديل المهمة</h5>
+                    <a href="/Tasks" class="btn btn-sm btn-outline-light rounded-pill">إلغاء</a>
                 </div>
-
                 <div class="card-body p-4 p-md-5 bg-white">
                     <form asp-action="Edit" enctype="multipart/form-data" method="post">
                         @Html.AntiForgeryToken()
                         <input type="hidden" asp-for="Id" />
-                        <input type="hidden" asp-for="CreatedById" />
-                        <input type="hidden" asp-for="IsCompleted" />
                         <input type="hidden" asp-for="AttachmentPath" />
 
-                        <div class="row g-4">
-                            <!-- Task Title -->
-                            <div class="col-12">
-                                <label asp-for="Title" class="form-label fw-bold text-muted small">@(isRtl ? "عنوان المهمة" : "Task Title")</label>
-                                <div class="input-group shadow-sm">
-                                    <span class="input-group-text bg-light border-end-0 text-gold"><i class="fas fa-heading"></i></span>
-                                    <input asp-for="Title" class="form-control bg-light border-start-0" required />
-                                </div>
-                                <span asp-validation-for="Title" class="text-danger small mt-1"></span>
+                        @if (isSuperAdmin)
+                        {
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small text-gold">نقل المهمة لشركة أخرى (اختياري)</label>
+                                <select id="companySelect" class="form-select bg-light" onchange="loadEmployees(this.value)" asp-items="ViewBag.Companies">
+                                    <option value="">-- الشركة الحالية --</option>
+                                </select>
                             </div>
+                        }
 
-                            <!-- Assign To -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small">إسناد إلى</label>
+                            <select asp-for="AssignedToId" id="employeeSelect" class="form-select bg-light" required asp-items="ViewBag.Employees"></select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Title" class="form-label fw-bold small">عنوان المهمة</label>
+                            <input asp-for="Title" class="form-control bg-light" required />
+                        </div>
+
+                        <div class="row g-3 mb-4">
                             <div class="col-md-6">
-                                <label asp-for="AssignedToId" class="form-label fw-bold text-muted small">@(isRtl ? "تعيين إلى موظف" : "Assign To")</label>
-                                <div class="input-group shadow-sm">
-                                    <span class="input-group-text bg-light border-end-0 text-gold"><i class="fas fa-user-tag"></i></span>
-                                    <select asp-for="AssignedToId" class="form-select bg-light border-start-0" asp-items="ViewBag.Employees" required>
-                                        <option value="">@(isRtl ? "-- اختر الموظف --" : "-- Select Employee --")</option>
-                                    </select>
-                                </div>
-                                <span asp-validation-for="AssignedToId" class="text-danger small mt-1"></span>
+                                <label asp-for="StartDate" class="form-label fw-bold small">تاريخ البدء</label>
+                                <input asp-for="StartDate" type="date" class="form-control bg-light" required />
                             </div>
-
-                            <!-- Due Date -->
                             <div class="col-md-6">
-                                <label asp-for="DueDate" class="form-label fw-bold text-muted small">@(isRtl ? "تاريخ الاستحقاق" : "Due Date")</label>
-                                <div class="input-group shadow-sm">
-                                    <span class="input-group-text bg-light border-end-0 text-gold"><i class="far fa-calendar-alt"></i></span>
-                                    <input asp-for="DueDate" type="date" class="form-control bg-light border-start-0" required />
-                                </div>
-                                <span asp-validation-for="DueDate" class="text-danger small mt-1"></span>
-                            </div>
-
-                            <!-- Description -->
-                            <div class="col-12">
-                                <label asp-for="Description" class="form-label fw-bold text-muted small">@(isRtl ? "تفاصيل المهمة" : "Task Description")</label>
-                                <textarea asp-for="Description" class="form-control bg-light shadow-sm" rows="4"></textarea>
-                                <span asp-validation-for="Description" class="text-danger small mt-1"></span>
-                            </div>
-
-                            <!-- Attachments -->
-                            <div class="col-12">
-                                <label class="form-label fw-bold text-muted small">@(isRtl ? "المرفقات" : "Attachments")</label>
-
-                                @if (!string.IsNullOrEmpty(Model.AttachmentPath))
-                                {
-                                    <div class="alert alert-light border border-secondary d-flex justify-content-between align-items-center py-2 px-3 mb-2 rounded-3">
-                                        <div class="d-flex align-items-center text-truncate">
-                                            <i class="fas fa-file-pdf text-danger me-2"></i>
-                                            <small class="text-muted">@Model.AttachmentPath</small>
-                                        </div>
-                                        <span class="badge bg-success bg-opacity-10 text-success ms-2">@(isRtl ? "مرفق حالي" : "Current")</span>
-                                    </div>
-                                }
-
-                                <div class="input-group shadow-sm">
-                                    <input type="file" name="attachment" class="form-control bg-light" accept=".pdf,.jpg,.png,.jpeg,.docx" />
-                                    <span class="input-group-text bg-light text-muted"><i class="fas fa-upload"></i></span>
-                                </div>
-                                <div class="form-text small text-muted">
-                                    @(isRtl ? "اترك هذا الحقل فارغاً إذا كنت لا تريد تغيير المرفق الحالي." : "Leave empty to keep current attachment.")
-                                </div>
+                                <label asp-for="DueDate" class="form-label fw-bold small">تاريخ الانتهاء</label>
+                                <input asp-for="DueDate" type="date" class="form-control bg-light" required />
                             </div>
                         </div>
 
-                        <hr class="my-4 opacity-10">
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label fw-bold small">الوصف</label>
+                            <textarea asp-for="Description" class="form-control bg-light" rows="4"></textarea>
+                        </div>
 
-                        <div class="d-flex justify-content-end gap-2">
-                            <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold px-5 py-2 rounded-pill hover-scale shadow-lg">
-                                <i class="fas fa-save me-2"></i> @(isRtl ? "حفظ التعديلات" : "Save Changes")
+                        @if (!string.IsNullOrEmpty(Model.AttachmentPath))
+                        {
+                            <div class="alert alert-info py-2 d-flex justify-content-between align-items-center mb-3">
+                                <small><i class="fas fa-paperclip me-2"></i> يوجد مرفق حالي</small>
+                                <a href="/uploads/tasks/@Model.AttachmentPath" target="_blank" class="btn btn-sm btn-light">عرض</a>
+                            </div>
+                        }
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small">تحديث المرفق</label>
+                            <input type="file" name="attachment" class="form-control" />
+                        </div>
+
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold px-5 rounded-pill shadow-sm">
+                                <i class="fas fa-save me-2"></i> حفظ التعديلات
                             </button>
                         </div>
                     </form>
@@ -109,7 +84,21 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <script>
+        function loadEmployees(companyId) {
+            var empSelect = document.getElementById("employeeSelect");
+            empSelect.innerHTML = "<option>جار التحميل...</option>";
+            if (!companyId) return;
+            fetch('/Tasks/GetEmployeesByCompany?companyId=' + companyId)
+                .then(res => res.json())
+                .then(data => {
+                    empSelect.innerHTML = "";
+                    data.forEach(item => {
+                        var opt = document.createElement("option");
+                        opt.value = item.id; opt.text = item.name;
+                        empSelect.appendChild(opt);
+                    });
+                });
+        }
+    </script>
 }

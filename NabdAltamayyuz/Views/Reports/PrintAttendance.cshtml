@@ -9,92 +9,100 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="utf-8" />
-    <title>تقرير الحضور والانصراف</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تقرير الحضور - نبض التميز الذهبي</title>
+    
+    <!-- استدعاء خط عربي احترافي (Cairo) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #fff;
-            padding: 20px;
-            font-size: 14px;
+        body { 
+            font-family: 'Cairo', sans-serif !important; 
+            background: #fff; 
+            padding: 20px; 
+            color: #1e293b;
         }
-
-        .report-header {
-            border-bottom: 2px solid #D4AF37;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .report-header { 
+            border-bottom: 3px solid #D4AF37; 
+            padding-bottom: 20px; 
+            margin-bottom: 30px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
         }
-
-        .logo {
-            color: #D4AF37;
-            font-weight: bold;
-            font-size: 24px;
-            margin-bottom: 5px;
+        .company-name { 
+            color: #D4AF37; 
+            font-weight: 700; 
+            font-size: 24px; 
+            margin-bottom: 5px; 
         }
-
-        .report-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
+        .report-title { 
+            font-size: 20px; 
+            font-weight: 600; 
+            color: #0F172A; 
         }
-
-        .meta-info {
+        .meta-box {
+            font-size: 12px;
+            color: #64748b;
             text-align: left;
-            font-size: 13px;
-            color: #666;
         }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 20px; 
+            font-size: 12px; 
         }
-
-        th {
-            background-color: #0F172A;
-            color: white;
-            padding: 10px;
-            text-align: center;
-            font-size: 13px;
+        th { 
+            background-color: #0F172A !important; 
+            color: #fff !important; 
+            padding: 12px 10px; 
+            border: 1px solid #0F172A; 
+            text-align: center; 
+            -webkit-print-color-adjust: exact; 
         }
-
-        td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            vertical-align: middle;
+        td { 
+            border: 1px solid #e2e8f0; 
+            padding: 8px; 
+            vertical-align: middle; 
             text-align: center;
         }
-
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
+        tr:nth-child(even) { 
+            background-color: #f8fafc !important; 
+            -webkit-print-color-adjust: exact; 
         }
-
-        .status-present {
-            color: #198754;
-            font-weight: bold;
-        }
-
-        .status-absent {
-            color: #dc3545;
-            font-weight: bold;
-        }
-
-        .print-btn {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
             border-radius: 50px;
-            padding: 10px 25px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-weight: 600;
+            font-size: 11px;
         }
+        
+        .print-btn { 
+            position: fixed; 
+            bottom: 30px; 
+            left: 30px; 
+            background: #0F172A; 
+            color: #D4AF37; 
+            border: none; 
+            padding: 10px 25px; 
+            border-radius: 50px; 
+            font-weight: bold; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+            cursor: pointer;
+        }
+        .print-btn:hover { background: #1e293b; }
 
-        @@media print {
-            .print-btn {
-                display: none;
-            }
+        @@media print { 
+            .print-btn { display: none; } 
+            body { padding: 0; font-family: 'Cairo', sans-serif !important; }
+            @@page { size: landscape; margin: 1cm; }
+            th { color: white !important; background-color: #0F172A !important; -webkit-print-color-adjust: exact; }
         }
     </style>
 </head>
@@ -102,13 +110,13 @@
 
     <div class="report-header">
         <div>
-            <div class="logo"> نبض التميز الذهبي</div>
+            <div class="company-name"><i class="fas fa-gem me-2"></i> نبض التميز الذهبي</div>
             <div class="report-title">تقرير الحضور والانصراف</div>
         </div>
-        <div class="meta-info">
-            <div><strong>تاريخ الاستخراج:</strong> @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</div>
-            <div><strong>الفترة:</strong> @ViewBag.FromDate إلى @ViewBag.ToDate</div>
-            <div><strong>السجلات:</strong> @Model.Count()</div>
+        <div class="meta-box">
+            <div><strong>تاريخ الطباعة:</strong> @ViewBag.PrintDate.ToString("yyyy-MM-dd HH:mm")</div>
+            <div><strong>الفترة:</strong> من @ViewBag.FromDate إلى @ViewBag.ToDate</div>
+            <div><strong>عدد السجلات:</strong> @Model.Count()</div>
         </div>
     </div>
 
@@ -131,38 +139,43 @@
                 foreach (var item in Model)
                 {
                     <tr>
-                        <td>@item.Date.ToString("yyyy-MM-dd")</td>
+                        <td style="font-weight:bold;">@item.Date.ToString("yyyy-MM-dd")</td>
                         <td>@item.Date.ToString("dddd", new CultureInfo("ar-SA"))</td>
-                        <td style="text-align:right; padding-right:10px;">@item.Employee.FullName</td>
+                        <td style="text-align:right; font-weight:600; padding-right: 10px;">@item.Employee.FullName</td>
                         <td>@item.Employee.JobTitle</td>
-                        <td dir="ltr">@(item.TimeIn?.ToString("hh:mm tt") ?? "--")</td>
-                        <td dir="ltr">@(item.TimeOut?.ToString("hh:mm tt") ?? "--")</td>
+                        <td dir="ltr" style="font-family: 'Courier New', monospace;">@(item.TimeIn?.ToString("HH:mm") ?? "--")</td>
+                        <td dir="ltr" style="font-family: 'Courier New', monospace;">@(item.TimeOut?.ToString("HH:mm") ?? "--")</td>
                         <td>
-                            @if (item.TimeIn != null)
-                            {
-                                <span class="status-present">حضور</span>
-                            }
-                            else
-                            {
-                                <span class="status-absent">غياب</span>
+                            @if(item.TimeIn != null) 
+                            { 
+                                <span class="status-badge" style="color:#15803d; background:#dcfce7;">حضور</span> 
+                            } 
+                            else 
+                            { 
+                                <span class="status-badge" style="color:#b91c1c; background:#fee2e2;">غياب</span> 
                             }
                         </td>
-                        <td style="font-size: 11px;">@item.Notes</td>
+                        <td style="font-size: 11px; color:#64748b;">@item.Notes</td>
                     </tr>
                 }
             }
             else
             {
-                <tr><td colspan="8" style="text-align:center; padding: 30px; color: #777;">لا توجد سجلات في هذه الفترة</td></tr>
+                <tr><td colspan="8" style="text-align:center; padding: 40px; color: #64748b;">لا توجد سجلات حضور في هذه الفترة</td></tr>
             }
         </tbody>
     </table>
 
-    <div style="margin-top: 40px; border-top: 1px solid #eee; pt-3; text-align: center; color: #999; font-size: 11px;">
-        تم إصدار هذا التقرير آلياً من نظام نبض التميز الذهبي للإدارة والتشغيل
+    <div style="margin-top: 50px; display: flex; justify-content: space-between; page-break-inside: avoid;">
+        <div style="text-align: center; width: 200px;">
+            <p style="margin-bottom: 40px; font-weight: bold; border-bottom: 1px dashed #ccc; padding-bottom: 10px;">اعتماد المشرف</p>
+        </div>
+        <div style="text-align: left; color: #94a3b8; font-size: 11px; align-self: flex-end;">
+            تم إصدار هذا المستند إلكترونياً من نظام نبض التميز الذهبي | @DateTime.Now.Year
+        </div>
     </div>
 
-    <button class="btn btn-dark print-btn" onclick="window.print()">طباعة التقرير</button>
+    <button class="print-btn" onclick="window.print()">طباعة التقرير</button>
 
 </body>
 </html>

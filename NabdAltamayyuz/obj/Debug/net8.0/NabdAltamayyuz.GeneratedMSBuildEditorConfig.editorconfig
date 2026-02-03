@@ -17,145 +17,145 @@ build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = NabdAltamayyuz
 build_property.RootNamespace = NabdAltamayyuz
-build_property.ProjectDir = C:\Users\MOHAMED ABO-ELM3ATY\Downloads\NabdAltamayyuz\NabdAltamayyuz\
+build_property.ProjectDir = D:\Dev\NabdAltamayyuz\NabdAltamayyuz\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = C:\Users\MOHAMED ABO-ELM3ATY\Downloads\NabdAltamayyuz\NabdAltamayyuz
+build_property.MSBuildProjectDirectory = D:\Dev\NabdAltamayyuz\NabdAltamayyuz
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Account/AccessDenied.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Account/AccessDenied.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxBY2Nlc3NEZW5pZWQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Account/Login.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Account/Login.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxMb2dpbi5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Account/Profile.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Account/Profile.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxQcm9maWxlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Attendance/Index.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Attendance/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXR0ZW5kYW5jZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Attendance/MyHistory.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Attendance/MyHistory.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXR0ZW5kYW5jZVxNeUhpc3RvcnkuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Companies/Create.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Companies/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29tcGFuaWVzXENyZWF0ZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Companies/CreateSub.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Companies/CreateSub.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29tcGFuaWVzXENyZWF0ZVN1Yi5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Companies/Details.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Companies/Details.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29tcGFuaWVzXERldGFpbHMuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Companies/Edit.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Companies/Edit.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29tcGFuaWVzXEVkaXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Companies/Index.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Companies/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ29tcGFuaWVzXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Dashboard/CompanyAdmin.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Dashboard/CompanyAdmin.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXENvbXBhbnlBZG1pbi5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Dashboard/Employee.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Dashboard/Employee.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXEVtcGxveWVlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Dashboard/SuperAdmin.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Dashboard/SuperAdmin.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXFN1cGVyQWRtaW4uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Employees/Create.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Employees/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRW1wbG95ZWVzXENyZWF0ZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Employees/Details.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Employees/Details.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRW1wbG95ZWVzXERldGFpbHMuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Employees/Edit.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Employees/Edit.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRW1wbG95ZWVzXEVkaXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Employees/Index.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Employees/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRW1wbG95ZWVzXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Home/About.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Home/About.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxBYm91dC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Home/ContractingSector.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Home/ContractingSector.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxDb250cmFjdGluZ1NlY3Rvci5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Home/Index.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Home/ServicesSector.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Home/ServicesSector.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxTZXJ2aWNlc1NlY3Rvci5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Reports/Index.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Reports/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0c1xJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Reports/PrintAttendance.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Reports/PrintAttendance.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0c1xQcmludEF0dGVuZGFuY2UuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Reports/PrintTasks.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Reports/PrintTasks.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0c1xQcmludFRhc2tzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Shared/Error.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Shared/_ValidationScriptsPartial.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Tasks/Create.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Tasks/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVGFza3NcQ3JlYXRlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Tasks/Details.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Tasks/Details.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVGFza3NcRGV0YWlscy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Tasks/Edit.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Tasks/Edit.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVGFza3NcRWRpdC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Tasks/Index.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Tasks/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVGFza3NcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/_ViewImports.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/_ViewImports.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/_ViewStart.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/_ViewStart.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/MOHAMED ABO-ELM3ATY/Downloads/NabdAltamayyuz/NabdAltamayyuz/Views/Shared/_Layout.cshtml]
+[D:/Dev/NabdAltamayyuz/NabdAltamayyuz/Views/Shared/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = b-vk9w97m42n
