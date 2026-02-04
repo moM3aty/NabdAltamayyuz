@@ -11,6 +11,17 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
+    const isRtl = document.documentElement.getAttribute('dir') === 'rtl';
+
+    flatpickr("input[type='date']", {
+        dateFormat: "Y-m-d",
+        locale: isRtl ? "ar" : "en",
+        altInput: true,
+        altFormat: "F j, Y", // e.g. January 1, 2024
+        allowInput: true,
+        disableMobile: "true", // Force custom calendar on mobile too
+        theme: "dark" // Base theme, customized in CSS
+    });
 
     // --- File Upload Validation (Max 5MB) ---
     const fileInputs = document.querySelectorAll('input[type="file"]');

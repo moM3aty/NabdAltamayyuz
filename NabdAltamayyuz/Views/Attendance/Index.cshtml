@@ -12,6 +12,7 @@
     var dateString = today.ToString("yyyy-MM-dd");
 }
 
+<!-- تنسيقات خاصة بالطباعة -->
 <style>
     @@media print {
         @@page { size: A4 landscape; margin: 1cm; }
@@ -32,6 +33,7 @@
 
 <div class="container py-5 animate-fade-in" style="margin-top: 120px;">
     
+    <!-- ترويسة الطباعة -->
     <div class="print-header text-center">
         <div class="row align-items-center">
             <div class="col-4 text-end"><small>تاريخ: @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</small></div>
@@ -74,7 +76,7 @@
         </div>
     }
 
-    <!-- Advanced Filters -->
+    <!-- Filters -->
     <div class="card border-0 shadow-lg mb-4 bg-white rounded-4 overflow-hidden no-print filters-card">
         <div class="card-body p-4">
             <form method="get" class="row g-3 align-items-end">
@@ -186,10 +188,13 @@
                 </table>
             </div>
         </div>
+        <div class="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center no-print">
+            <small class="text-muted">@(isRtl ? $"إجمالي السجلات: {Model?.Count() ?? 0}" : $"Total Records: {Model?.Count() ?? 0}")</small>
+        </div>
     </div>
 </div>
 
-<!-- Manual Entry / Edit Modal -->
+<!-- Manual Entry Modal -->
 <div class="modal fade" id="manualEntryModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
@@ -199,10 +204,9 @@
             </div>
             <form action="/Attendance/ManualEntry" method="post" id="attendanceForm">
                 @Html.AntiForgeryToken()
-                <input type="hidden" name="id" id="recordId" value="0" /> <!-- 0 for new, ID for edit -->
+                <input type="hidden" name="id" id="recordId" value="0" /> 
                 
                 <div class="modal-body p-4">
-                    <!-- حقول اختيار الشركة والموظف (تظهر فقط عند الإضافة الجديدة) -->
                     <div id="selectionFields">
                         @if (isSuperAdmin)
                         {
@@ -265,7 +269,6 @@
 
 @section Scripts {
     <script>
-        // دالة لجلب الموظفين عند تغيير الشركة (للسوبر أدمن)
         function loadEmployees(companyId) {
             var empSelect = document.getElementById("employeeSelect");
             empSelect.innerHTML = "<option value=''>جار التحميل...</option>";
@@ -288,36 +291,49 @@
                 });
         }
 
-        // دالة التصدير
+        // دالة التصدير للإكسيل (محسنة مع BOM للعربية وتنظيف)
         function exportToExcel(tableId) {
-            let table = document.getElementById(tableId);
-            let html = table.outerHTML.replace(/ /g, '%20');
-            let a = document.createElement('a');
-            a.href = 'data:application/vnd.ms-excel,' + html;
+            var table = document.getElementById(tableId);
+            var clone = table.cloneNode(true);
+            
+            // إزالة الأعمدة غير المرغوب فيها (مثل الإجراءات)
+            var rows = clone.rows;
+            for (var i = 0; i < rows.length; i++) {
+                var cells = rows[i].cells;
+                for (var j = cells.length - 1; j >= 0; j--) {
+                    if (cells[j].classList.contains('no-print')) {
+                        rows[i].deleteCell(j);
+                    }
+                }
+            }
+
+            var html = clone.outerHTML;
+            // إضافة BOM لضمان دعم اللغة العربية
+            var blob = new Blob(['\ufeff', html], {
+                type: 'application/vnd.ms-excel;charset=utf-8'
+            });
+            
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
             a.download = 'Attendance_Report.xls';
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
         }
 
-        // إعداد المودال للتعديل
         function editAttendance(id, timeIn, timeOut, notes) {
             document.getElementById('modalTitle').innerText = 'تعديل سجل حضور';
-            document.getElementById('attendanceForm').action = '/Attendance/Edit/' + id; // تغيير الـ Action
+            document.getElementById('attendanceForm').action = '/Attendance/Edit/' + id;
             document.getElementById('recordId').value = id;
-            
-            // إخفاء حقول اختيار الموظف عند التعديل
             document.getElementById('selectionFields').style.display = 'none';
-            
-            // تعبئة البيانات
             document.getElementById('timeIn').value = timeIn;
             document.getElementById('timeOut').value = timeOut;
             document.getElementById('notes').value = notes;
-            
-            // فتح المودال
             var myModal = new bootstrap.Modal(document.getElementById('manualEntryModal'));
             myModal.show();
         }
         
-        // إعادة المودال لحالته الأصلية عند الإغلاق
         document.getElementById('manualEntryModal').addEventListener('hidden.bs.modal', function () {
             document.getElementById('modalTitle').innerText = 'تسجيل حضور يدوي';
             document.getElementById('attendanceForm').action = '/Attendance/ManualEntry';

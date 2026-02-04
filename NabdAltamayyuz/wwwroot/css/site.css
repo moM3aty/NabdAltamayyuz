@@ -356,14 +356,112 @@ h1, h2, h3, h4, h5, h6 {
     background: var(--gold-gradient) !important;
 }
 
+/* Flatpickr Premium Gold Theme */
+.flatpickr-calendar {
+    background: #0F172A !important; /* Dark Blue Background */
+    border: 1px solid #D4AF37 !important; /* Gold Border */
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6) !important;
+    border-radius: 16px !important;
+    font-family: 'Cairo', sans-serif !important;
+    color: #fff !important;
+    width: 320px !important; /* Slightly wider */
+}
+
+/* Header (Month/Year) */
+.flatpickr-months {
+    background: #0F172A !important;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2) !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 15px 0 10px 0 !important;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months,
+.flatpickr-current-month input.cur-year {
+    color: #D4AF37 !important; /* Gold Text */
+    font-weight: 700 !important;
+    font-size: 1.1rem !important;
+}
+
+    .flatpickr-current-month .flatpickr-monthDropdown-months:hover {
+        background: rgba(255,255,255,0.05) !important;
+    }
+
+/* Arrows */
+.flatpickr-prev-month, .flatpickr-next-month {
+    fill: #D4AF37 !important;
+    color: #D4AF37 !important;
+    padding-top: 10px !important;
+}
+
+    .flatpickr-prev-month:hover svg, .flatpickr-next-month:hover svg {
+        fill: #fff !important;
+    }
+
+/* Weekdays */
+.flatpickr-weekdays {
+    background: #0F172A !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+span.flatpickr-weekday {
+    color: #94a3b8 !important; /* Muted text */
+    font-weight: 600 !important;
+}
+
+/* Days */
+.flatpickr-day {
+    color: #e2e8f0 !important;
+    border-radius: 50% !important; /* Perfectly circular */
+    border: 1px solid transparent !important;
+    transition: all 0.2s ease !important;
+    margin-top: 5px !important;
+}
+
+    .flatpickr-day:hover,
+    .flatpickr-day:focus {
+        background: rgba(212, 175, 55, 0.2) !important;
+        border-color: #D4AF37 !important;
+    }
+
+    /* Selected Day (Gold Circle) */
+    .flatpickr-day.selected,
+    .flatpickr-day.startRange,
+    .flatpickr-day.endRange,
+    .flatpickr-day.selected.inRange,
+    .flatpickr-day.startRange.inRange,
+    .flatpickr-day.endRange.inRange {
+        background: linear-gradient(135deg, #D4AF37 0%, #aa8c2c 100%) !important; /* Gold Gradient */
+        border-color: transparent !important;
+        color: #0F172A !important; /* Dark text on gold */
+        font-weight: 800 !important;
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.5) !important; /* Glow effect */
+    }
+
+    /* Today */
+    .flatpickr-day.today {
+        border-color: #D4AF37 !important;
+        color: #D4AF37 !important;
+    }
+
+        .flatpickr-day.today:hover {
+            background: #D4AF37 !important;
+            color: #0F172A !important;
+        }
+
+/* Input Trigger Style */
+input[type="date"] {
+    background-color: #fff !important;
+    color: #333 !important;
+    cursor: pointer;
+}
+
 /* --- 3. Navbar (Premium Glass Effect) --- */
 .premium-navbar {
     background: rgba(15, 23, 42, 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 1rem 0;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);s
 }
 
     .premium-navbar.scrolled {

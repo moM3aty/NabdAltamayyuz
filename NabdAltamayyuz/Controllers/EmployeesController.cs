@@ -232,7 +232,7 @@ namespace NabdAltamayyuz.Controllers
         // POST: Employees/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, ApplicationUser model, IFormFile? attachment)
+        public async Task<IActionResult> Edit(int id, ApplicationUser model, IFormFile? attachment, string? newPassword)
         {
             if (id != model.Id) return NotFound();
 
@@ -250,6 +250,12 @@ namespace NabdAltamayyuz.Controllers
                 userToUpdate.JobTitle = model.JobTitle;
                 userToUpdate.PhoneNumber = model.PhoneNumber;
                 userToUpdate.Status = model.Status;
+
+                if (!string.IsNullOrEmpty(newPassword))
+                {
+                    userToUpdate.PasswordHash = newPassword;
+                }
+
 
                 if (attachment != null && attachment.Length > 0)
                 {

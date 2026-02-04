@@ -13,21 +13,62 @@
 <!-- تنسيقات الطباعة -->
 <style>
     @@media print {
-        @@page { size: A4 landscape; margin: 1cm; }
-        body { background-color: white !important; -webkit-print-color-adjust: exact; }
-        .premium-navbar, footer, .btn, .card-header, .filters-card, .no-print { display: none !important; }
-        .container { margin: 0 !important; max-width: 100% !important; }
-        .card { border: none !important; box-shadow: none !important; }
-        .print-header { display: block !important; margin-bottom: 20px; border-bottom: 2px solid #D4AF37; }
-        table { width: 100% !important; border-collapse: collapse; font-size: 12px; }
-        th { background: #0F172A !important; color: white !important; padding: 5px; }
-        td { border: 1px solid #ccc; padding: 5px; }
+        @@page {
+            size: A4 landscape;
+            margin: 1cm;
+        }
+
+        body {
+            background-color: white !important;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .premium-navbar, footer, .btn, .card-header, .filters-card, .no-print {
+            display: none !important;
+        }
+
+        .container {
+            margin: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .print-header {
+            display: block !important;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #D4AF37;
+        }
+
+        table {
+            width: 100% !important;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        th {
+            background: #0F172A !important;
+            color: white !important;
+            padding: 5px;
+        }
+
+        td {
+            border: 1px solid #ccc;
+            padding: 5px;
+        }
     }
-    .print-header { display: none; }
+
+    .print-header {
+        display: none;
+    }
 </style>
 
 <div class="container py-5 animate-fade-in" style="margin-top: 120px;">
-    
+
     <!-- ترويسة الطباعة -->
     <div class="print-header text-center">
         <h3>نبض التميز الذهبي - تقرير المهام</h3>
@@ -40,11 +81,11 @@
             <h3 class="fw-bold text-dark mb-1"><i class="fas fa-tasks text-gold me-2"></i> @(isRtl ? "إدارة المهام" : "Task Management")</h3>
             <p class="text-muted small mb-0">@(isRtl ? "متابعة وإدارة المهام الوظيفية والتشغيلية" : "Track and manage operational tasks")</p>
         </div>
-        
+
         <div class="d-flex gap-2">
             <button onclick="window.print()" class="btn btn-outline-secondary btn-sm rounded-pill px-3"><i class="fas fa-print me-1"></i> طباعة</button>
             <button onclick="exportToExcel('tasksTable')" class="btn btn-outline-success btn-sm rounded-pill px-3"><i class="fas fa-file-excel me-1"></i> Excel</button>
-            
+
             @if (!isEmployee)
             {
                 <a href="/Tasks/Create" class="btn btn-gold bg-dark text-gold fw-bold shadow-sm hover-lift rounded-pill px-4">
@@ -97,14 +138,15 @@
         </div>
     </div>
 
-    <!-- Tasks Grid -->
+    <!-- Tasks Grid (Card View for Screen) -->
     <div class="row g-4 no-print">
         @if (Model != null && Model.Any())
         {
             foreach (var task in Model)
             {
                 var isOverdue = !task.IsCompleted && task.DueDate < DateTime.Today;
-                var statusBadge = task.Status switch {
+                var statusBadge = task.Status switch
+                {
                     NabdAltamayyuz.Models.TaskStatus.Completed => "bg-success bg-opacity-10 text-success",
                     NabdAltamayyuz.Models.TaskStatus.Pending => "bg-warning bg-opacity-10 text-dark",
                     NabdAltamayyuz.Models.TaskStatus.Cancelled => "bg-danger bg-opacity-10 text-danger",
@@ -114,20 +156,23 @@
                 <div class="col-md-6 col-lg-4">
                     <div class="card border-0 shadow-sm h-100 rounded-4 hover-lift task-card bg-white position-relative overflow-hidden">
                         <div class="position-absolute top-0 start-0 w-100" style="height: 4px; background: @(task.IsCompleted ? "#198754" : "#D4AF37");"></div>
-                        
+
                         <div class="card-body p-4 d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <span class="badge @statusBadge rounded-pill px-3 py-1">@task.Status</span>
-                                @if(isOverdue) { <span class="badge bg-danger rounded-pill">متأخرة</span> }
+                                @if (isOverdue)
+                                {
+                                    <span class="badge bg-danger rounded-pill">متأخرة</span>
+                                }
                             </div>
 
                             <h5 class="card-title fw-bold text-dark mb-2 text-truncate" title="@task.Title">@task.Title</h5>
                             <div class="small text-muted mb-3">
                                 <i class="far fa-calendar-alt me-1"></i> @task.StartDate.ToString("MM/dd") <i class="fas fa-arrow-left mx-1"></i> @task.DueDate.ToString("MM/dd")
                             </div>
-                            
+
                             <p class="card-text text-muted small mb-4 flex-grow-1 text-truncate">@task.Description</p>
-                            
+
                             @if (!isEmployee)
                             {
                                 <div class="d-flex align-items-center mb-3 bg-light p-2 rounded-3">
@@ -139,11 +184,11 @@
                             }
 
                             <hr class="border-secondary opacity-10 mt-auto">
-                            
+
                             <div class="d-flex justify-content-between align-items-center pt-1">
                                 <div class="btn-group">
                                     <a href="/Tasks/Details/@task.Id" class="btn btn-sm btn-outline-info rounded-pill me-1" title="معاينة"><i class="fas fa-eye"></i></a>
-                                    @if (!isEmployee) 
+                                    @if (!isEmployee)
                                     {
                                         <a href="/Tasks/Edit/@task.Id" class="btn btn-sm btn-outline-primary rounded-pill me-1" title="تعديل"><i class="fas fa-edit"></i></a>
                                         <form action="/Tasks/Delete" method="post" style="display:inline;">
@@ -212,14 +257,23 @@
                 .then(res => res.json()).then(data => { if(data.success) location.reload(); });
             }
         }
-        
+
         function exportToExcel(tableId) {
-            let table = document.getElementById(tableId);
-            let html = table.outerHTML.replace(/ /g, '%20');
-            let a = document.createElement('a');
-            a.href = 'data:application/vnd.ms-excel,' + html;
+            var table = document.getElementById(tableId);
+            var html = table.outerHTML;
+
+         
+            var blob = new Blob(['\ufeff', html], {
+                type: 'application/vnd.ms-excel;charset=utf-8'
+            });
+
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
             a.download = 'Tasks_Report.xls';
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
         }
     </script>
 }

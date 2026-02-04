@@ -173,12 +173,22 @@
     <script>
         // دالة تعليق الحساب
         function suspendCompany(id) {
-            if(confirm('هل أنت متأكد من تغيير حالة الحساب؟')) {
-                $.post('/Companies/Suspend/' + id, {
-                    '__RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                }, function(data) {
-                    if(data.success) location.reload();
-                    else alert('حدث خطأ');
+                if(confirm('هل أنت متأكد من تغيير حالة تعليق الحساب؟')) {
+                fetch('/Companies/Suspend/' + id, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } 
+                    else {
+                        alert("حدث خطأ: " + data.message);
+                    }
                 });
             }
         }

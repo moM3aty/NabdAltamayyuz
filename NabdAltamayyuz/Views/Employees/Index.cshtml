@@ -12,6 +12,9 @@
     int? currentCompany = ViewBag.CurrentCompany as int?;
 }
 
+<!-- رمز حماية مخفي لاستخدامه في طلبات AJAX -->
+@Html.AntiForgeryToken()
+
 <div class="container py-5 animate-fade-in" style="margin-top: 100px;">
 
     <!-- Title & Export -->
@@ -77,7 +80,7 @@
                             <th>@(isRtl ? "الشركة" : "Company")</th>
                             <th>@(isRtl ? "الوظيفة" : "Job Title")</th>
                             <th>@(isRtl ? "الحالة" : "Status")</th>
-                            <th class="text-end pe-4">@(isRtl ? "إجراءات" : "Actions")</th>
+                            <th class="text-end pe-4 no-export">@(isRtl ? "إجراءات" : "Actions")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -103,15 +106,19 @@
                                     <td><small class="text-muted">@(item.Company?.Name ?? "-")</small></td>
                                     <td><span class="badge bg-light text-dark border">@item.JobTitle</span></td>
                                     <td><span class="badge @statusClass rounded-pill">@statusText</span></td>
-                                    <td class="text-end pe-4">
+                                    <td class="text-end pe-4 no-export">
                                         <div class="d-flex justify-content-end gap-2">
                                             <a href="/Employees/Details/@item.Id" class="btn btn-sm btn-outline-info rounded-circle" title="معاينة"><i class="fas fa-eye"></i></a>
                                             <a href="/Employees/Edit/@item.Id" class="btn btn-sm btn-outline-primary rounded-circle" title="تعديل"><i class="fas fa-edit"></i></a>
-                                            <button onclick="suspendUser(@item.Id)" class="btn btn-sm btn-outline-warning rounded-circle" title="@(item.IsSuspended ? "تفعيل" : "تعليق")"><i class="fas @(item.IsSuspended ? "fa-play" : "fa-ban")"></i></button>
+
+                                            <!-- زر التعليق -->
+                                            <button type="button" onclick="suspendUser(@item.Id)" class="btn btn-sm btn-outline-warning rounded-circle" title="@(item.IsSuspended ? "تفعيل" : "تعليق")">
+                                                <i class="fas @(item.IsSuspended ? "fa-play" : "fa-ban")"></i>
+                                            </button>
 
                                             <!-- زر الحذف داخل فورم للأمان -->
                                             <form action="/Employees/Delete" method="post" style="display:inline;">
-                                                @Html.AntiForgeryToken()
+                                                <!-- لا نحتاج لـ AntiForgeryToken هنا لأننا وضعناه في الأعلى عالمياً للصفحة -->
                                                 <input type="hidden" name="id" value="@item.Id" />
                                                 <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle" onclick="return confirm('حذف الموظف نهائياً؟')" title="حذف"><i class="fas fa-trash-alt"></i></button>
                                             </form>
@@ -133,31 +140,73 @@
 
 @section Scripts {
     <script>
+        // دالة تعليق الحساب (تم إصلاحها لتعمل بدون jQuery واستخدام التوكن الصحيح)
         function suspendUser(id) {
             if(confirm('هل أنت متأكد من تغيير حالة الحساب؟')) {
-                // إرسال طلب POST مع التوكن
-                var token = $('input[name="__RequestVerificationToken"]').val();
-                if (!token) token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                // البحث عن التوكن في الصفحة (يوجد واحد في الأعلى)
+                var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                var token = tokenInput ? tokenInput.value : '';
 
                 fetch('/Employees/Suspend/' + id, {
                     method: 'POST',
-                    headers: { 'RequestVerificationToken': token }
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': token
+                    }
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
                 .then(data => {
-                    if(data.success) location.reload();
-                    else alert('حدث خطأ');
+                    if(data.success) {
+                        alert(data.message);
+                        location.reload();
+                    }
+                    else {
+                        alert("حدث خطأ: " + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("حدث خطأ أثناء الاتصال بالخادم.");
                 });
             }
         }
 
+        
         function exportToExcel(tableId) {
-            let table = document.getElementById(tableId);
-            let html = table.outerHTML.replace(/ /g, '%20');
-            let a = document.createElement('a');
-            a.href = 'data:application/vnd.ms-excel,' + html;
-            a.download = 'Employees.xls';
+            var table = document.getElementById(tableId);
+
+         
+            var clone = table.cloneNode(true);
+
+          
+            var rows = clone.rows;
+            for (var i = 0; i < rows.length; i++) {
+             
+                var cells = rows[i].cells;
+                for (var j = cells.length - 1; j >= 0; j--) {
+                    if (cells[j].classList.contains('no-export')) {
+                        rows[i].deleteCell(j);
+                    }
+                }
+            }
+
+            var html = clone.outerHTML;
+
+      
+            var blob = new Blob(['\ufeff', html], {
+                type: 'application/vnd.ms-excel;charset=utf-8'
+            });
+
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'Employees_Report.xls';
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
         }
     </script>
 }
