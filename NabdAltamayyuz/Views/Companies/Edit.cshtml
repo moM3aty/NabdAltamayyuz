@@ -2,8 +2,8 @@
 @using System.Globalization
 
 @{
-    ViewData["Title"] = "تعديل بيانات الشركة";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    ViewData["Title"] = isRtl ? "تعديل بيانات الشركة" : "Edit Company Details";
     Layout = "~/Views/Shared/_Layout.cshtml";
     bool isSuperAdmin = User.IsInRole("SuperAdmin");
 }
@@ -37,88 +37,88 @@
                 <input type="hidden" asp-for="ParentCompanyId" />
 
                 <!-- 1. البيانات الأساسية -->
-                <h6 class="text-gold fw-bold mb-3 border-bottom pb-2">البيانات الأساسية والاتصال</h6>
+                <h6 class="text-gold fw-bold mb-3 border-bottom pb-2">@(isRtl ? "البيانات الأساسية والاتصال" : "Basic & Contact Information")</h6>
                 <div class="row g-3 mb-4">
                     <div class="col-md-4">
-                        <label asp-for="Name" class="form-label small fw-bold">اسم الشركة</label>
+                        <label asp-for="Name" class="form-label small fw-bold">@(isRtl ? "اسم الشركة" : "Company Name")</label>
                         <input asp-for="Name" class="form-control bg-light" required />
                         <span asp-validation-for="Name" class="text-danger small"></span>
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="UnifiedNumber" class="form-label small fw-bold">الرقم الموحد</label>
+                        <label asp-for="UnifiedNumber" class="form-label small fw-bold">@(isRtl ? "الرقم الموحد" : "Unified Number")</label>
                         <input asp-for="UnifiedNumber" class="form-control bg-light" />
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="RegistrationNumber" class="form-label small fw-bold">رقم السجل التجاري</label>
+                        <label asp-for="RegistrationNumber" class="form-label small fw-bold">@(isRtl ? "رقم السجل التجاري" : "Commercial Registration No.")</label>
                         <input asp-for="RegistrationNumber" class="form-control bg-light" />
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="TaxNumber" class="form-label small fw-bold">الرقم الضريبي</label>
+                        <label asp-for="TaxNumber" class="form-label small fw-bold">@(isRtl ? "الرقم الضريبي" : "Tax Number")</label>
                         <input asp-for="TaxNumber" class="form-control bg-light" />
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="ResponsiblePerson" class="form-label small fw-bold">اسم المسؤول</label>
+                        <label asp-for="ResponsiblePerson" class="form-label small fw-bold">@(isRtl ? "اسم المسؤول" : "Responsible Person")</label>
                         <input asp-for="ResponsiblePerson" class="form-control bg-light" />
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="Email" class="form-label small fw-bold">البريد الإلكتروني</label>
+                        <label asp-for="Email" class="form-label small fw-bold">@(isRtl ? "البريد الإلكتروني" : "Email")</label>
                         <input asp-for="Email" class="form-control bg-light" />
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="PhoneNumber" class="form-label small fw-bold">رقم التواصل</label>
+                        <label asp-for="PhoneNumber" class="form-label small fw-bold">@(isRtl ? "رقم التواصل" : "Contact Number")</label>
                         <input asp-for="PhoneNumber" class="form-control bg-light" />
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="NationalAddressShortCode" class="form-label small fw-bold">العنوان الوطني (مختصر)</label>
+                        <label asp-for="NationalAddressShortCode" class="form-label small fw-bold">@(isRtl ? "العنوان الوطني (مختصر)" : "National Address (Short)")</label>
                         <input asp-for="NationalAddressShortCode" class="form-control bg-light" />
                     </div>
                     @if (isSuperAdmin)
                     {
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold text-danger">تعيين كلمة مرور جديدة للمدير</label>
-                            <input type="text" name="adminPassword" class="form-control bg-white border-warning" placeholder="اتركها فارغة للاحتفاظ بالحالية" />
+                            <label class="form-label small fw-bold text-danger">@(isRtl ? "تعيين كلمة مرور جديدة للمدير" : "Set New Manager Password")</label>
+                            <input type="text" name="adminPassword" class="form-control bg-white border-warning" placeholder="@(isRtl ? "اتركها فارغة للاحتفاظ بالحالية" : "Leave empty to keep current")" />
                         </div>
                     }
                 </div>
 
                 <!-- 2. بيانات الاشتراك -->
-                <h6 class="text-gold fw-bold mb-3 border-bottom pb-2 pt-2">بيانات الاشتراك والحدود</h6>
+                <h6 class="text-gold fw-bold mb-3 border-bottom pb-2 pt-2">@(isRtl ? "بيانات الاشتراك والحدود" : "Subscription & Limits")</h6>
                 <div class="row g-3 mb-4">
                     <div class="col-md-3">
-                        <label asp-for="SubscriptionStartDate" class="form-label small fw-bold">بداية الاشتراك</label>
+                        <label asp-for="SubscriptionStartDate" class="form-label small fw-bold">@(isRtl ? "بداية الاشتراك" : "Subscription Start")</label>
                         <input asp-for="SubscriptionStartDate" class="form-control bg-light" type="date" />
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="SubscriptionEndDate" class="form-label small fw-bold">نهاية الاشتراك</label>
+                        <label asp-for="SubscriptionEndDate" class="form-label small fw-bold">@(isRtl ? "نهاية الاشتراك" : "Subscription End")</label>
                         <input asp-for="SubscriptionEndDate" class="form-control bg-light" type="date" />
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="PaymentTerm" class="form-label small fw-bold">نظام السداد</label>
+                        <label asp-for="PaymentTerm" class="form-label small fw-bold">@(isRtl ? "نظام السداد" : "Payment Term")</label>
                         <select asp-for="PaymentTerm" class="form-select bg-light" asp-items="Html.GetEnumSelectList<NabdAltamayyuz.Models.PaymentTerm>()"></select>
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="NotificationDaysBeforeExpiry" class="form-label small fw-bold">تنبيه قبل (يوم)</label>
+                        <label asp-for="NotificationDaysBeforeExpiry" class="form-label small fw-bold">@(isRtl ? "تنبيه قبل (يوم)" : "Alert Before (Days)")</label>
                         <input asp-for="NotificationDaysBeforeExpiry" class="form-control bg-light" />
                     </div>
                     <div class="col-md-6">
-                        <label asp-for="AllowedSubAccounts" class="form-label small fw-bold">الحسابات الفرعية المسموحة</label>
+                        <label asp-for="AllowedSubAccounts" class="form-label small fw-bold">@(isRtl ? "الحسابات الفرعية المسموحة" : "Allowed Sub-Accounts")</label>
                         <input asp-for="AllowedSubAccounts" class="form-control bg-light" />
                     </div>
                     <div class="col-md-6">
-                        <label asp-for="AllowedEmployees" class="form-label small fw-bold">الموظفين المسموح بهم</label>
+                        <label asp-for="AllowedEmployees" class="form-label small fw-bold">@(isRtl ? "الموظفين المسموح بهم" : "Allowed Employees")</label>
                         <input asp-for="AllowedEmployees" class="form-control bg-light" />
                     </div>
                 </div>
 
                 <!-- 3. البيانات المالية -->
-                <h6 class="text-gold fw-bold mb-3 border-bottom pb-2 pt-2">البيانات المالية</h6>
+                <h6 class="text-gold fw-bold mb-3 border-bottom pb-2 pt-2">@(isRtl ? "البيانات المالية" : "Financials")</h6>
                 <div class="row g-3 mb-4 bg-light p-3 rounded-3">
                     <div class="col-md-6">
-                        <label asp-for="PricePerEmployee" class="form-label small fw-bold">قيمة الاشتراك للموظف</label>
+                        <label asp-for="PricePerEmployee" class="form-label small fw-bold">@(isRtl ? "قيمة الاشتراك للموظف" : "Price Per Employee")</label>
                         <input asp-for="PricePerEmployee" class="form-control" type="number" step="0.01" />
                     </div>
                     <div class="col-md-6">
-                        <label asp-for="TaxRate" class="form-label small fw-bold">نسبة الضريبة %</label>
+                        <label asp-for="TaxRate" class="form-label small fw-bold">@(isRtl ? "نسبة الضريبة %" : "Tax Rate %")</label>
                         <input asp-for="TaxRate" class="form-control" type="number" step="0.01" />
                     </div>
                 </div>
@@ -127,19 +127,19 @@
                 @if (!string.IsNullOrEmpty(Model.AttachmentPath))
                 {
                     <div class="alert alert-info py-2 d-flex justify-content-between align-items-center mb-3">
-                        <small><i class="fas fa-paperclip me-2"></i> يوجد ملف مرفق حالياً</small>
-                        <a href="/uploads/companies/@Model.AttachmentPath" target="_blank" class="btn btn-sm btn-light">عرض</a>
+                        <small><i class="fas fa-paperclip me-2"></i> @(isRtl ? "يوجد ملف مرفق حالياً" : "Attachment exists")</small>
+                        <a href="/uploads/companies/@Model.AttachmentPath" target="_blank" class="btn btn-sm btn-light">@(isRtl ? "عرض" : "View")</a>
                     </div>
                 }
 
                 <div class="mb-4">
-                    <label class="form-label small fw-bold">تحديث المرفقات (اختياري)</label>
+                    <label class="form-label small fw-bold">@(isRtl ? "تحديث المرفقات (اختياري)" : "Update Attachments (Optional)")</label>
                     <input type="file" name="attachment" class="form-control" />
                 </div>
 
                 <div class="d-flex justify-content-end">
                     <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold px-5 rounded-pill shadow-sm">
-                        <i class="fas fa-check me-2"></i> حفظ التعديلات
+                        <i class="fas fa-check me-2"></i> @(isRtl ? "حفظ التعديلات" : "Save Changes")
                     </button>
                 </div>
             </form>
@@ -150,12 +150,12 @@
 @section Scripts {
     <script>
         function suspendCompany(id) {
-            if(confirm('هل أنت متأكد من تغيير حالة تعليق الحساب؟')) {
+            var confirmMsg = '@(isRtl ? "هل أنت متأكد من تغيير حالة تعليق الحساب؟" : "Are you sure you want to change account suspension status?")';
+            if(confirm(confirmMsg)) {
+                var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
                 fetch('/Companies/Suspend/' + id, {
                     method: 'POST',
-                    headers: {
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                    }
+                    headers: { 'RequestVerificationToken': token }
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -163,7 +163,7 @@
                         alert(data.message);
                         location.reload();
                     } else {
-                        alert("حدث خطأ: " + data.message);
+                        alert('@(isRtl ? "حدث خطأ: " : "Error: ")' + data.message);
                     }
                 });
             }

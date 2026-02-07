@@ -2,16 +2,16 @@
 @using System.Globalization
 
 @{
-    ViewData["Title"] = "سجل حضوري";
-    Layout = "~/Views/Shared/_Layout.cshtml";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    ViewData["Title"] = isRtl ? "سجل حضوري" : "My Attendance";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="container py-5 animate-fade-in" style="margin-top: 120px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold text-dark"><i class="fas fa-history text-gold me-2"></i> @(isRtl ? "سجل الحضور الشخصي" : "My Attendance History")</h3>
-            <p class="text-muted small">@(isRtl ? "عرض سجلات الدوام لآخر 30 يوم" : "Last 30 days records")</p>
+            <p class="text-muted small">@(isRtl ? "عرض سجلات الدوام لآخر 30 يوم" : "Showing records for the last 30 days")</p>
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-outline-secondary shadow-sm rounded-pill px-4" onclick="window.print()">
@@ -26,12 +26,12 @@
                 <table class="table table-hover align-middle mb-0 text-center">
                     <thead class="bg-dark text-white">
                         <tr>
-                            <th class="py-3">التاريخ</th>
-                            <th class="py-3">اليوم</th>
-                            <th class="py-3">دخول</th>
-                            <th class="py-3">خروج</th>
-                            <th class="py-3">ساعات العمل</th>
-                            <th class="py-3">الحالة</th>
+                            <th class="py-3">@(isRtl ? "التاريخ" : "Date")</th>
+                            <th class="py-3">@(isRtl ? "اليوم" : "Day")</th>
+                            <th class="py-3">@(isRtl ? "دخول" : "Time In")</th>
+                            <th class="py-3">@(isRtl ? "خروج" : "Time Out")</th>
+                            <th class="py-3">@(isRtl ? "ساعات العمل" : "Work Hours")</th>
+                            <th class="py-3">@(isRtl ? "الحالة" : "Status")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -41,13 +41,16 @@
                             {
                                 <tr>
                                     <td><span class="fw-bold">@item.Date.ToString("yyyy-MM-dd")</span></td>
-                                    <td>@item.DayName</td>
-                                    <td class="text-success ltr font-monospace">@(item.TimeIn?.ToString("hh:mm tt") ?? "--")</td>
-                                    <td class="text-danger ltr font-monospace">@(item.TimeOut?.ToString("hh:mm tt") ?? "--")</td>
+                                    <!-- عرض اسم اليوم حسب لغة المتصفح بدلاً من المسجل في قاعدة البيانات -->
+                                    <td>@item.Date.ToString("dddd")</td>
+                                    <td class="text-success font-monospace" dir="ltr">@(item.TimeIn?.ToString("hh:mm tt") ?? "--")</td>
+                                    <td class="text-danger font-monospace" dir="ltr">@(item.TimeOut?.ToString("hh:mm tt") ?? "--")</td>
                                     <td>
                                         @if (item.TimeIn.HasValue && item.TimeOut.HasValue)
                                         {
-                                            <span class="badge bg-light text-dark border">@((item.TimeOut.Value - item.TimeIn.Value).TotalHours.ToString("0.0")) س</span>
+                                            <span class="badge bg-light text-dark border">
+                                                @((item.TimeOut.Value - item.TimeIn.Value).TotalHours.ToString("0.0")) @(isRtl ? "س" : "h")
+                                            </span>
                                         }
                                         else
                                         {
@@ -57,11 +60,11 @@
                                     <td>
                                         @if (item.TimeOut == null)
                                         {
-                                            <span class="badge bg-warning bg-opacity-10 text-dark rounded-pill">جاري العمل</span>
+                                            <span class="badge bg-warning bg-opacity-10 text-dark rounded-pill">@(isRtl ? "جاري العمل" : "Working")</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill">مكتمل</span>
+                                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill">@(isRtl ? "مكتمل" : "Completed")</span>
                                         }
                                     </td>
                                 </tr>
@@ -70,7 +73,7 @@
                         else
                         {
                             <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">لا يوجد سجلات حضور</td>
+                                <td colspan="6" class="text-center py-5 text-muted">@(isRtl ? "لا يوجد سجلات حضور" : "No attendance records found")</td>
                             </tr>
                         }
                     </tbody>

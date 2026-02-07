@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "تسجيل الدخول";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
-    Layout = null; // صفحة مستقلة بدون Layout كامل
+    Layout = null;
 }
 
 <!DOCTYPE html>
@@ -10,12 +10,9 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@(isRtl ? "تسجيل الدخول" : "Login") - @(isRtl ? "نبض التميز الذهبي" : "Nabd AlTamayyuz Aldhahabi")</title>
-    <!-- Bootstrap 5 -->
+    <title>@(isRtl ? "تسجيل الدخول" : "Login") - @(isRtl ? "نبض التميز الذهبي" : "Golden Pulse")</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
     <style>
@@ -29,34 +26,11 @@
             background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%), url('https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&q=80');
             background-size: cover;
             background-position: center;
-            background-attachment: fixed;
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             font-family: 'Cairo', 'Poppins', sans-serif;
-            overflow: hidden;
-        }
-
-        /* Decorative Elements */
-        .glow-circle {
-            position: absolute;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(212, 175, 55, 0.15) 0%, rgba(0,0,0,0) 70%);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .top-left {
-            top: -200px;
-            left: -200px;
-        }
-
-        .bottom-right {
-            bottom: -200px;
-            right: -200px;
         }
 
         .login-card {
@@ -65,59 +39,23 @@
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-top: 1px solid rgba(212, 175, 55, 0.5);
-            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
             border-radius: 24px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             width: 100%;
             max-width: 420px;
             padding: 3rem 2.5rem;
-            color: white;
-            position: relative;
-            z-index: 1;
-            animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
-        .brand-icon {
-            width: 80px;
-            height: 80px;
-            background: rgba(212, 175, 55, 0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+        .brand-logo img {
+            max-height: 100px;
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.3));
+            border-radius: 5%;
+            border: 2px solid var(--primary-gold);
         }
 
         .text-gold {
             color: var(--primary-gold) !important;
-        }
-
-        .form-label {
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 0.5rem;
-        }
-
-        .input-group-text {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-right: none;
-            color: var(--primary-gold);
-        }
-
-        [dir="rtl"] .input-group-text {
-            border-left: none;
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 0 10px 10px 0;
-        }
-
-        [dir="ltr"] .input-group-text {
-            border-right: none;
-            border-left: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px 0 0 10px;
         }
 
         .form-control {
@@ -125,33 +63,12 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: white !important;
             height: 50px;
-            font-size: 0.95rem;
         }
 
-        [dir="rtl"] .form-control {
-            border-right: none;
-            border-radius: 10px 0 0 10px;
-        }
-
-        [dir="ltr"] .form-control {
-            border-left: none;
-            border-radius: 0 10px 10px 0;
-        }
-
-        .form-control::placeholder {
-            color: rgba(255, 255, 255, 0.3);
-        }
-
-        .form-control:focus {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--primary-gold);
-            box-shadow: none;
-        }
-
-            .form-control:focus + .input-group-text,
-            .input-group:focus-within .input-group-text {
+            .form-control:focus {
+                background: rgba(255, 255, 255, 0.1);
                 border-color: var(--primary-gold);
-                background: rgba(212, 175, 55, 0.1);
+                box-shadow: none;
             }
 
         .btn-gold {
@@ -161,120 +78,51 @@
             border: none;
             height: 50px;
             border-radius: 12px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+            width: 100%;
         }
 
-            .btn-gold:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(212, 175, 55, 0.5);
-                color: #000;
-            }
-
-        .back-link {
-            color: rgba(255, 255, 255, 0.5);
-            text-decoration: none;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            font-size: 0.9rem;
-        }
-
-            .back-link:hover {
-                color: var(--primary-gold);
-                transform: translateX( @(isRtl ? "5px" : "-5px") );
-            }
-
-        @@keyframes fadeInUp {
-            from
-
-        {
-            opacity: 0;
-            transform: translateY(40px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        }
-
-        .form-check-input {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-            .form-check-input:checked {
-                background-color: var(--primary-gold);
-                border-color: var(--primary-gold);
-            }
-
-        .rtl-flip {
-            transform: scaleX( @(isRtl ? "-1" : "1") );
+        .input-group-text {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: var(--primary-gold);
         }
     </style>
 </head>
 <body>
-
-    <!-- Ambient Glow -->
-    <div class="glow-circle top-left"></div>
-    <div class="glow-circle bottom-right"></div>
-
-    <div class="login-card">
-        <div class="text-center mb-5">
-            <div class="brand-icon">
-                <i class="fas fa-gem fa-2x text-gold"></i>
-            </div>
-            <h3 class="fw-bold mb-2">@(isRtl ? "بوابة الموظفين" : "Staff Portal")</h3>
-            <p class="text-white-50 small mb-0">@(isRtl ? "سجل دخولك لمتابعة المهام والحضور" : "Login to manage tasks and attendance")</p>
+    <div class="login-card text-center">
+        <div class="brand-logo">
+            <!-- اللوجو -->
+            <img src="~/images/logo.jpg" alt="نبض التميز الذهبي" class="img-fluid">
+            <h4 class="text-white fw-bold mb-4">نبض التميز الذهبي</h4>
         </div>
+
+        <h5 class="fw-bold text-white mb-4">@(isRtl ? "تسجيل الدخول" : "Login")</h5>
 
         @if (ViewBag.Error != null)
         {
-            <div class="alert alert-danger border-0 bg-danger bg-opacity-25 text-white d-flex align-items-center mb-4 rounded-3" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>
-                <div>@ViewBag.Error</div>
-            </div>
+            <div class="alert alert-danger bg-danger bg-opacity-25 border-0 text-white small py-2 mb-3">@ViewBag.Error</div>
         }
 
         <form action="/Account/Login" method="post">
             @Html.AntiForgeryToken()
-            <div class="mb-4">
-                <label class="form-label text-uppercase fw-bold">@(isRtl ? "البريد الإلكتروني" : "Email Address")</label>
+            <div class="mb-3 text-start">
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                    <input type="email" name="email" class="form-control" placeholder="name@company.com" required>
+                    <input type="email" name="email" class="form-control" placeholder="@(isRtl ? "البريد الإلكتروني" : "Email")" required>
                 </div>
             </div>
-
-            <div class="mb-4">
-                <label class="form-label text-uppercase fw-bold">@(isRtl ? "كلمة المرور" : "Password")</label>
+            <div class="mb-3 text-start">
                 <div class="input-group">
                     <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                    <input type="password" name="password" class="form-control" placeholder="@(isRtl ? "كلمة المرور" : "Password")" required>
                 </div>
             </div>
-
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="rememberMe">
-                    <label class="form-check-label text-white-50 small pt-1" for="rememberMe">@(isRtl ? "تذكرني" : "Remember me")</label>
-                </div>
+            <div class="form-check text-start mb-4">
+                <input class="form-check-input bg-transparent border-secondary" type="checkbox" id="rememberMe">
+                <label class="form-check-label text-white-50 small" for="rememberMe">@(isRtl ? "تذكرني" : "Remember me")</label>
             </div>
-
-            <button type="submit" class="btn btn-gold w-100 mb-4">
-                @(isRtl ? "تسجيل الدخول" : "Sign In")
-            </button>
+            <button type="submit" class="btn btn-gold">@(isRtl ? "دخول" : "Sign In")</button>
         </form>
-
-        <div class="text-center pt-3 border-top border-white border-opacity-10">
-            <a href="/" class="back-link">
-                @(isRtl ? "العودة للصفحة الرئيسية" : "Back to Home")
-            </a>
-        </div>
     </div>
-
 </body>
 </html>

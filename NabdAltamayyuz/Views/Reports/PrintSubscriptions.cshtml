@@ -1,0 +1,232 @@
+﻿@model IEnumerable<NabdAltamayyuz.Models.Company>
+@using System.Globalization
+@{
+    Layout = null;
+    var culture = CultureInfo.CurrentCulture.Name.StartsWith("ar") ? "ar" : "en";
+    var isArabic = culture == "ar";
+    decimal grandTotal = 0;
+}
+
+<!DOCTYPE html>
+<html lang="@culture" dir="@(isArabic ? "rtl" : "ltr")">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(isArabic ? "تقرير الاشتراكات" : "Subscriptions Report") - @(isArabic ? "نبض التميز الذهبي" : "Golden Pulse")</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+    @if (isArabic)
+    {
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    }
+    else
+    {
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    }
+
+    <style>
+        body {
+            font-family: @(isArabic ? "'Cairo', sans-serif" : "'Poppins', sans-serif") !important;
+            background: #fff;
+            padding: 20px;
+            color: #1e293b;
+        }
+
+        .report-header {
+            border-bottom: 3px solid #D4AF37;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .company-name {
+            color: #D4AF37;
+            font-weight: 700;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .report-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #0F172A;
+        }
+
+        .meta-box {
+            font-size: 12px;
+            color: #64748b;
+            text-align: @(isArabic ? "left" : "right");
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+
+        th {
+            background-color: #0F172A !important;
+            color: #fff !important;
+            padding: 10px;
+            border: 1px solid #0F172A;
+            text-align: center;
+            -webkit-print-color-adjust: exact;
+        }
+
+        td {
+            border: 1px solid #e2e8f0;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8fafc !important;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .badge-status {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 10px;
+            border: 1px solid #ccc;
+        }
+
+        .active {
+            background-color: #dcfce7;
+            color: #166534;
+            border-color: #bbf7d0;
+        }
+
+        .expired {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border-color: #fecaca;
+        }
+
+        .suspended {
+            background-color: #f3f4f6;
+            color: #374151;
+            border-color: #d1d5db;
+        }
+
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            @(isArabic ? "left: 30px;" : "right: 30px;")
+            background: #0F172A;
+            color: #D4AF37;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Helper for text alignment based on language */
+        .text-align-start {
+            text-align: @(isArabic ? "right" : "left") !important;
+        }
+
+        .text-align-end {
+            text-align: @(isArabic ? "left" : "right") !important;
+        }
+
+        @@media print {
+            .print-btn {
+                display: none;
+            }
+
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+
+    <div class="report-header">
+        <div>
+            <div class="company-name">@(isArabic ? "نبض التميز الذهبي" : "Nabd AlTamayyuz")</div>
+            <div class="report-title">@(isArabic ? "تقرير الاشتراكات والفواتير" : "Subscriptions & Invoices Report")</div>
+        </div>
+        <div class="meta-box">
+            <div><strong>@(isArabic ? "تاريخ الطباعة:" : "Print Date:")</strong> @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</div>
+            <div><strong>@(isArabic ? "عدد الشركات:" : "Companies Count:")</strong> @Model.Count()</div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th width="20%">@(isArabic ? "اسم الشركة / الفرع" : "Company/Branch")</th>
+                <th width="10%">@(isArabic ? "النوع" : "Type")</th>
+                <th width="15%">@(isArabic ? "فترة الاشتراك" : "Subscription Period")</th>
+                <th width="10%">@(isArabic ? "الحالة" : "Status")</th>
+                <th width="10%">@(isArabic ? "نظام السداد" : "Payment Term")</th>
+                <th width="10%">@(isArabic ? "الموظفين (متاح)" : "Allowed Emp.")</th>
+                <th width="10%">@(isArabic ? "قيمة الموظف" : "Emp. Price")</th>
+                <th width="15%">@(isArabic ? "الإجمالي التقديري" : "Est. Total")</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                var isExpired = item.SubscriptionEndDate < DateTime.Now;
+                var statusClass = item.IsSuspended ? "suspended" : (isExpired ? "expired" : "active");
+
+                // Status Text Translation
+                var statusText = "";
+                if (item.IsSuspended) { statusText = isArabic ? "معلق" : "Suspended"; }
+                else if (isExpired) { statusText = isArabic ? "منتهي" : "Expired"; }
+                else { statusText = isArabic ? "نشط" : "Active"; }
+
+                // Type Text Translation
+                var typeText = item.ParentCompanyId == null ? (isArabic ? "رئيسي" : "Main") : (isArabic ? "فرع" : "Branch");
+
+                // Payment Term (Enum)
+                var paymentText = item.PaymentTerm.ToString(); // Or utilize resource files for Enums if available
+
+                // حساب تقديري للتكلفة
+                decimal estimatedTotal = item.AllowedEmployees * item.TotalPricePerEmployee;
+                grandTotal += estimatedTotal;
+
+                <tr>
+                    <td class="text-align-start" style="font-weight: bold;">@item.Name</td>
+                    <td>@typeText</td>
+                    <td style="font-family: monospace; direction: ltr;">
+                        @item.SubscriptionStartDate.ToString("yyyy-MM-dd") <br>
+                        @item.SubscriptionEndDate.ToString("yyyy-MM-dd")
+                    </td>
+                    <td><span class="badge-status @statusClass">@statusText</span></td>
+                    <td>@paymentText</td>
+                    <td>@item.AllowedEmployees</td>
+                    <td>@item.TotalPricePerEmployee.ToString("N2")</td>
+                    <td style="font-weight: bold;">@estimatedTotal.ToString("N2") <small>SAR</small></td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr style="background-color: #f1f5f9; font-weight: bold;">
+                <td colspan="7" class="text-align-end" style="padding-@(isArabic ? "left" : "right"): 20px;">
+                    @(isArabic ? "الإجمالي الكلي التقديري:" : "Grand Total (Estimated):")
+                </td>
+                <td>@grandTotal.ToString("N2") SAR</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div style="margin-top: 40px; border-top: 1px solid #ddd; padding-top: 10px; font-size: 11px; color: #64748b; text-align: center;">
+        @(isArabic ? "هذا التقرير تم إصداره آلياً ولا يعتبر فاتورة ضريبية نهائية إلا بوجود الختم الرسمي." : "This report is automatically generated and is not considered a final tax invoice without an official seal.")
+    </div>
+
+    <button class="print-btn" onclick="window.print()">@(isArabic ? "طباعة" : "Print")</button>
+</body>
+</html>

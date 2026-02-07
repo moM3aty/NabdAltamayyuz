@@ -26,8 +26,8 @@ namespace NabdAltamayyuz.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        // GET: Tasks (مع الفلترة والبحث)
-        public async Task<IActionResult> Index(string searchString, int? companyId, string status)
+        // GET: Tasks (مع الفلترة والبحث والإحصائيات)
+        public async Task<IActionResult> Index(string searchString, int? companyId, string status, DateTime? fromDate, DateTime? toDate)
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var userRole = User.FindFirstValue(ClaimTypes.Role);
@@ -43,25 +43,44 @@ namespace NabdAltamayyuz.Controllers
             {
                 query = query.Where(t => t.AssignedToId == userId);
             }
-            else if (userRole != "SuperAdmin") // CompanyAdmin & SubAdmin
+            else // SuperAdmin, CompanyAdmin, SubAdmin
             {
-                var currentUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
-                if (currentUser?.CompanyId != null)
+                if (userRole == "SuperAdmin")
                 {
-                    query = query.Where(t => t.AssignedTo.CompanyId == currentUser.CompanyId);
-
-                    // تجهيز قائمة الموظفين للفلتر في الـ View
-                    ViewBag.Employees = new SelectList(await _context.Users
-                        .Where(u => u.CompanyId == currentUser.CompanyId && u.Role == UserRole.Employee)
-                        .Select(u => new { Id = u.Id, Name = u.FullName })
-                        .ToListAsync(), "Id", "Name");
+                    if (companyId.HasValue)
+                    {
+                        // جلب الشركة وفروعها إذا كانت رئيسية
+                        var subIds = await _context.Companies.Where(c => c.ParentCompanyId == companyId).Select(c => c.Id).ToListAsync();
+                        subIds.Add(companyId.Value);
+                        query = query.Where(t => subIds.Contains(t.AssignedTo.CompanyId.Value));
+                    }
+                    ViewBag.Companies = new SelectList(await _context.Companies.Where(c => c.ParentCompanyId == null).ToListAsync(), "Id", "Name", companyId);
                 }
-            }
-            else // SuperAdmin
-            {
-                if (companyId.HasValue) query = query.Where(t => t.AssignedTo.CompanyId == companyId);
+                else
+                {
+                    var currentUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+                    if (currentUser?.CompanyId != null)
+                    {
+                        var subIds = await _context.Companies.Where(c => c.ParentCompanyId == currentUser.CompanyId).Select(c => c.Id).ToListAsync();
+                        subIds.Add(currentUser.CompanyId.Value);
 
-                ViewBag.Companies = new SelectList(await _context.Companies.ToListAsync(), "Id", "Name", companyId);
+                        if (companyId.HasValue && subIds.Contains(companyId.Value))
+                        {
+                            query = query.Where(t => t.AssignedTo.CompanyId == companyId.Value);
+                        }
+                        else
+                        {
+                            query = query.Where(t => subIds.Contains(t.AssignedTo.CompanyId.Value));
+                        }
+
+                        // قائمة الشركات للفلتر
+                        var myCompanies = await _context.Companies
+                            .Where(c => subIds.Contains(c.Id))
+                            .Select(c => new { c.Id, Name = c.ParentCompanyId == null ? c.Name : " -- " + c.Name })
+                            .ToListAsync();
+                        ViewBag.Companies = new SelectList(myCompanies, "Id", "Name", companyId);
+                    }
+                }
             }
 
             // 2. الفلترة
@@ -75,9 +94,23 @@ namespace NabdAltamayyuz.Controllers
                 query = query.Where(t => t.Status == (MyTaskStatus)statusVal);
             }
 
+            if (fromDate.HasValue) query = query.Where(t => t.StartDate >= fromDate.Value);
+            if (toDate.HasValue) query = query.Where(t => t.DueDate <= toDate.Value);
+
+            // 3. الإحصائيات (للمقياس العلوي) - يتم حسابها بناءً على الفلترة الحالية أو الكل حسب الرغبة
+            // هنا سنحسبها بناءً على النطاق العام للمستخدم قبل فلترة البحث الدقيق لتعطي نظرة عامة
+            var statsQuery = query; // أو يمكن إعادة بناء استعلام أوسع للإحصائيات
+
+            ViewBag.TotalTasks = await statsQuery.CountAsync();
+            ViewBag.CompletedTasks = await statsQuery.CountAsync(t => t.IsCompleted);
+            ViewBag.PendingTasks = await statsQuery.CountAsync(t => t.Status == MyTaskStatus.Pending);
+            ViewBag.DelayedTasks = await statsQuery.CountAsync(t => t.Status == MyTaskStatus.Delayed || (!t.IsCompleted && t.DueDate < DateTime.Today));
+
             ViewBag.CurrentSearch = searchString;
             ViewBag.CurrentStatus = status;
             ViewBag.CurrentCompany = companyId;
+            ViewBag.FromDate = fromDate?.ToString("yyyy-MM-dd");
+            ViewBag.ToDate = toDate?.ToString("yyyy-MM-dd");
 
             return View(await query.OrderByDescending(t => t.DueDate).ToListAsync());
         }
@@ -99,7 +132,6 @@ namespace NabdAltamayyuz.Controllers
             // التحقق من الصلاحية
             if (!User.IsInRole("SuperAdmin"))
             {
-                // يسمح للمشرفين ولصاحب المهمة
                 bool isManager = User.IsInRole("CompanyAdmin") || User.IsInRole("SubAdmin");
                 if (!isManager && task.AssignedToId != userId && task.CreatedById != userId)
                 {
@@ -147,13 +179,22 @@ namespace NabdAltamayyuz.Controllers
             else
             {
                 var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var currentUser = await _context.Users.FindAsync(userId);
+                var user = await _context.Users.FindAsync(userId);
 
-                var employees = await _context.Users
-                    .Where(u => u.CompanyId == currentUser.CompanyId && u.Role == UserRole.Employee)
-                    .Select(u => new { Id = u.Id, Name = u.FullName })
+                // جلب الشركة والفروع
+                var myCompanies = await _context.Companies
+                    .Where(c => c.Id == user.CompanyId || c.ParentCompanyId == user.CompanyId)
+                    .Select(c => new { c.Id, Name = c.ParentCompanyId == null ? c.Name : " -- " + c.Name })
                     .ToListAsync();
 
+                // إذا كان فرع فقط، يظهر الموظفين مباشرة، إذا رئيسي يظهر قائمة الفروع
+                ViewBag.Companies = new SelectList(myCompanies, "Id", "Name", user.CompanyId);
+
+                // تحميل موظفي الشركة الافتراضية
+                var employees = await _context.Users
+                    .Where(u => u.CompanyId == user.CompanyId && u.Role == UserRole.Employee)
+                    .Select(u => new { Id = u.Id, Name = u.FullName })
+                    .ToListAsync();
                 ViewBag.Employees = new SelectList(employees, "Id", "Name");
             }
             return View();
@@ -163,16 +204,13 @@ namespace NabdAltamayyuz.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "SuperAdmin,CompanyAdmin,SubAdmin")]
-        public async Task<IActionResult> Create(WorkTask model, IFormFile? attachment)
+        public async Task<IActionResult> Create(WorkTask model, IFormFile? attachment, int? selectedCompanyId)
         {
-            // 1. تنظيف الـ ModelState (هام جداً للحفظ)
             ModelState.Clear();
 
-            // 2. التحقق اليدوي للحقول الإجبارية
             if (string.IsNullOrWhiteSpace(model.Title)) ModelState.AddModelError("Title", "عنوان المهمة مطلوب");
             if (model.AssignedToId == 0) ModelState.AddModelError("AssignedToId", "يجب اختيار موظف");
 
-            // 3. إعداد البيانات الافتراضية
             model.CreatedById = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             model.Status = MyTaskStatus.Pending;
             model.IsCompleted = false;
@@ -182,7 +220,6 @@ namespace NabdAltamayyuz.Controllers
 
             if (ModelState.IsValid)
             {
-                // رفع المرفق
                 if (attachment != null && attachment.Length > 0)
                 {
                     string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads/tasks");
@@ -202,7 +239,6 @@ namespace NabdAltamayyuz.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // إعادة تعبئة القوائم عند الخطأ
             await PopulateLists(model.AssignedToId);
             return View(model);
         }
@@ -218,19 +254,20 @@ namespace NabdAltamayyuz.Controllers
 
             if (task == null) return NotFound();
 
-            // التحقق من الصلاحية
             if (!User.IsInRole("SuperAdmin"))
             {
                 var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var currentUser = await _context.Users.FindAsync(userId);
-                if (task.AssignedTo.CompanyId != currentUser.CompanyId) return Forbid();
+                var user = await _context.Users.FindAsync(userId);
+
+                // التحقق من أن المهمة تابعة لشركته أو فروعه
+                var isAllowed = await _context.Companies.AnyAsync(c => c.Id == task.AssignedTo.CompanyId && (c.Id == user.CompanyId || c.ParentCompanyId == user.CompanyId));
+                if (!isAllowed) return Forbid();
             }
 
             await PopulateLists(task.AssignedToId, task.AssignedTo.CompanyId);
             return View(task);
         }
 
-        // POST: Tasks/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "SuperAdmin,CompanyAdmin,SubAdmin")]
@@ -283,42 +320,54 @@ namespace NabdAltamayyuz.Controllers
             return View(model);
         }
 
-        // Helper: Populate Dropdowns
-        private async Task PopulateLists(int? selectedEmployeeId = null, int? companyIdForSuperAdmin = null)
+        // Helper
+        private async Task PopulateLists(int? selectedEmployeeId = null, int? companyId = null)
         {
+            // منطق تعبئة القوائم (الشركات والموظفين) بناءً على الصلاحيات
             if (User.IsInRole("SuperAdmin"))
             {
-                ViewBag.Companies = new SelectList(await _context.Companies.ToListAsync(), "Id", "Name", companyIdForSuperAdmin);
-
-                // إذا تم تحديد شركة أو موظف، نعرض الموظفين
-                if (companyIdForSuperAdmin != null)
-                {
-                    var emps = await _context.Users.Where(u => u.CompanyId == companyIdForSuperAdmin && u.Role == UserRole.Employee).ToListAsync();
-                    ViewBag.Employees = new SelectList(emps, "Id", "FullName", selectedEmployeeId);
-                }
-                else if (selectedEmployeeId != null && selectedEmployeeId != 0)
-                {
-                    var emp = await _context.Users.FindAsync(selectedEmployeeId);
-                    if (emp != null)
-                    {
-                        var emps = await _context.Users.Where(u => u.CompanyId == emp.CompanyId && u.Role == UserRole.Employee).ToListAsync();
-                        ViewBag.Employees = new SelectList(emps, "Id", "FullName", selectedEmployeeId);
-                    }
-                }
+                ViewBag.Companies = new SelectList(await _context.Companies.ToListAsync(), "Id", "Name", companyId);
             }
             else
             {
                 var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var currentUser = await _context.Users.FindAsync(userId);
-                var emps = await _context.Users.Where(u => u.CompanyId == currentUser.CompanyId && u.Role == UserRole.Employee).ToListAsync();
+                var user = await _context.Users.FindAsync(userId);
+                var myCompanies = await _context.Companies
+                    .Where(c => c.Id == user.CompanyId || c.ParentCompanyId == user.CompanyId)
+                    .Select(c => new { c.Id, Name = c.ParentCompanyId == null ? c.Name : " -- " + c.Name })
+                    .ToListAsync();
+                ViewBag.Companies = new SelectList(myCompanies, "Id", "Name", companyId);
+            }
+
+            if (companyId != null)
+            {
+                var emps = await _context.Users.Where(u => u.CompanyId == companyId && u.Role == UserRole.Employee).ToListAsync();
                 ViewBag.Employees = new SelectList(emps, "Id", "FullName", selectedEmployeeId);
+            }
+            else if (selectedEmployeeId != null)
+            {
+                var emp = await _context.Users.FindAsync(selectedEmployeeId);
+                if (emp != null)
+                {
+                    var emps = await _context.Users.Where(u => u.CompanyId == emp.CompanyId && u.Role == UserRole.Employee).ToListAsync();
+                    ViewBag.Employees = new SelectList(emps, "Id", "FullName", selectedEmployeeId);
+                }
             }
         }
 
-        // GET: Employees by Company (AJAX)
+        // AJAX Helper
         [HttpGet]
         public async Task<IActionResult> GetEmployeesByCompany(int companyId)
         {
+            // تحقق من الصلاحية للمشرفين
+            if (!User.IsInRole("SuperAdmin"))
+            {
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var user = await _context.Users.FindAsync(userId);
+                var isAllowed = companyId == user.CompanyId || await _context.Companies.AnyAsync(c => c.Id == companyId && c.ParentCompanyId == user.CompanyId);
+                if (!isAllowed) return Forbid();
+            }
+
             var employees = await _context.Users
                 .Where(u => u.CompanyId == companyId && u.Role == UserRole.Employee)
                 .OrderBy(u => u.FullName)
@@ -346,10 +395,11 @@ namespace NabdAltamayyuz.Controllers
         {
             var task = await _context.WorkTasks.FindAsync(id);
             if (task == null) return NotFound();
-
-            // تحقق بسيط من الصلاحية
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            if (task.AssignedToId != userId && !User.IsInRole("CompanyAdmin") && !User.IsInRole("SuperAdmin") && !User.IsInRole("SubAdmin")) return Forbid();
+
+            // الموظف أو المشرف يمكنه الإنجاز
+            bool isAuthorized = task.AssignedToId == userId || User.IsInRole("CompanyAdmin") || User.IsInRole("SuperAdmin") || User.IsInRole("SubAdmin");
+            if (!isAuthorized) return Forbid();
 
             task.IsCompleted = true;
             task.Status = MyTaskStatus.Completed;

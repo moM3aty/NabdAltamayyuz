@@ -3,108 +3,133 @@
 @using NabdAltamayyuz.Models
 @{
     Layout = null;
-    var isRtl = true;
+    var culture = CultureInfo.CurrentCulture.Name.StartsWith("ar") ? "ar" : "en";
+    var isArabic = culture == "ar";
 }
 
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="@culture" dir="@(isArabic ? "rtl" : "ltr")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>تقرير المهام - نبض التميز الذهبي</title>
-    
-    <!-- استدعاء خط عربي احترافي (Cairo) -->
+    <title>@(isArabic ? "تقرير المهام" : "Tasks Report") - @(isArabic ? "نبض التميز الذهبي" : "Golden Pulse")</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+    @if (isArabic)
+    {
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    }
+    else
+    {
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    }
+
     <style>
-        body { 
-            font-family: 'Cairo', sans-serif !important; 
-            background: #fff; 
-            padding: 20px; 
+        body {
+            font-family: @(isArabic ? "'Cairo', sans-serif" : "'Poppins', sans-serif") !important;
+            background: #fff;
+            padding: 20px;
             color: #1e293b;
         }
-        .report-header { 
-            border-bottom: 3px solid #D4AF37; 
-            padding-bottom: 20px; 
-            margin-bottom: 30px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
+
+        .report-header {
+            border-bottom: 3px solid #D4AF37;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .company-name { 
-            color: #D4AF37; 
-            font-weight: 700; 
-            font-size: 24px; 
-            margin-bottom: 5px; 
+
+        .company-name {
+            color: #D4AF37;
+            font-weight: 700;
+            font-size: 24px;
+            margin-bottom: 5px;
         }
-        .report-title { 
-            font-size: 20px; 
-            font-weight: 600; 
-            color: #0F172A; 
+
+        .report-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #0F172A;
         }
+
         .meta-box {
             font-size: 12px;
             color: #64748b;
-            text-align: left;
+            text-align: @(isArabic ? "left" : "right");
         }
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-bottom: 20px; 
-            font-size: 12px; 
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 12px;
         }
-        th { 
-            background-color: #0F172A !important; 
-            color: #fff !important; 
-            padding: 12px 10px; 
-            border: 1px solid #0F172A; 
-            text-align: center; 
-            -webkit-print-color-adjust: exact; 
-        }
-        td { 
-            border: 1px solid #e2e8f0; 
-            padding: 10px; 
-            vertical-align: middle; 
+
+        th {
+            background-color: #0F172A !important;
+            color: #fff !important;
+            padding: 10px;
+            border: 1px solid #0F172A;
             text-align: center;
+            -webkit-print-color-adjust: exact;
         }
-        tr:nth-child(even) { 
-            background-color: #f8fafc !important; 
-            -webkit-print-color-adjust: exact; 
+
+        td {
+            border: 1px solid #e2e8f0;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
         }
-        
+
+        tr:nth-child(even) {
+            background-color: #f8fafc !important;
+            -webkit-print-color-adjust: exact;
+        }
+
         .status-badge {
-            display: inline-block;
             padding: 4px 10px;
             border-radius: 50px;
             font-weight: 600;
             font-size: 11px;
             border: 1px solid #ccc;
+            display: inline-block;
         }
-        
-        .print-btn { 
-            position: fixed; 
-            bottom: 30px; 
-            left: 30px; 
-            background: #0F172A; 
-            color: #D4AF37; 
-            border: none; 
-            padding: 10px 25px; 
-            border-radius: 50px; 
-            font-weight: bold; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
-            cursor: pointer;
-        }
-        .print-btn:hover { background: #1e293b; }
 
-        @@media print { 
-            .print-btn { display: none; } 
-            body { padding: 0; font-family: 'Cairo', sans-serif !important; }
-            @@page { size: landscape; margin: 1cm; }
-            th { color: white !important; background-color: #0F172A !important; -webkit-print-color-adjust: exact; }
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            @(isArabic ? "left: 30px;" : "right: 30px;")
+            background: #0F172A;
+            color: #D4AF37;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .text-start-custom {
+            text-align: @(isArabic ? "right" : "left") !important;
+            padding- @(isArabic ? "right" : "left") : 10px;
+        }
+
+        .font-mono {
+            font-family: 'Courier New', monospace;
+        }
+
+        @@media print {
+            .print-btn {
+                display: none;
+            }
+
+            body {
+                padding: 0;
+            }
         }
     </style>
 </head>
@@ -112,87 +137,79 @@
 
     <div class="report-header">
         <div>
-            <div class="company-name"><i class="fas fa-gem me-2"></i> نبض التميز الذهبي</div>
-            <div class="report-title">تقرير حالة المهام والإنجاز</div>
+            <div class="company-name">@(isArabic ? "نبض التميز الذهبي" : "Nabd AlTamayyuz")</div>
+            <div class="report-title">@(isArabic ? "تقرير حالة المهام" : "Tasks Status Report")</div>
         </div>
         <div class="meta-box">
-            <div><strong>تاريخ الطباعة:</strong> @ViewBag.PrintDate.ToString("yyyy-MM-dd HH:mm")</div>
-            <div><strong>الفترة:</strong> من @ViewBag.FromDate إلى @ViewBag.ToDate</div>
-            <div><strong>عدد السجلات:</strong> @Model.Count()</div>
+            <div><strong>@(isArabic ? "تاريخ الطباعة:" : "Print Date:")</strong> @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</div>
+            <div><strong>@(isArabic ? "عدد المهام:" : "Tasks Count:")</strong> @Model.Count()</div>
         </div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th width="20%">عنوان المهمة</th>
-                <th width="15%">الموظف المسؤول</th>
-                <th width="10%">تاريخ الاستحقاق</th>
-                <th width="10%">الحالة</th>
-                <th width="25%">الملاحظات / سبب الحالة</th>
-                <th width="15%">المشرف</th>
+                <th width="25%">@(isArabic ? "المهمة" : "Task Title")</th>
+                <th width="15%">@(isArabic ? "الموظف المسؤول" : "Assigned To")</th>
+                <th width="15%">@(isArabic ? "فترة التنفيذ" : "Execution Period")</th>
+                <th width="10%">@(isArabic ? "الحالة" : "Status")</th>
+                <th width="20%">@(isArabic ? "الملاحظات" : "Notes")</th>
+                <th width="15%">@(isArabic ? "المشرف" : "Supervisor")</th>
             </tr>
         </thead>
         <tbody>
-            @if (Model.Any())
+            @foreach (var item in Model)
             {
-                foreach (var item in Model)
-                {
-                    <tr>
-                        <td style="font-weight:bold; text-align: right;">@item.Title</td>
-                        <td>@item.AssignedTo?.FullName</td>
-                        <td dir="ltr" style="font-family: 'Courier New', monospace;">@item.DueDate.ToString("yyyy-MM-dd")</td>
-                        <td>
-                            @switch (item.Status)
-                            {
-                                case NabdAltamayyuz.Models.TaskStatus.Completed:
-                                    <span class="status-badge" style="color:#15803d; background:#dcfce7; border-color:#86efac;">منجز</span>
-                                    break;
-                                case NabdAltamayyuz.Models.TaskStatus.Pending:
-                                    <span class="status-badge" style="color:#b45309; background:#ffedd5; border-color:#fdba74;">قيد الانتظار</span>
-                                    break;
-                                case NabdAltamayyuz.Models.TaskStatus.Delayed:
-                                    <span class="status-badge" style="color:#0369a1; background:#e0f2fe; border-color:#7dd3fc;">مؤجل</span>
-                                    break;
-                                case NabdAltamayyuz.Models.TaskStatus.Cancelled:
-                                    <span class="status-badge" style="color:#b91c1c; background:#fee2e2; border-color:#fca5a5;">ملغي</span>
-                                    break;
-                                default:
-                                    <span>@item.Status</span>
-                                    break;
-                            }
-                        </td>
-                        <td style="text-align: right; font-size: 11px; color: #64748b;">
-                            @if(!string.IsNullOrEmpty(item.StatusReason))
-                            {
-                                <strong style="color:#333;">السبب:</strong> @item.StatusReason
-                            }
-                            else
-                            {
-                                @(item.Description?.Length > 50 ? item.Description.Substring(0, 50) + "..." : item.Description)
-                            }
-                        </td>
-                        <td>@item.CreatedBy?.FullName</td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr><td colspan="6" style="text-align:center; padding: 40px; color: #64748b;">لا توجد مهام مسجلة خلال الفترة المحددة</td></tr>
+                <tr>
+                    <td class="text-start-custom" style="font-weight:bold;">@item.Title</td>
+                    <td>@item.AssignedTo?.FullName</td>
+                    <td class="font-mono" dir="ltr">
+                        <small>@(isArabic ? "من:" : "From:")</small> @item.StartDate.ToString("dd/MM/yyyy") <br>
+                        <small>@(isArabic ? "إلى:" : "To:")</small> @item.DueDate.ToString("dd/MM/yyyy")
+                    </td>
+                    <td>
+                        @switch (item.Status)
+                        {
+                            case NabdAltamayyuz.Models.TaskStatus.Completed:
+                                <span class="status-badge" style="background:#dcfce7; color:#15803d; border-color:#86efac;">@(isArabic ? "منجز" : "Completed")</span>
+                                break;
+                            case NabdAltamayyuz.Models.TaskStatus.Pending:
+                                <span class="status-badge" style="background:#ffedd5; color:#b45309; border-color:#fdba74;">@(isArabic ? "قيد الانتظار" : "Pending")</span>
+                                break;
+                            case NabdAltamayyuz.Models.TaskStatus.Delayed:
+                                <span class="status-badge" style="background:#e0f2fe; color:#0369a1; border-color:#7dd3fc;">@(isArabic ? "مؤجل" : "Delayed")</span>
+                                break;
+                            case NabdAltamayyuz.Models.TaskStatus.Cancelled:
+                                <span class="status-badge" style="background:#fee2e2; color:#b91c1c; border-color:#fca5a5;">@(isArabic ? "ملغي" : "Cancelled")</span>
+                                break;
+                        }
+                    </td>
+                    <td class="text-start-custom" style="color: #64748b;">
+                        @if (!string.IsNullOrEmpty(item.StatusReason))
+                        {
+                            <span style="color:#b91c1c; font-weight:bold;">@(isArabic ? "السبب:" : "Reason:")</span> 
+                            @item.StatusReason
+                        }
+                        else
+                        {
+                            @item.Description
+                        }
+                    </td>
+                    <td>@item.CreatedBy?.FullName</td>
+                </tr>
             }
         </tbody>
     </table>
 
     <div style="margin-top: 50px; display: flex; justify-content: space-between; page-break-inside: avoid;">
         <div style="text-align: center; width: 200px;">
-            <p style="margin-bottom: 40px; font-weight: bold; border-bottom: 1px dashed #ccc; padding-bottom: 10px;">اعتماد المشرف</p>
+            <p style="margin-bottom: 40px; font-weight: bold; border-bottom: 1px dashed #ccc; padding-bottom: 10px;">@(isArabic ? "اعتماد المشرف" : "Supervisor Approval")</p>
         </div>
-        <div style="text-align: left; color: #94a3b8; font-size: 11px; align-self: flex-end;">
-            تم إصدار هذا المستند إلكترونياً من نظام نبض التميز الذهبي | @DateTime.Now.Year
+        <div style="text-align: @(isArabic ? "left" : "right"); color: #94a3b8; font-size: 11px; align-self: flex-end;">
+            @(isArabic ? "تم إصدار هذا التقرير من نظام نبض التميز الذهبي" : "This report was generated by Golden Pulse System")
         </div>
     </div>
 
-    <button class="print-btn" onclick="window.print()">طباعة التقرير</button>
-
+    <button class="print-btn" onclick="window.print()">@(isArabic ? "طباعة التقرير" : "Print Report")</button>
 </body>
 </html>

@@ -2,7 +2,7 @@
 @using System.Globalization
 
 @{
-    ViewData["Title"] = "تفاصيل الشركة";
+    ViewData["Title"] = CultureInfo.CurrentCulture.Name.StartsWith("ar") ? "تفاصيل الشركة" : "Company Details";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -85,19 +85,19 @@
                     <div class="row g-4">
                         <div class="col-md-4">
                             <div class="p-3 bg-light rounded-3 border">
-                                <small class="text-muted d-block mb-1">الرقم الموحد</small>
+                                <small class="text-muted d-block mb-1">@(isRtl ? "الرقم الموحد" : "Unified Number")</small>
                                 <strong class="text-dark font-monospace">@Model.UnifiedNumber</strong>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="p-3 bg-light rounded-3 border">
-                                <small class="text-muted d-block mb-1">الرقم الضريبي</small>
+                                <small class="text-muted d-block mb-1">@(isRtl ? "الرقم الضريبي" : "Tax Number")</small>
                                 <strong class="text-dark font-monospace">@Model.TaxNumber</strong>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="p-3 bg-light rounded-3 border">
-                                <small class="text-muted d-block mb-1">تاريخ الإضافة</small>
+                                <small class="text-muted d-block mb-1">@(isRtl ? "تاريخ الإضافة" : "Created Date")</small>
                                 <strong class="text-dark">@Model.CreatedAt.ToString("yyyy-MM-dd")</strong>
                             </div>
                         </div>
@@ -117,10 +117,10 @@
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="bg-light text-muted small text-uppercase">
                                     <tr>
-                                        <th class="ps-4">الاسم</th>
-                                        <th>السجل</th>
-                                        <th>المسؤول</th>
-                                        <th class="text-end pe-4">عرض</th>
+                                        <th class="ps-4">@(isRtl ? "الاسم" : "Name")</th>
+                                        <th>@(isRtl ? "السجل" : "CR No")</th>
+                                        <th>@(isRtl ? "المسؤول" : "Responsible")</th>
+                                        <th class="text-end pe-4">@(isRtl ? "عرض" : "View")</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -151,16 +151,19 @@
                     <div class="row g-4">
                         <div class="col-md-6">
                             <div class="border-start border-4 border-gold ps-3">
-                                <small class="text-muted">فترة الاشتراك</small>
+                                <small class="text-muted">@(isRtl ? "فترة الاشتراك" : "Subscription Period")</small>
                                 <div class="fw-bold fs-5 mt-1">
                                     @Model.SubscriptionStartDate.ToString("dd MMM yyyy") <i class="fas fa-arrow-left mx-2 text-muted small rtl-flip"></i> @Model.SubscriptionEndDate.ToString("dd MMM yyyy")
                                 </div>
                                 @{
                                     var daysLeft = (Model.SubscriptionEndDate - DateTime.Now).Days;
                                     var badgeColor = daysLeft < 30 ? "text-danger" : "text-success";
+                                    var statusText = daysLeft > 0
+                                    ? (isRtl ? $"متبقي {daysLeft} يوم" : $"{daysLeft} days remaining")
+                                    : (isRtl ? "منتهي الصلاحية" : "Expired");
                                 }
                                 <small class="@badgeColor fw-bold mt-1 d-block">
-                                    @(daysLeft > 0 ? $"متبقي {daysLeft} يوم" : "منتهي الصلاحية")
+                                    @statusText
                                 </small>
                             </div>
                         </div>
@@ -168,11 +171,11 @@
                             <div class="row text-center">
                                 <div class="col-6">
                                     <h3 class="fw-bold mb-0">@Model.AllowedEmployees</h3>
-                                    <small class="text-muted">موظف مسموح</small>
+                                    <small class="text-muted">@(isRtl ? "موظف مسموح" : "Allowed Employees")</small>
                                 </div>
                                 <div class="col-6 border-start">
                                     <h3 class="fw-bold mb-0">@Model.AllowedSubAccounts</h3>
-                                    <small class="text-muted">فرع مسموح</small>
+                                    <small class="text-muted">@(isRtl ? "فرع مسموح" : "Allowed Branches")</small>
                                 </div>
                             </div>
                         </div>
@@ -186,24 +189,24 @@
             <!-- Financial Card -->
             <div class="card border-0 shadow-lg rounded-4 mb-4 bg-dark text-white">
                 <div class="card-body p-4 position-relative overflow-hidden">
-                    <div class="position-absolute top-0 end-0 opacity-10 p-3"><i class="fas fa-coins fa-5x text-gold"></i></div>
+                    <div class="position-absolute top-0 end-0 opacity-10 p-3"><i class="fas fa-coins fa-3x text-gold"></i></div>
                     <h6 class="text-gold text-uppercase letter-spacing-1 mb-4">@(isRtl ? "البيانات المالية" : "Financials")</h6>
 
                     <div class="d-flex justify-content-between mb-2">
-                        <span class="text-white-50">قيمة الموظف:</span>
+                        <span class="text-white-50">@(isRtl ? "قيمة الموظف:" : "Price per Employee:")</span>
                         <span class="fw-bold">@Model.PricePerEmployee.ToString("N2") SAR</span>
                     </div>
                     <div class="d-flex justify-content-between mb-3 border-bottom border-secondary pb-2">
-                        <span class="text-white-50">الضريبة (@Model.TaxRate%):</span>
+                        <span class="text-white-50">@(isRtl ? $"الضريبة ({Model.TaxRate}%):" : $"Tax ({Model.TaxRate}%):")</span>
                         <span class="fw-bold">@((Model.PricePerEmployee * Model.TaxRate / 100).ToString("N2")) SAR</span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-white">الإجمالي (للموظف):</span>
+                        <span class="text-white">@(isRtl ? "الإجمالي (للموظف):" : "Total (per Employee):")</span>
                         <span class="text-gold fs-4 fw-bold">@Model.TotalPricePerEmployee.ToString("N2") <small class="fs-6">SAR</small></span>
                     </div>
 
                     <div class="mt-4 pt-3 border-top border-secondary">
-                        <small class="text-white-50 d-block mb-1">نظام السداد:</small>
+                        <small class="text-white-50 d-block mb-1">@(isRtl ? "نظام السداد:" : "Payment Term:")</small>
                         <span class="badge bg-gold text-dark px-3">@Model.PaymentTerm</span>
                     </div>
                 </div>
@@ -222,8 +225,8 @@
                                 <i class="fas fa-file-pdf fa-lg"></i>
                             </div>
                             <div class="flex-grow-1 overflow-hidden">
-                                <h6 class="mb-0 fw-bold text-truncate" title="@Model.AttachmentPath">ملف العقد / السجل</h6>
-                                <small class="text-muted">مرفق</small>
+                                <h6 class="mb-0 fw-bold text-truncate" title="@Model.AttachmentPath">@(isRtl ? "ملف العقد / السجل" : "Contract / CR File")</h6>
+                                <small class="text-muted">@(isRtl ? "مرفق" : "Attachment")</small>
                             </div>
                             <a href="/uploads/companies/@Model.AttachmentPath" target="_blank" class="btn btn-sm btn-outline-dark rounded-pill px-3">
                                 @(isRtl ? "فتح" : "Open")
@@ -234,7 +237,7 @@
                     {
                         <div class="text-center text-muted py-4">
                             <i class="fas fa-file-excel fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0 small">لا توجد مرفقات لهذه الشركة</p>
+                            <p class="mb-0 small">@(isRtl ? "لا توجد مرفقات لهذه الشركة" : "No attachments found")</p>
                         </div>
                     }
                 </div>

@@ -2,8 +2,8 @@
 @using System.Globalization
 
 @{
-    ViewData["Title"] = "إسناد مهمة جديدة";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    ViewData["Title"] = isRtl ? "إسناد مهمة جديدة" : "Assign New Task";
     Layout = "~/Views/Shared/_Layout.cshtml";
     bool isSuperAdmin = User.IsInRole("SuperAdmin");
 }
@@ -13,8 +13,8 @@
         <div class="col-md-9">
             <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
                 <div class="card-header bg-dark text-white py-3 border-0 px-4 d-flex justify-content-between">
-                    <h5 class="mb-0 fw-bold text-gold"><i class="fas fa-plus-circle me-2"></i> إسناد مهمة جديدة</h5>
-                    <a href="/Tasks" class="btn btn-sm btn-outline-light rounded-pill">إلغاء</a>
+                    <h5 class="mb-0 fw-bold text-gold"><i class="fas fa-plus-circle me-2"></i> @(isRtl ? "إسناد مهمة جديدة" : "Assign New Task")</h5>
+                    <a href="/Tasks" class="btn btn-sm btn-outline-light rounded-pill">@(isRtl ? "إلغاء" : "Cancel")</a>
                 </div>
                 <div class="card-body p-4 p-md-5 bg-white">
                     <form asp-action="Create" enctype="multipart/form-data" method="post">
@@ -23,9 +23,9 @@
                         @if (isSuperAdmin)
                         {
                             <div class="mb-4">
-                                <label class="form-label fw-bold small text-gold">اختيار الشركة</label>
+                                <label class="form-label fw-bold small text-gold">@(isRtl ? "اختيار الشركة" : "Select Company")</label>
                                 <select id="companySelect" class="form-select bg-light" onchange="loadEmployees(this.value)">
-                                    <option value="">-- اختر الشركة --</option>
+                                    <option value="">@(isRtl ? "-- اختر الشركة --" : "-- Select Company --")</option>
                                     @foreach (var comp in ViewBag.Companies as SelectList)
                                     {
                                         <option value="@comp.Value">@comp.Text</option>
@@ -35,42 +35,42 @@
                         }
 
                         <div class="mb-4">
-                            <label class="form-label fw-bold small">تعيين إلى موظف</label>
+                            <label class="form-label fw-bold small">@(isRtl ? "تعيين إلى موظف" : "Assign to Employee")</label>
                             <select asp-for="AssignedToId" id="employeeSelect" class="form-select bg-light" required asp-items="ViewBag.Employees">
-                                <option value="">-- اختر الموظف --</option>
+                                <option value="">@(isRtl ? "-- اختر الموظف --" : "-- Select Employee --")</option>
                             </select>
                             <span asp-validation-for="AssignedToId" class="text-danger small"></span>
                         </div>
 
                         <div class="mb-4">
-                            <label asp-for="Title" class="form-label fw-bold small">عنوان المهمة</label>
-                            <input asp-for="Title" class="form-control bg-light" placeholder="مثال: تجديد رخصة..." required />
+                            <label asp-for="Title" class="form-label fw-bold small">@(isRtl ? "عنوان المهمة" : "Task Title")</label>
+                            <input asp-for="Title" class="form-control bg-light" placeholder="@(isRtl ? "مثال: تجديد رخصة..." : "e.g. Renew License...")" required />
                         </div>
 
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
-                                <label asp-for="StartDate" class="form-label fw-bold small">تاريخ البدء</label>
+                                <label asp-for="StartDate" class="form-label fw-bold small">@(isRtl ? "تاريخ البدء" : "Start Date")</label>
                                 <input asp-for="StartDate" type="date" class="form-control bg-light" required value="@DateTime.Now.ToString("yyyy-MM-dd")" />
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="DueDate" class="form-label fw-bold small">تاريخ الانتهاء</label>
+                                <label asp-for="DueDate" class="form-label fw-bold small">@(isRtl ? "تاريخ الانتهاء" : "Due Date")</label>
                                 <input asp-for="DueDate" type="date" class="form-control bg-light" required />
                             </div>
                         </div>
 
                         <div class="mb-4">
-                            <label asp-for="Description" class="form-label fw-bold small">الوصف والتفاصيل</label>
+                            <label asp-for="Description" class="form-label fw-bold small">@(isRtl ? "الوصف والتفاصيل" : "Description & Details")</label>
                             <textarea asp-for="Description" class="form-control bg-light" rows="4"></textarea>
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label fw-bold small">مرفقات (اختياري)</label>
+                            <label class="form-label fw-bold small">@(isRtl ? "مرفقات (اختياري)" : "Attachments (Optional)")</label>
                             <input type="file" name="attachment" class="form-control bg-light" />
                         </div>
 
                         <div class="d-flex justify-content-end">
                             <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold px-5 rounded-pill shadow-lg">
-                                <i class="fas fa-paper-plane me-2"></i> إرسال المهمة
+                                <i class="fas fa-paper-plane me-2"></i> @(isRtl ? "إرسال المهمة" : "Submit Task")
                             </button>
                         </div>
                     </form>
@@ -84,15 +84,25 @@
     <script>
         function loadEmployees(companyId) {
             var empSelect = document.getElementById("employeeSelect");
-            empSelect.innerHTML = "<option>جار التحميل...</option>";
-            if (!companyId) { empSelect.innerHTML = "<option value=''>-- اختر الموظف --</option>"; return; }
+            // Translated strings for JS
+            var loadingText = '@(isRtl ? "جار التحميل..." : "Loading...")';
+            var defaultText = '@(isRtl ? "-- اختر الموظف --" : "-- Select Employee --")';
+
+            empSelect.innerHTML = "<option>" + loadingText + "</option>";
+
+            if (!companyId) {
+                empSelect.innerHTML = "<option value=''>" + defaultText + "</option>";
+                return;
+            }
+
             fetch('/Tasks/GetEmployeesByCompany?companyId=' + companyId)
                 .then(res => res.json())
                 .then(data => {
-                    empSelect.innerHTML = "<option value=''>-- اختر الموظف --</option>";
+                    empSelect.innerHTML = "<option value=''>" + defaultText + "</option>";
                     data.forEach(item => {
                         var opt = document.createElement("option");
-                        opt.value = item.id; opt.text = item.name;
+                        opt.value = item.id;
+                        opt.text = item.name;
                         empSelect.appendChild(opt);
                     });
                 });

@@ -2,8 +2,8 @@
 @using System.Globalization
 
 @{
-    ViewData["Title"] = "إضافة فرع جديد";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    ViewData["Title"] = isRtl ? "إضافة فرع جديد" : "Add New Branch";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -12,57 +12,71 @@
         <div class="col-md-9">
             <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
                 <div class="card-header bg-dark text-white py-3 px-4 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold text-gold"><i class="fas fa-code-branch me-2"></i> @(isRtl ? "إضافة فرع / شركة تابعة" : "Add Sub-Company")</h5>
-                    <a href="/Companies" class="btn btn-sm btn-outline-light rounded-pill">@(isRtl ? "إلغاء" : "Cancel")</a>
+                    <h5 class="mb-0 fw-bold text-gold"><i class="fas fa-code-branch me-2"></i> @(isRtl ? "إضافة فرع جديد" : "Add New Branch")</h5>
+                    <a href="/Companies/Index" class="btn btn-sm btn-outline-light rounded-pill">@(isRtl ? "إلغاء" : "Cancel")</a>
                 </div>
                 <div class="card-body p-4 bg-white">
                     <form asp-action="CreateSub" enctype="multipart/form-data" method="post">
-                        <div class="alert alert-info border-0 bg-info bg-opacity-10 small mb-4">
-                            <i class="fas fa-info-circle me-2"></i>
-                            @(isRtl ? "سيتم ربط هذا الحساب بحساب شركتك الرئيسي، وستكون مدة الاشتراك مرتبطة بالحساب الرئيسي." : "This account will be linked to your main company account.")
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="ParentCompanyId" />
+
+                        <div class="alert alert-warning border-0 bg-warning bg-opacity-10 small mb-4">
+                            <i class="fas fa-link me-2"></i>
+                            <strong>@(isRtl ? "تابع للشركة الرئيسية:" : "Parent Company:")</strong> <span class="text-dark fw-bold">@ViewBag.ParentCompanyName</span>
+                            <br>
+                            <span class="text-muted">@(isRtl ? "البيانات المالية والاشتراك والضريبة ترتبط تلقائياً بالشركة الرئيسية." : "Financial, subscription, and tax data are automatically inherited from the main company.")</span>
                         </div>
 
-                        <h6 class="text-gold fw-bold mb-3 border-bottom pb-2">البيانات الأساسية للفرع</h6>
+                        <h6 class="text-gold fw-bold mb-3 border-bottom pb-2">@(isRtl ? "بيانات الفرع" : "Branch Details")</h6>
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
-                                <label asp-for="Name" class="form-label small fw-bold">اسم الفرع / الشركة</label>
-                                <input asp-for="Name" class="form-control bg-light" required />
+                                <label asp-for="Name" class="form-label small fw-bold">@(isRtl ? "اسم الفرع" : "Branch Name")</label>
+                                <input asp-for="Name" class="form-control bg-light" required placeholder="@(isRtl ? "مثال: فرع الرياض" : "e.g. Riyadh Branch")" />
                                 <span asp-validation-for="Name" class="text-danger small"></span>
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="RegistrationNumber" class="form-label small fw-bold">رقم السجل التجاري</label>
+                                <label asp-for="RegistrationNumber" class="form-label small fw-bold">@(isRtl ? "رقم السجل التجاري (فرعي)" : "CR Number (Sub)")</label>
                                 <input asp-for="RegistrationNumber" class="form-control bg-light" />
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="Email" class="form-label small fw-bold">البريد الإلكتروني للفرع</label>
-                                <input asp-for="Email" class="form-control bg-light" />
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold text-dark">كلمة المرور لمدير الفرع</label>
-                                <input type="text" name="adminPassword" class="form-control bg-white border-gold" placeholder="اتركها فارغة لتعيين الافتراضي (123456)" />
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="PhoneNumber" class="form-label small fw-bold">رقم التواصل</label>
-                                <input asp-for="PhoneNumber" class="form-control bg-light" />
-                            </div>
-                            <div class="col-md-6">
-                                <label asp-for="ResponsiblePerson" class="form-label small fw-bold">مدير الفرع</label>
+                                <label asp-for="ResponsiblePerson" class="form-label small fw-bold">@(isRtl ? "مدير الفرع" : "Branch Manager")</label>
                                 <input asp-for="ResponsiblePerson" class="form-control bg-light" />
                             </div>
                             <div class="col-md-6">
-                                <label asp-for="AllowedEmployees" class="form-label small fw-bold">عدد الموظفين المخصص</label>
-                                <input asp-for="AllowedEmployees" class="form-control bg-light" type="number" min="1" value="5" />
+                                <label asp-for="PhoneNumber" class="form-label small fw-bold">@(isRtl ? "رقم التواصل" : "Contact Number")</label>
+                                <input asp-for="PhoneNumber" class="form-control bg-light" />
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="AllowedEmployees" class="form-label small fw-bold">@(isRtl ? "تخصيص عدد موظفين" : "Allocate Employees")</label>
+                                <div class="input-group">
+                                    <input asp-for="AllowedEmployees" class="form-control bg-light" type="number" min="1" max="@ViewBag.MaxEmployeesAllowed" />
+                                    <span class="input-group-text bg-white small text-muted">@(isRtl ? "متبقي في الرئيسي:" : "Remaining in Main:") @ViewBag.MaxEmployeesAllowed</span>
+                                </div>
+                            </div>
+
+                            <!-- مدير الفرع: بيانات الدخول فقط، لا يضاف كموظف -->
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label small fw-bold">@(isRtl ? "البريد الإلكتروني (للدخول)" : "Email (Login)")</label>
+                                <input asp-for="Email" class="form-control bg-light" type="email" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-dark">@(isRtl ? "كلمة المرور (للمدير)" : "Password (Manager)")</label>
+                                <input type="text" name="adminPassword" class="form-control bg-white border-gold" placeholder="@(isRtl ? "اتركها فارغة لتعيين الافتراضي (123456)" : "Leave empty for default (123456)")" />
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label small fw-bold">مرفقات (اختياري)</label>
-                            <input type="file" name="attachment" class="form-control" />
-                        </div>
+                        <!-- Hidden Inherited Fields -->
+                        <input type="hidden" asp-for="TaxNumber" />
+                        <input type="hidden" asp-for="SubscriptionEndDate" />
+                        <input type="hidden" asp-for="SubscriptionStartDate" />
+                        <input type="hidden" asp-for="PaymentTerm" />
+                        <input type="hidden" asp-for="NotificationDaysBeforeExpiry" />
+                        <input type="hidden" asp-for="PricePerEmployee" />
+                        <input type="hidden" asp-for="TaxRate" />
 
                         <div class="d-flex justify-content-end">
                             <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold px-5 rounded-pill shadow-sm">
-                                <i class="fas fa-save me-2"></i> تسجيل الفرع
+                                <i class="fas fa-save me-2"></i> @(isRtl ? "حفظ الفرع" : "Save Branch")
                             </button>
                         </div>
                     </form>

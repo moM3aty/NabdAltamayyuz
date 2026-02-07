@@ -26,7 +26,6 @@ namespace NabdAltamayyuz.Controllers
             {
                 return RedirectToAction("SuperAdmin");
             }
-            // المشرف الرئيسي والفرعي يذهبان لنفس اللوحة
             else if (User.IsInRole(UserRole.CompanyAdmin.ToString()) || User.IsInRole(UserRole.SubAdmin.ToString()))
             {
                 return RedirectToAction("CompanyAdmin");
@@ -37,14 +36,22 @@ namespace NabdAltamayyuz.Controllers
             }
         }
 
-        // 1. Super Admin Dashboard
+        // 1. Super Admin Dashboard (Updated with Task Stats)
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> SuperAdmin()
         {
             ViewBag.CompaniesCount = await _context.Companies.CountAsync();
             ViewBag.EmployeesCount = await _context.Users.CountAsync();
 
-            // جلب الشركات مع ترتيب حسب تاريخ الإضافة
+            // Task Statistics
+            var allTasks = await _context.WorkTasks.ToListAsync();
+
+            ViewBag.TotalTasks = allTasks.Count;
+            ViewBag.CompletedTasks = allTasks.Count(t => t.IsCompleted);
+            ViewBag.PendingTasks = allTasks.Count(t => t.Status == NabdAltamayyuz.Models.TaskStatus.Pending);
+            ViewBag.DelayedTasks = allTasks.Count(t => t.Status == NabdAltamayyuz.Models.TaskStatus.Delayed);
+            ViewBag.LateTasks = allTasks.Count(t => !t.IsCompleted && t.DueDate < DateTime.Today);
+
             var recentCompanies = await _context.Companies
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
@@ -61,11 +68,9 @@ namespace NabdAltamayyuz.Controllers
 
             if (user?.CompanyId == null) return RedirectToAction("AccessDenied", "Account");
 
-            // إحصائيات الموظفين للشركة
             var employeesCount = await _context.Users.CountAsync(u => u.CompanyId == user.CompanyId && u.Role == UserRole.Employee);
             ViewBag.EmployeesCount = employeesCount;
 
-            // سجل حضور اليوم للشركة
             var today = DateTime.Today;
             var attendanceList = await _context.Attendances
                 .Include(a => a.Employee)
@@ -75,7 +80,6 @@ namespace NabdAltamayyuz.Controllers
 
             ViewBag.AttendanceList = attendanceList;
 
-            // المهام المعلقة لموظفي الشركة
             var pendingTasks = await _context.WorkTasks
                 .Include(t => t.AssignedTo)
                 .Where(t => t.AssignedTo.CompanyId == user.CompanyId && !t.IsCompleted)
@@ -85,7 +89,6 @@ namespace NabdAltamayyuz.Controllers
 
             ViewBag.PendingTasks = pendingTasks;
 
-            // التحقق من انتهاء الاشتراك
             if (user.Company != null)
             {
                 var daysLeft = (user.Company.SubscriptionEndDate - DateTime.Now).Days;
@@ -102,7 +105,7 @@ namespace NabdAltamayyuz.Controllers
             return View();
         }
 
-        // 3. Employee Dashboard
+        // 3. Employee Dashboard (Added Task Completion Stat)
         [Authorize(Roles = "Employee")]
         public async Task<IActionResult> Employee()
         {
@@ -115,21 +118,24 @@ namespace NabdAltamayyuz.Controllers
             ViewBag.IsCheckedIn = attendance != null && attendance.TimeIn != null;
             ViewBag.IsCheckedOut = attendance != null && attendance.TimeOut != null;
 
-            // رسالة للموظف في حالة تسجيل الدخول/الخروج
             if (TempData["Success"] != null) ViewBag.Message = TempData["Success"];
 
             var myTasks = await _context.WorkTasks
-                .Where(t => t.AssignedToId == userId && !t.IsCompleted)
+                .Where(t => t.AssignedToId == userId)
                 .OrderBy(t => t.DueDate)
                 .ToListAsync();
 
-            return View(myTasks);
+            // Stats for Employee
+            ViewBag.MyTotalTasks = myTasks.Count;
+            ViewBag.MyCompletedTasks = myTasks.Count(t => t.IsCompleted);
+            ViewBag.MyPendingTasks = myTasks.Count(t => !t.IsCompleted);
+
+            return View(myTasks.Where(t => !t.IsCompleted).ToList());
         }
 
-        // Actions: Check In/Out (Logic remains same, ensuring Authorize is correct)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Employee,CompanyAdmin,SubAdmin")] // Admins might test attendance too
+        [Authorize(Roles = "Employee,CompanyAdmin,SubAdmin")]
         public async Task<IActionResult> CheckIn()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));

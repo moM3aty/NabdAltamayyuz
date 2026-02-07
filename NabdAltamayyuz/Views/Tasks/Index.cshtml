@@ -3,277 +3,238 @@
 @using NabdAltamayyuz.Models
 
 @{
-    ViewData["Title"] = "إدارة المهام";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    ViewData["Title"] = isRtl ? "إدارة المهام" : "Tasks Management";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var isEmployee = User.IsInRole(UserRole.Employee.ToString());
-    bool isSuperAdmin = User.IsInRole("SuperAdmin");
+
+    // Stats for Meter
+    int total = ViewBag.TotalTasks ?? 0;
+    int completed = ViewBag.CompletedTasks ?? 0;
+    int pending = ViewBag.PendingTasks ?? 0;
+    int delayed = ViewBag.DelayedTasks ?? 0;
+    double progress = total > 0 ? (double)completed / total * 100 : 0;
 }
-
-<!-- تنسيقات الطباعة -->
-<style>
-    @@media print {
-        @@page {
-            size: A4 landscape;
-            margin: 1cm;
-        }
-
-        body {
-            background-color: white !important;
-            -webkit-print-color-adjust: exact;
-        }
-
-        .premium-navbar, footer, .btn, .card-header, .filters-card, .no-print {
-            display: none !important;
-        }
-
-        .container {
-            margin: 0 !important;
-            max-width: 100% !important;
-            width: 100% !important;
-        }
-
-        .card {
-            border: none !important;
-            box-shadow: none !important;
-        }
-
-        .print-header {
-            display: block !important;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #D4AF37;
-        }
-
-        table {
-            width: 100% !important;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
-
-        th {
-            background: #0F172A !important;
-            color: white !important;
-            padding: 5px;
-        }
-
-        td {
-            border: 1px solid #ccc;
-            padding: 5px;
-        }
-    }
-
-    .print-header {
-        display: none;
-    }
-</style>
 
 <div class="container py-5 animate-fade-in" style="margin-top: 120px;">
 
-    <!-- ترويسة الطباعة -->
-    <div class="print-header text-center">
-        <h3>نبض التميز الذهبي - تقرير المهام</h3>
-        <small>تاريخ الطباعة: @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</small>
+    <!-- Metrics Bar (مقياس الإنجاز) -->
+    <div class="row g-3 mb-4 no-print">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-dark text-white h-100 rounded-3">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6 class="text-gold mb-1">@(isRtl ? "نسبة الإنجاز" : "Completion Rate")</h6>
+                        <h3 class="fw-bold mb-0 text-black">@Math.Round(progress, 1)%</h3>
+                    </div>
+                    <div style="width: 50px; height: 50px;">
+                        <svg viewBox="0 0 36 36" class="circular-chart gold">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle" stroke-dasharray="@progress, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-white h-100 rounded-3 border-start border-4 border-success">
+                <div class="card-body p-3">
+                    <small class="text-muted fw-bold">@(isRtl ? "المنجزة" : "Completed")</small>
+                    <h4 class="fw-bold text-dark mb-0">@completed</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-white h-100 rounded-3 border-start border-4 border-warning">
+                <div class="card-body p-3">
+                    <small class="text-muted fw-bold">@(isRtl ? "المؤجلة / قيد الانتظار" : "Pending / Delayed")</small>
+                    <h4 class="fw-bold text-dark mb-0">@pending</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-white h-100 rounded-3 border-start border-4 border-danger">
+                <div class="card-body p-3">
+                    <small class="text-muted fw-bold">@(isRtl ? "المتأخرة" : "Late")</small>
+                    <h4 class="fw-bold text-dark mb-0">@delayed</h4>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Header & Actions -->
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3 no-print">
-        <div>
-            <h3 class="fw-bold text-dark mb-1"><i class="fas fa-tasks text-gold me-2"></i> @(isRtl ? "إدارة المهام" : "Task Management")</h3>
-            <p class="text-muted small mb-0">@(isRtl ? "متابعة وإدارة المهام الوظيفية والتشغيلية" : "Track and manage operational tasks")</p>
-        </div>
-
+    <!-- Title & Actions -->
+    <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+        <h4 class="fw-bold text-dark"><i class="fas fa-list-check text-gold me-2"></i> @(isRtl ? "سجل المهام" : "Tasks Log")</h4>
         <div class="d-flex gap-2">
-            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm rounded-pill px-3"><i class="fas fa-print me-1"></i> طباعة</button>
+            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm rounded-pill px-3"><i class="fas fa-print me-1"></i> @(isRtl ? "طباعة" : "Print")</button>
             <button onclick="exportToExcel('tasksTable')" class="btn btn-outline-success btn-sm rounded-pill px-3"><i class="fas fa-file-excel me-1"></i> Excel</button>
-
             @if (!isEmployee)
             {
-                <a href="/Tasks/Create" class="btn btn-gold bg-dark text-gold fw-bold shadow-sm hover-lift rounded-pill px-4">
-                    <i class="fas fa-plus-circle me-2"></i> @(isRtl ? "إسناد مهمة جديدة" : "Assign New Task")
+                <a href="/Tasks/Create" class="btn btn-gold bg-dark text-gold fw-bold rounded-pill px-4 shadow-sm hover-scale">
+                    <i class="fas fa-plus-circle me-2"></i> @(isRtl ? "إسناد مهمة" : "Assign Task")
                 </a>
             }
         </div>
     </div>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success border-0 bg-success bg-opacity-10 text-success rounded-3 shadow-sm mb-4 fade show no-print">
-            <i class="fas fa-check-circle me-2"></i> @TempData["Success"]
-        </div>
-    }
-
-    <!-- Advanced Filters -->
-    <div class="card border-0 shadow-lg mb-4 bg-white rounded-4 overflow-hidden no-print filters-card">
-        <div class="card-body p-4">
-            <form method="get" action="/Tasks/Index" class="row g-3 align-items-end">
-                @if (isSuperAdmin)
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white no-print">
+        <div class="card-body p-3">
+            <form method="get" class="row g-2 align-items-end">
+                @if (!isEmployee)
                 {
                     <div class="col-md-3">
-                        <label class="form-label fw-bold small text-muted">الشركة</label>
+                        <label class="small text-muted fw-bold ms-1">@(isRtl ? "الشركة / الفرع" : "Company / Branch")</label>
                         <select name="companyId" class="form-select bg-light border-0" asp-items="ViewBag.Companies">
-                            <option value="">-- كل الشركات --</option>
+                            <option value="">@(isRtl ? "-- الكل --" : "-- All --")</option>
                         </select>
                     </div>
                 }
-
                 <div class="col-md-3">
-                    <label class="form-label fw-bold small text-muted">بحث (عنوان/موظف)</label>
-                    <div class="input-group shadow-sm">
-                        <span class="input-group-text bg-light border-end-0 text-gold"><i class="fas fa-search"></i></span>
-                        <input type="text" name="searchString" class="form-control bg-light border-start-0" placeholder="بحث..." value="@ViewBag.CurrentSearch">
-                    </div>
+                    <label class="small text-muted fw-bold ms-1">@(isRtl ? "بحث" : "Search")</label>
+                    <input type="text" name="searchString" class="form-control bg-light border-0" placeholder="@(isRtl ? "عنوان المهمة / الموظف" : "Task Title / Employee")" value="@ViewBag.CurrentSearch">
                 </div>
-
-                <div class="col-md-3">
-                    <label class="form-label fw-bold small text-muted">الحالة</label>
-                    <select name="status" class="form-select bg-light border-0 shadow-sm" asp-items="Html.GetEnumSelectList<NabdAltamayyuz.Models.TaskStatus>()">
-                        <option value="">-- كل الحالات --</option>
+                <div class="col-md-2">
+                    <label class="small text-muted fw-bold ms-1">@(isRtl ? "الحالة" : "Status")</label>
+                    <select name="status" class="form-select bg-light border-0" asp-items="Html.GetEnumSelectList<NabdAltamayyuz.Models.TaskStatus>()">
+                        <option value="">@(isRtl ? "-- الكل --" : "-- All --")</option>
                     </select>
                 </div>
-
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-dark w-100 fw-bold rounded-pill shadow-sm">تصفية</button>
+                    <label class="small text-muted fw-bold ms-1">@(isRtl ? "من تاريخ" : "From Date")</label>
+                    <input type="date" name="fromDate" class="form-control bg-light border-0" value="@ViewBag.FromDate">
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn-dark rounded-pill">@(isRtl ? "عرض" : "Filter")</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Tasks Grid (Card View for Screen) -->
-    <div class="row g-4 no-print">
-        @if (Model != null && Model.Any())
-        {
-            foreach (var task in Model)
-            {
-                var isOverdue = !task.IsCompleted && task.DueDate < DateTime.Today;
-                var statusBadge = task.Status switch
-                {
-                    NabdAltamayyuz.Models.TaskStatus.Completed => "bg-success bg-opacity-10 text-success",
-                    NabdAltamayyuz.Models.TaskStatus.Pending => "bg-warning bg-opacity-10 text-dark",
-                    NabdAltamayyuz.Models.TaskStatus.Cancelled => "bg-danger bg-opacity-10 text-danger",
-                    _ => "bg-secondary"
-                };
-
-                <div class="col-md-6 col-lg-4">
-                    <div class="card border-0 shadow-sm h-100 rounded-4 hover-lift task-card bg-white position-relative overflow-hidden">
-                        <div class="position-absolute top-0 start-0 w-100" style="height: 4px; background: @(task.IsCompleted ? "#198754" : "#D4AF37");"></div>
-
-                        <div class="card-body p-4 d-flex flex-column">
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <span class="badge @statusBadge rounded-pill px-3 py-1">@task.Status</span>
-                                @if (isOverdue)
-                                {
-                                    <span class="badge bg-danger rounded-pill">متأخرة</span>
-                                }
-                            </div>
-
-                            <h5 class="card-title fw-bold text-dark mb-2 text-truncate" title="@task.Title">@task.Title</h5>
-                            <div class="small text-muted mb-3">
-                                <i class="far fa-calendar-alt me-1"></i> @task.StartDate.ToString("MM/dd") <i class="fas fa-arrow-left mx-1"></i> @task.DueDate.ToString("MM/dd")
-                            </div>
-
-                            <p class="card-text text-muted small mb-4 flex-grow-1 text-truncate">@task.Description</p>
-
+    <!-- Tasks Table (Sijill) -->
+    <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table id="tasksTable" class="table table-hover align-middle mb-0 text-center">
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="ps-4 text-start">@(isRtl ? "عنوان المهمة" : "Task Title")</th>
+                            <th>@(isRtl ? "الموظف" : "Employee")</th>
                             @if (!isEmployee)
                             {
-                                <div class="d-flex align-items-center mb-3 bg-light p-2 rounded-3">
-                                    <div class="avatar-xs bg-dark text-gold rounded-circle d-flex justify-content-center align-items-center me-2" style="width: 25px; height: 25px; font-size: 0.7rem;">
-                                        @task.AssignedTo?.FullName?.Substring(0, 1)
-                                    </div>
-                                    <small class="fw-bold text-dark" style="font-size: 0.8rem;">@task.AssignedTo?.FullName</small>
-                                </div>
+                                <th>@(isRtl ? "الشركة / الفرع" : "Company / Branch")</th>
                             }
+                            <th>@(isRtl ? "تاريخ الاستحقاق (من - إلى)" : "Due Date (From - To)")</th>
+                            <th>@(isRtl ? "الحالة" : "Status")</th>
+                            <th class="text-end pe-4 no-print">@(isRtl ? "الإجراءات" : "Actions")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                var statusClass = item.Status switch
+                                {
+                                    NabdAltamayyuz.Models.TaskStatus.Completed => "bg-success bg-opacity-10 text-success",
+                                    NabdAltamayyuz.Models.TaskStatus.Pending => "bg-warning bg-opacity-10 text-dark",
+                                    NabdAltamayyuz.Models.TaskStatus.Delayed => "bg-info bg-opacity-10 text-dark",
+                                    NabdAltamayyuz.Models.TaskStatus.Cancelled => "bg-danger bg-opacity-10 text-danger",
+                                    _ => "bg-secondary"
+                                };
 
-                            <hr class="border-secondary opacity-10 mt-auto">
-
-                            <div class="d-flex justify-content-between align-items-center pt-1">
-                                <div class="btn-group">
-                                    <a href="/Tasks/Details/@task.Id" class="btn btn-sm btn-outline-info rounded-pill me-1" title="معاينة"><i class="fas fa-eye"></i></a>
+                                <tr>
+                                    <td class="text-start ps-4 fw-bold text-dark">@item.Title</td>
+                                    <td>@item.AssignedTo?.FullName</td>
                                     @if (!isEmployee)
                                     {
-                                        <a href="/Tasks/Edit/@task.Id" class="btn btn-sm btn-outline-primary rounded-pill me-1" title="تعديل"><i class="fas fa-edit"></i></a>
-                                        <form action="/Tasks/Delete" method="post" style="display:inline;">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@task.Id" />
-                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill" onclick="return confirm('هل أنت متأكد من حذف المهمة؟')" title="حذف"><i class="fas fa-trash-alt"></i></button>
-                                        </form>
+                                        <td class="small">@(item.AssignedTo?.Company?.Name ?? "-")</td>
                                     }
-                                </div>
-                                @if (isEmployee && !task.IsCompleted)
-                                {
-                                    <button onclick="completeTask(@task.Id)" class="btn btn-sm btn-gold text-dark fw-bold rounded-pill px-3 shadow-sm"><i class="fas fa-check me-1"></i> إنجاز</button>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-        }
-        else
-        {
-            <div class="col-12 text-center py-5"><p class="text-muted">لا توجد مهام</p></div>
-        }
-    </div>
-
-    <!-- Hidden Table for Print/Export -->
-    <div class="d-none d-print-block">
-        <table id="tasksTable" class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>المهمة</th>
-                    <th>الموظف</th>
-                    <th>من</th>
-                    <th>إلى</th>
-                    <th>الحالة</th>
-                    <th>الوصف</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (Model != null)
-                {
-                    foreach (var item in Model)
-                    {
-                        <tr>
-                            <td>@item.Title</td>
-                            <td>@item.AssignedTo?.FullName</td>
-                            <td>@item.StartDate.ToString("yyyy-MM-dd")</td>
-                            <td>@item.DueDate.ToString("yyyy-MM-dd")</td>
-                            <td>@item.Status</td>
-                            <td>@item.Description</td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
+                                    <td class="small font-monospace">
+                                        <div class="text-muted">@item.StartDate.ToString("dd/MM/yyyy")</div>
+                                        <div class="text-danger fw-bold">@item.DueDate.ToString("dd/MM/yyyy")</div>
+                                    </td>
+                                    <td><span class="badge @statusClass rounded-pill px-3">@item.Status</span></td>
+                                    <td class="text-end pe-4 no-print">
+                                        <div class="btn-group">
+                                            <a href="/Tasks/Details/@item.Id" class="btn btn-sm btn-outline-info rounded-circle" title="@(isRtl ? "معاينة" : "View")"><i class="fas fa-eye"></i></a>
+                                            @if (!isEmployee || (!item.IsCompleted))
+                                            {
+                                                <a href="/Tasks/Edit/@item.Id" class="btn btn-sm btn-outline-primary rounded-circle" title="@(isRtl ? "تعديل" : "Edit")"><i class="fas fa-edit"></i></a>
+                                            }
+                                            @if (!isEmployee)
+                                            {
+                                                <form action="/Tasks/Delete" method="post" style="display:inline;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@item.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle" onclick="return confirm('@(isRtl ? "حذف المهمة؟" : "Delete Task?")')" title="@(isRtl ? "حذف" : "Delete")"><i class="fas fa-trash-alt"></i></button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="@(isEmployee ? 5 : 6)" class="py-5 text-muted">@(isRtl ? "لا توجد مهام" : "No tasks found")</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
+<style>
+    .circular-chart {
+        display: block;
+        margin: 0 auto;
+        max-width: 100%;
+        max-height: 250px;
+    }
+
+    .circle-bg {
+        fill: none;
+        stroke: #eee;
+        stroke-width: 3.8;
+    }
+
+    .circle {
+        fill: none;
+        stroke-width: 2.8;
+        stroke-linecap: round;
+        animation: progress 1s ease-out forwards;
+    }
+
+    .circular-chart.gold .circle {
+        stroke: #D4AF37;
+    }
+
+    @@keyframes progress {
+        0% {
+            stroke-dasharray: 0 100;
+        }
+    }
+</style>
+
 @section Scripts {
     <script>
-        function completeTask(id) {
-            if (confirm('تأكيد إنجاز المهمة؟')) {
-                var token = $('input[name="__RequestVerificationToken"]').val();
-                if (!token) token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-                fetch('/Tasks/Complete/' + id, { method: 'POST', headers: { 'RequestVerificationToken': token } })
-                .then(res => res.json()).then(data => { if(data.success) location.reload(); });
-            }
-        }
-
         function exportToExcel(tableId) {
             var table = document.getElementById(tableId);
-            var html = table.outerHTML;
-
-         
-            var blob = new Blob(['\ufeff', html], {
-                type: 'application/vnd.ms-excel;charset=utf-8'
-            });
-
+            var clone = table.cloneNode(true);
+            // Clean up for export
+            var rows = clone.rows;
+            for (var i = 0; i < rows.length; i++) {
+                var cells = rows[i].cells;
+                for (var j = cells.length - 1; j >= 0; j--) {
+                    if (cells[j].classList.contains('no-print')) rows[i].deleteCell(j);
+                }
+            }
+            var html = clone.outerHTML;
+            var blob = new Blob(['\ufeff', html], { type: 'application/vnd.ms-excel;charset=utf-8' });
             var url = URL.createObjectURL(blob);
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = 'Tasks_Report.xls';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            var a = document.createElement('a'); a.href = url; a.download = 'Tasks_Log.xls'; a.click();
         }
     </script>
 }

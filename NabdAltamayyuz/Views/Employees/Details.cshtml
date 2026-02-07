@@ -3,55 +3,106 @@
 @using System.Globalization
 
 @{
-    ViewData["Title"] = "ملف الموظف";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    ViewData["Title"] = isRtl ? "ملف الموظف" : "Employee Profile";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
     var attendanceLog = ViewBag.AttendanceLog as List<Attendance>;
     var tasksLog = ViewBag.TasksLog as List<WorkTask>;
+
+    // إحصائيات المهام للمقياس
+    double completionRate = ViewBag.CompletionRate ?? 0;
+    int totalTasks = ViewBag.TotalTasks ?? 0;
+    int completedTasks = ViewBag.CompletedTasks ?? 0;
+    int lateTasks = ViewBag.LateTasks ?? 0;
 }
 
 <div class="container py-5 animate-fade-in" style="margin-top: 100px;">
-    <!-- Employee Info Card -->
+    <!-- Employee Info Card (بطاقة الموظف المحسنة) -->
     <div class="card border-0 shadow-lg rounded-4 mb-5 overflow-hidden">
-        <div class="card-header bg-dark text-white p-4 d-flex justify-content-between">
-            <h5 class="mb-0 fw-bold text-gold"><i class="fas fa-id-badge me-2"></i> بطاقة الموظف</h5>
-            <a href="/Employees" class="btn btn-sm btn-outline-light rounded-pill"><i class="fas fa-arrow-left me-1"></i> عودة</a>
+        <div class="card-header bg-dark text-white p-4 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold text-gold"><i class="fas fa-id-badge me-2"></i> @(isRtl ? "بطاقة الموظف" : "Employee Card")</h5>
+            <div class="d-flex gap-2">
+                <a href="/Employees/Edit/@Model.Id" class="btn btn-sm btn-gold text-dark fw-bold rounded-pill"><i class="fas fa-pen me-1"></i> @(isRtl ? "تعديل" : "Edit")</a>
+                <a href="/Employees" class="btn btn-sm btn-outline-light rounded-pill"><i class="fas fa-arrow-left me-1"></i> @(isRtl ? "عودة" : "Back")</a>
+            </div>
         </div>
         <div class="card-body p-4 bg-white">
             <div class="row align-items-center">
-                <div class="col-md-2 text-center">
-                    <div class="avatar-circle bg-gold-light text-gold fw-bold d-inline-flex align-items-center justify-content-center border border-gold mb-3" style="width: 100px; height: 100px; font-size: 2.5rem;">
+                <div class="col-md-2 text-center mb-3 mb-md-0">
+                    <div class="avatar-circle bg-gold-light text-gold fw-bold d-inline-flex align-items-center justify-content-center border border-gold shadow-sm" style="width: 110px; height: 110px; font-size: 2.5rem; border-radius: 50%;">
                         @Model.FullName.Substring(0, 1).ToUpper()
                     </div>
                 </div>
                 <div class="col-md-10">
-                    <div class="row g-3">
+                    <div class="row g-4">
                         <div class="col-md-4">
-                            <small class="text-muted d-block">الاسم</small>
-                            <span class="fw-bold">@Model.FullName</span>
+                            <label class="small text-muted fw-bold">@(isRtl ? "الاسم الرباعي" : "Full Name")</label>
+                            <div class="fw-bold text-dark fs-5">@Model.FullName</div>
                         </div>
                         <div class="col-md-4">
-                            <small class="text-muted d-block">الوظيفة</small>
-                            <span class="fw-bold">@Model.JobTitle</span>
+                            <label class="small text-muted fw-bold">@(isRtl ? "المسمى الوظيفي" : "Job Title")</label>
+                            <div class="fw-bold text-primary">@Model.JobTitle</div>
                         </div>
                         <div class="col-md-4">
-                            <small class="text-muted d-block">الشركة</small>
-                            <span class="fw-bold">@(Model.Company?.Name ?? "-")</span>
+                            <label class="small text-muted fw-bold">@(isRtl ? "الشركة / الفرع" : "Company / Branch")</label>
+                            <div class="fw-bold text-dark"><i class="fas fa-building text-gold me-1"></i> @(Model.Company?.Name ?? "-")</div>
+                        </div>
+
+                        <div class="col-12"><hr class="my-1 opacity-10"></div>
+
+                        <div class="col-md-4">
+                            <label class="small text-muted fw-bold">@(isRtl ? "رقم الهوية" : "National ID")</label>
+                            <div class="font-monospace text-dark">@Model.NationalId</div>
                         </div>
                         <div class="col-md-4">
-                            <small class="text-muted d-block">الهوية</small>
-                            <span class="font-monospace">@Model.NationalId</span>
+                            <label class="small text-muted fw-bold">@(isRtl ? "رقم الجوال" : "Phone Number")</label>
+                            <div class="font-monospace text-dark" dir="ltr">@Model.PhoneNumber</div>
                         </div>
                         <div class="col-md-4">
-                            <small class="text-muted d-block">الحالة</small>
-                            <span class="badge @(Model.IsSuspended ? "bg-danger" : "bg-success")">@(Model.IsSuspended ? "معلق" : Model.Status)</span>
+                            <label class="small text-muted fw-bold">@(isRtl ? "البريد الإلكتروني" : "Email")</label>
+                            <div class="text-dark">@Model.Email</div>
                         </div>
-                        <div class="col-md-4">
-                            @if (!string.IsNullOrEmpty(Model.AttachmentPath))
-                            {
-                                <a href="/uploads/employees/@Model.AttachmentPath" target="_blank" class="btn btn-sm btn-outline-dark rounded-pill mt-2">عرض المستندات</a>
-                            }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Performance Meter -->
+    <div class="card border-0 shadow-sm rounded-4 mb-5 bg-gradient-dark text-white overflow-hidden">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center mb-3 mb-md-0">
+                    <div class="position-relative d-inline-block">
+                        <svg viewBox="0 0 36 36" class="circular-chart gold" style="max-width: 100px;">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle" stroke-dasharray="@completionRate, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <text x="18" y="20.35" class="percentage">@completionRate%</text>
+                        </svg>
+                        <div class="mt-2 small fw-bold text-gold">@(isRtl ? "نسبة الإنجاز" : "Completion Rate")</div>
+                    </div>
+                </div>
+                <div class="col-md-9">
+                    <h5 class="fw-bold mb-3">@(isRtl ? "مؤشر أداء المهام" : "Task Performance Index")</h5>
+                    <div class="row text-center g-3">
+                        <div class="col-4">
+                            <div class="bg-white bg-opacity-10 rounded-3 p-2">
+                                <div class="display-6 fw-bold">@totalTasks</div>
+                                <div class="small opacity-75">@(isRtl ? "إجمالي المهام" : "Total Tasks")</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="bg-success bg-opacity-25 rounded-3 p-2 border border-success">
+                                <div class="display-6 fw-bold text-white">@completedTasks</div>
+                                <div class="small text-white">@(isRtl ? "المنجزة" : "Completed")</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="bg-danger bg-opacity-25 rounded-3 p-2 border border-danger">
+                                <div class="display-6 fw-bold text-white">@lateTasks</div>
+                                <div class="small text-white">@(isRtl ? "المتأخرة" : "Late")</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -63,19 +114,18 @@
         <!-- Attendance History -->
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white py-3 border-bottom">
-                    <h6 class="mb-0 fw-bold"><i class="fas fa-clock text-gold me-2"></i> سجل الحضور والانصراف</h6>
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-clock text-gold me-2"></i> @(isRtl ? "سجل الحضور" : "Attendance Log")</h6>
                 </div>
                 <div class="card-body">
-                    <!-- Filter -->
                     <form method="get" class="row g-2 mb-3 align-items-end">
-                        <input type="hidden" name="id" value="@Model.Id" /> <!-- الحفاظ على الـ ID -->
+                        <input type="hidden" name="id" value="@Model.Id" />
                         <div class="col-5">
-                            <label class="small text-muted">من</label>
+                            <label class="small text-muted">@(isRtl ? "من" : "From")</label>
                             <input type="date" name="attendanceFrom" class="form-control form-control-sm" value="@ViewBag.AttFrom">
                         </div>
                         <div class="col-5">
-                            <label class="small text-muted">إلى</label>
+                            <label class="small text-muted">@(isRtl ? "إلى" : "To")</label>
                             <input type="date" name="attendanceTo" class="form-control form-control-sm" value="@ViewBag.AttTo">
                         </div>
                         <div class="col-2">
@@ -84,14 +134,13 @@
                     </form>
 
                     <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                        <table class="table table-sm table-hover mb-0 font-monospace" style="font-size: 0.9rem;">
+                        <table class="table table-sm table-hover mb-0 text-center" style="font-size: 0.9rem;">
                             <thead class="table-light sticky-top">
                                 <tr>
-                                    <th>التاريخ</th>
-                                    <th>دخول</th>
-                                    <th>خروج</th>
-                                    <th>ساعات</th>
-                                    <th>حالة</th>
+                                    <th>@(isRtl ? "التاريخ" : "Date")</th>
+                                    <th>@(isRtl ? "دخول - خروج" : "In - Out")</th>
+                                    <th>@(isRtl ? "ساعات" : "Hours")</th>
+                                    <th>@(isRtl ? "تعديل" : "Edit")</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -101,8 +150,11 @@
                                     {
                                         <tr>
                                             <td>@item.Date.ToString("yyyy-MM-dd")</td>
-                                            <td class="text-success">@(item.TimeIn?.ToString("HH:mm") ?? "-")</td>
-                                            <td class="text-danger">@(item.TimeOut?.ToString("HH:mm") ?? "-")</td>
+                                            <td class="font-monospace" dir="ltr">
+                                                <span class="text-success">@(item.TimeIn?.ToString("HH:mm") ?? "-")</span>
+                                                <span class="text-muted mx-1">|</span>
+                                                <span class="text-danger">@(item.TimeOut?.ToString("HH:mm") ?? "-")</span>
+                                            </td>
                                             <td>
                                                 @if (item.TimeIn.HasValue && item.TimeOut.HasValue)
                                                 {
@@ -114,13 +166,15 @@
                                                     <text>-</text>
                                                 }
                                             </td>
-                                            <td>@(item.TimeIn != null ? "حضور" : "غياب")</td>
+                                            <td>
+                                                <a href="#" onclick="editAttendance(@item.Id, '@(item.TimeIn?.ToString("HH:mm"))', '@(item.TimeOut?.ToString("HH:mm"))')" class="text-primary"><i class="fas fa-edit"></i></a>
+                                            </td>
                                         </tr>
                                     }
                                 }
                                 else
                                 {
-                                    <tr><td colspan="5" class="text-center py-3 text-muted">لا توجد بيانات</td></tr>
+                                    <tr><td colspan="4" class="text-muted py-3">@(isRtl ? "لا توجد سجلات" : "No records found")</td></tr>
                                 }
                             </tbody>
                         </table>
@@ -133,30 +187,17 @@
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-header bg-white py-3 border-bottom">
-                    <h6 class="mb-0 fw-bold"><i class="fas fa-tasks text-gold me-2"></i> سجل المهام</h6>
+                    <h6 class="mb-0 fw-bold"><i class="fas fa-tasks text-gold me-2"></i> @(isRtl ? "سجل المهام" : "Tasks Log")</h6>
                 </div>
                 <div class="card-body">
-                    <!-- Filter -->
-                    <form method="get" class="row g-2 mb-3 align-items-end">
-                        <input type="hidden" name="id" value="@Model.Id" /> <!-- الحفاظ على الـ ID -->
-                        <div class="col-10">
-                            <label class="small text-muted">الحالة</label>
-                            <select name="taskStatus" class="form-select form-select-sm" asp-items="Html.GetEnumSelectList<NabdAltamayyuz.Models.TaskStatus>()">
-                                <option value="">-- الكل --</option>
-                            </select>
-                        </div>
-                        <div class="col-2">
-                            <button class="btn btn-sm btn-dark w-100"><i class="fas fa-search"></i></button>
-                        </div>
-                    </form>
-
                     <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                         <table class="table table-sm table-hover mb-0" style="font-size: 0.9rem;">
                             <thead class="table-light sticky-top">
                                 <tr>
-                                    <th>المهمة</th>
-                                    <th>استحقاق</th>
-                                    <th>الحالة</th>
+                                    <th>@(isRtl ? "المهمة" : "Task")</th>
+                                    <th>@(isRtl ? "الفترة (من - إلى)" : "Period (From - To)")</th>
+                                    <th>@(isRtl ? "الحالة" : "Status")</th>
+                                    <th>@(isRtl ? "تعديل" : "Edit")</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -165,19 +206,23 @@
                                     foreach (var item in tasksLog)
                                     {
                                         <tr>
-                                            <td class="text-truncate" style="max-width: 150px;" title="@item.Title">@item.Title</td>
-                                            <td>@item.DueDate.ToString("MM/dd")</td>
+                                            <td class="text-truncate" style="max-width: 120px;" title="@item.Title">@item.Title</td>
+                                            <td class="small text-muted">
+                                                <div dir="ltr">@item.StartDate.ToString("dd/MM/yyyy")</div>
+                                                <div dir="ltr">@item.DueDate.ToString("dd/MM/yyyy")</div>
+                                            </td>
                                             <td>
-                                                <span class="badge @(item.Status == NabdAltamayyuz.Models.TaskStatus.Completed ? "bg-success" : "bg-warning text-dark")">
-                                                    @item.Status
-                                                </span>
+                                                <span class="badge @(item.Status == NabdAltamayyuz.Models.TaskStatus.Completed ? "bg-success" : "bg-warning text-dark")">@item.Status</span>
+                                            </td>
+                                            <td>
+                                                <a href="/Tasks/Edit/@item.Id" class="text-primary"><i class="fas fa-edit"></i></a>
                                             </td>
                                         </tr>
                                     }
                                 }
                                 else
                                 {
-                                    <tr><td colspan="3" class="text-center py-3 text-muted">لا توجد مهام</td></tr>
+                                    <tr><td colspan="4" class="text-muted text-center py-3">@(isRtl ? "لا توجد مهام" : "No tasks found")</td></tr>
                                 }
                             </tbody>
                         </table>
@@ -187,3 +232,79 @@
         </div>
     </div>
 </div>
+
+<!-- Modal for Quick Attendance Edit -->
+<div class="modal fade" id="quickEditModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title fw-bold">@(isRtl ? "تعديل سريع" : "Quick Edit")</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/Attendance/Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="editAttId">
+                <div class="modal-body">
+                    <label class="small fw-bold">@(isRtl ? "دخول" : "Time In")</label>
+                    <input type="time" name="TimeIn" id="editTimeIn" class="form-control mb-2">
+                    <label class="small fw-bold">@(isRtl ? "خروج" : "Time Out")</label>
+                    <input type="time" name="TimeOut" id="editTimeOut" class="form-control">
+                </div>
+                <div class="modal-footer py-1">
+                    <button type="submit" class="btn btn-sm btn-primary w-100">@(isRtl ? "حفظ" : "Save")</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .circular-chart {
+        display: block;
+        margin: 0 auto;
+        max-width: 80%;
+        max-height: 250px;
+    }
+
+    .circle-bg {
+        fill: none;
+        stroke: #eee;
+        stroke-width: 3.8;
+    }
+
+    .circle {
+        fill: none;
+        stroke-width: 2.8;
+        stroke-linecap: round;
+        animation: progress 1s ease-out forwards;
+    }
+
+    .percentage {
+        fill: #fff;
+        font-family: sans-serif;
+        font-weight: bold;
+        font-size: 0.5em;
+        text-anchor: middle;
+    }
+
+    .circular-chart.gold .circle {
+        stroke: #D4AF37;
+    }
+
+    @@keyframes progress {
+        0% {
+            stroke-dasharray: 0 100;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function editAttendance(id, inTime, outTime) {
+            document.getElementById('editAttId').value = id;
+            document.getElementById('editTimeIn').value = inTime;
+            document.getElementById('editTimeOut').value = outTime;
+            new bootstrap.Modal(document.getElementById('quickEditModal')).show();
+        }
+    </script>
+}

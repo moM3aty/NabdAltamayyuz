@@ -3,11 +3,11 @@
 @using System.Globalization
 
 @{
-    ViewData["Title"] = "تفاصيل المهمة";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    ViewData["Title"] = isRtl ? "تفاصيل المهمة" : "Task Details";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
-    // Status Badge Logic - using full qualification for enum
+    // Status Badge Logic
     string badgeClass = Model.Status switch
     {
         NabdAltamayyuz.Models.TaskStatus.Completed => "bg-success",
@@ -36,7 +36,7 @@
                 <div class="card-header bg-dark text-white p-4">
                     <h4 class="mb-1 fw-bold text-gold">@Model.Title</h4>
                     <div class="d-flex gap-3 text-white-50 small">
-                        <span><i class="far fa-calendar me-1"></i> @(isRtl ? "تاريخ الاستحقاق:" : "Due:") @Model.DueDate.ToString("yyyy-MM-dd")</span>
+                        <span><i class="far fa-calendar me-1"></i> @(isRtl ? "تاريخ الاستحقاق:" : "Due Date:") @Model.DueDate.ToString("yyyy-MM-dd")</span>
                         <span><i class="fas fa-user-tag me-1"></i> @(isRtl ? "بواسطة:" : "By:") @Model.CreatedBy?.FullName</span>
                     </div>
                 </div>
@@ -71,7 +71,7 @@
                                 </div>
                                 <div class="col-md-8">
                                     <label class="form-label small fw-bold">@(isRtl ? "ملاحظات / سبب التأجيل" : "Reason / Notes")</label>
-                                    <input type="text" name="reason" class="form-control" placeholder="@(isRtl ? "اكتب السبب هنا..." : "Enter reason here...")" value="@Model.StatusReason" />
+                                    <input type="text" name="reason" class="form-control" placeholder="@(isRtl ? "اكتب السبب هنا..." : "Enter notes or reason here...")" value="@Model.StatusReason" />
                                 </div>
                                 <div class="col-12 text-end mt-3">
                                     <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold px-4 rounded-pill">

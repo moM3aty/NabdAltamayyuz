@@ -1,139 +1,114 @@
-﻿@model IEnumerable<NabdAltamayyuz.Models.Attendance>
+﻿@model IEnumerable<NabdAltamayyuz.Controllers.AttendanceController.AttendanceViewModel>
 @using System.Globalization
 
 @{
-    ViewData["Title"] = "سجل الحضور والانصراف";
-    Layout = "~/Views/Shared/_Layout.cshtml";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
-    bool isSuperAdmin = User.IsInRole("SuperAdmin");
-    
-    var today = DateTime.Now;
-    var dayName = today.ToString("dddd", new CultureInfo("ar-SA"));
-    var dateString = today.ToString("yyyy-MM-dd");
+    ViewData["Title"] = isRtl ? "كشف الحضور" : "Attendance Sheet";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var dateString = ViewBag.SelectedDate as string;
+    // Parsing date to show correct day name based on current culture
+    DateTime parsedDate = DateTime.Parse(dateString);
+    var dayName = parsedDate.ToString("dddd");
 }
 
-<!-- تنسيقات خاصة بالطباعة -->
 <style>
-    @@media print {
-        @@page { size: A4 landscape; margin: 1cm; }
-        body { background-color: white !important; font-family: 'Cairo', sans-serif; -webkit-print-color-adjust: exact; }
-        .premium-navbar, footer, .btn, .card-header, .card-footer, form, .alert, .no-print, .filters-card { display: none !important; }
-        .container { margin-top: 0 !important; padding: 0 !important; max-width: 100% !important; width: 100% !important; }
-        .card { border: none !important; box-shadow: none !important; }
-        .card-body { padding: 0 !important; }
-        .print-header { display: block !important; margin-bottom: 20px; border-bottom: 2px solid #D4AF37; padding-bottom: 10px; }
-        .table-responsive { overflow: visible !important; }
-        table { width: 100% !important; border-collapse: collapse !important; font-size: 12px; }
-        th { background-color: #0F172A !important; color: white !important; border: 1px solid #000 !important; padding: 5px !important; }
-        td { border: 1px solid #ccc !important; padding: 5px !important; color: black !important; }
-        .badge { border: 1px solid #000; background: transparent !important; color: black !important; padding: 2px 5px; }
+    .time-input {
+        border: 1px solid transparent;
+        background: transparent;
+        width: 100px;
+        text-align: center;
+        font-family: monospace;
+        color: #198754;
     }
-    .print-header { display: none; }
+
+        .time-input:hover, .time-input:focus {
+            border: 1px solid #D4AF37;
+            background: #fff;
+            outline: none;
+            border-radius: 4px;
+        }
+
+        .time-input.out {
+            color: #dc3545;
+        }
 </style>
 
 <div class="container py-5 animate-fade-in" style="margin-top: 120px;">
-    
-    <!-- ترويسة الطباعة -->
-    <div class="print-header text-center">
-        <div class="row align-items-center">
-            <div class="col-4 text-end"><small>تاريخ: @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</small></div>
-            <div class="col-4"><h3 class="fw-bold mb-1">نبض التميز الذهبي</h3><h5 class="text-muted">تقرير الحضور اليومي</h5></div>
-            <div class="col-4 text-start"><small>@User.Identity.Name</small></div>
-        </div>
-    </div>
 
-    <!-- Header & Date Display -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3 no-print">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
         <div>
             <h3 class="fw-bold text-dark mb-1">
-                <i class="fas fa-clipboard-list text-gold me-2"></i> @(isRtl ? "سجل الحضور والانصراف" : "Attendance Sheet")
+                <i class="fas fa-clipboard-list text-gold me-2"></i> @(isRtl ? "كشف الحضور الشامل" : "Comprehensive Attendance Sheet")
             </h3>
-            <div class="d-flex align-items-center mt-2 text-muted">
-                <span class="badge bg-gold text-dark me-2">@dayName</span>
-                <span><i class="far fa-calendar-alt me-1"></i> @dateString</span>
-            </div>
+            <p class="text-muted small mb-0">@dayName | @parsedDate.ToString("dd MMMM yyyy")</p>
         </div>
         <div class="d-flex gap-2">
-            <button class="btn btn-gold bg-dark text-gold fw-bold shadow-sm rounded-pill px-4 hover-scale" data-bs-toggle="modal" data-bs-target="#manualEntryModal">
-                <i class="fas fa-plus me-2"></i> @(isRtl ? "تسجيل يدوي" : "Manual Entry")
+            <button class="btn btn-outline-secondary rounded-pill px-3" onclick="window.print()">
+                <i class="fas fa-print me-1"></i> @(isRtl ? "طباعة" : "Print")
             </button>
             <div class="dropdown">
-                <button class="btn btn-outline-secondary shadow-sm rounded-pill px-4 dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-download me-2"></i> @(isRtl ? "تصدير" : "Export")
+                <button class="btn btn-gold bg-dark text-gold rounded-pill px-4 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-pen me-2"></i> @(isRtl ? "إجراءات" : "Actions")
                 </button>
                 <ul class="dropdown-menu shadow-lg border-0">
-                    <li><button class="dropdown-item" onclick="window.print()"><i class="fas fa-print me-2"></i> طباعة / PDF</button></li>
-                    <li><button class="dropdown-item" onclick="exportToExcel('attendanceTable')"><i class="fas fa-file-excel me-2 text-success"></i> Excel</button></li>
+                    <li><a class="dropdown-item" href="#" onclick="enableEditMode()">@(isRtl ? "تفعيل التعديل السريع" : "Enable Quick Edit")</a></li>
+                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#manualEntryModal">@(isRtl ? "تسجيل موظف جديد" : "Register New Employee")</a></li>
                 </ul>
             </div>
         </div>
     </div>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success border-0 bg-success bg-opacity-10 text-success rounded-3 shadow-sm mb-4 fade show no-print">
-            <i class="fas fa-check-circle me-2"></i> @TempData["Success"]
-        </div>
-    }
-
     <!-- Filters -->
-    <div class="card border-0 shadow-lg mb-4 bg-white rounded-4 overflow-hidden no-print filters-card">
-        <div class="card-body p-4">
-            <form method="get" class="row g-3 align-items-end">
-                @if (isSuperAdmin)
-                {
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold small text-muted">الشركة</label>
-                        <select name="companyId" class="form-select bg-light border-0" asp-items="ViewBag.Companies">
-                            <option value="">-- كل الشركات --</option>
-                        </select>
-                    </div>
-                }
-
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white no-print">
+        <div class="card-body p-3">
+            <form method="get" class="row g-2 align-items-center">
                 <div class="col-md-3">
-                    <label class="form-label fw-bold small text-muted">اسم الموظف</label>
-                    <div class="input-group shadow-sm">
-                        <span class="input-group-text bg-light border-end-0 text-gold"><i class="fas fa-search"></i></span>
-                        <input type="text" name="searchEmployee" class="form-control bg-light border-start-0" placeholder="بحث..." value="@ViewBag.CurrentSearch">
-                    </div>
-                </div>
-
-                <div class="col-md-2">
-                    <label class="form-label fw-bold small text-muted">التاريخ</label>
-                    <input type="date" name="date" class="form-control bg-light border-0 shadow-sm" value="@(ViewBag.SelectedDate ?? dateString)">
-                </div>
-
-                <div class="col-md-2">
-                    <label class="form-label fw-bold small text-muted">الحالة</label>
-                    <select name="status" class="form-select bg-light border-0 shadow-sm">
-                        <option value="">-- الكل --</option>
-                        <option value="Active" selected="@(ViewBag.CurrentStatus == "Active")">نشط</option>
-                        <option value="Inactive" selected="@(ViewBag.CurrentStatus == "Inactive")">غير نشط</option>
+                    <label class="small text-muted fw-bold ms-1">@(isRtl ? "الشركة / الفرع" : "Company / Branch")</label>
+                    <select name="companyId" class="form-select bg-light border-0" asp-items="ViewBag.Companies" onchange="this.form.submit()">
+                        <option value="">@(isRtl ? "-- عرض الكل --" : "-- Show All --")</option>
                     </select>
                 </div>
-
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-dark w-100 fw-bold rounded-pill shadow-sm">عرض</button>
+                <div class="col-md-3">
+                    <label class="small text-muted fw-bold ms-1">@(isRtl ? "التاريخ" : "Date")</label>
+                    <input type="date" name="date" class="form-control bg-light border-0" value="@dateString" onchange="this.form.submit()">
+                </div>
+                <div class="col-md-4">
+                    <label class="small text-muted fw-bold ms-1">@(isRtl ? "بحث موظف" : "Search Employee")</label>
+                    <input type="text" name="searchString" class="form-control bg-light border-0" placeholder="@(isRtl ? "الاسم..." : "Name...")" value="@ViewBag.CurrentSearch">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-dark w-100 rounded-pill mt-4">@(isRtl ? "عرض" : "View")</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Attendance Table -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success border-0 bg-success bg-opacity-10 text-success rounded-3 mb-4"><i class="fas fa-check-circle me-2"></i> @TempData["Success"]</div>
+    }
+
+    <!-- Sheet Table -->
     <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 text-gold">@(isRtl ? "سجل حركات الحضور والانصراف (يمكن التعديل مباشرة)" : "Attendance Records Log (Editable)")</h6>
+            <span class="badge bg-gold text-dark">@Model.Count() @(isRtl ? "موظف" : "Employees")</span>
+        </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table id="attendanceTable" class="table table-hover align-middle mb-0 text-center">
-                    <thead class="bg-dark text-white">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead class="bg-light text-muted small text-uppercase">
                         <tr>
-                            <th class="py-3 px-3 text-start">@(isRtl ? "الموظف" : "Employee")</th>
-                            @if(isSuperAdmin) { <th class="py-3">الشركة</th> }
-                            <th class="py-3">@(isRtl ? "اليوم" : "Day")</th>
-                            <th class="py-3">@(isRtl ? "دخول" : "In")</th>
-                            <th class="py-3">@(isRtl ? "خروج" : "Out")</th>
-                            <th class="py-3">@(isRtl ? "ساعات" : "Hrs")</th>
-                            <th class="py-3">@(isRtl ? "الحالة" : "Status")</th>
-                            <th class="py-3 text-end pe-4 no-print">@(isRtl ? "إجراءات" : "Actions")</th>
+                            <th class="ps-4 text-start">@(isRtl ? "الموظف" : "Employee")</th>
+                            <th>@(isRtl ? "الشركة / الفرع" : "Company / Branch")</th>
+                            <th>@(isRtl ? "دخول (08:30 ص)" : "Time In")</th>
+                            <th>@(isRtl ? "خروج (04:30 م)" : "Time Out")</th>
+                            <th>@(isRtl ? "الساعات" : "Hours")</th>
+                            <th>@(isRtl ? "الحالة" : "Status")</th>
+                            <th>@(isRtl ? "ملاحظات" : "Notes")</th>
+                            <th class="no-print">@(isRtl ? "حفظ" : "Save")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -141,55 +116,77 @@
                         {
                             foreach (var item in Model)
                             {
-                                <tr>
-                                    <td class="text-start px-3">
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar-circle bg-light text-gold rounded-circle d-flex align-items-center justify-content-center me-2 border border-gold no-print" style="width: 35px; height: 35px;">
-                                                <span class="fw-bold small">@item.Employee.FullName.Substring(0, 1).ToUpper()</span>
-                                            </div>
-                                            <div>
-                                                <div class="fw-bold text-dark small">@item.Employee.FullName</div>
-                                                <small class="text-muted no-print" style="font-size: 0.7rem;">@item.Employee.JobTitle</small>
-                                            </div>
-                                        </div>
+                                <tr id="row-@item.EmployeeId">
+                                    <form action="/Attendance/ManualEntry" method="post" id="form-@item.EmployeeId">
+                                        <input type="hidden" name="employeeId" value="@item.EmployeeId" />
+                                        <input type="hidden" name="date" value="@dateString" />
+
+                                    <td class="text-start ps-4">
+                                        <div class="fw-bold text-dark">@item.EmployeeName</div>
+                                        <small class="text-muted">@item.JobTitle</small>
                                     </td>
-                                    @if(isSuperAdmin) { <td class="small text-muted">@(item.Employee.Company?.Name ?? "-")</td> }
-                                    <td class="small">@item.DayName <br> <span class="text-muted" style="font-size:0.7rem;">@item.Date.ToString("MM-dd")</span></td>
-                                    <td class="text-success ltr font-monospace fw-bold small">@(item.TimeIn?.ToString("HH:mm") ?? "--")</td>
-                                    <td class="text-danger ltr font-monospace fw-bold small">@(item.TimeOut?.ToString("HH:mm") ?? "--")</td>
+                                    <td class="small text-muted">@item.CompanyName</td>
+                                    <td>
+                                        <input type="time" name="timeIn" class="time-input"
+                                               value="@(item.TimeIn?.ToString("HH:mm"))" onchange="markChanged(@item.EmployeeId)">
+                                    </td>
+                                    <td>
+                                        <input type="time" name="timeOut" class="time-input out"
+                                               value="@(item.TimeOut?.ToString("HH:mm"))" onchange="markChanged(@item.EmployeeId)">
+                                    </td>
                                     <td>
                                         @if (item.TimeIn.HasValue && item.TimeOut.HasValue)
                                         {
-                                            <span class="badge bg-light text-dark border">@((item.TimeOut.Value - item.TimeIn.Value).TotalHours.ToString("0.0"))</span>
+                                            <span class="badge bg-light text-dark border">
+                                                @((item.TimeOut.Value - item.TimeIn.Value).TotalHours.ToString("0.0"))
+                                            </span>
                                         }
-                                        else { <span class="text-muted">--</span> }
+                                        else
+                                        {
+
+                                            <span class="text-muted">-</span>
+                                        }
                                     </td>
                                     <td>
-                                        @if (item.TimeIn == null) { <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill">غياب</span> }
-                                        else if (item.TimeOut == null) { <span class="badge bg-warning bg-opacity-10 text-dark rounded-pill">جاري</span> }
-                                        else { <span class="badge bg-success bg-opacity-10 text-success rounded-pill">مكتمل</span> }
-                                        
-                                        @if(item.IsManualEntry) { <i class="fas fa-pen text-info ms-1 small" title="يدوي"></i> }
+                                        @if (item.IsPresent)
+                                        {
+                                            if (item.TimeOut == null)
+                                            {
+                                                <span class="badge bg-warning text-dark rounded-pill">@(isRtl ? "جاري" : "Active")</span>
+                                            }
+                                            else
+                                            {
+
+                                                <span class="badge bg-success rounded-pill">@(isRtl ? "مكتمل" : "Completed")</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill">@(isRtl ? "غياب" : "Absent")</span>
+                                        }
                                     </td>
-                                    <td class="text-end pe-4 no-print">
-                                        <div class="btn-group">
-                                            <button class="btn btn-sm btn-outline-primary" title="تعديل" onclick="editAttendance(@item.Id, '@(item.TimeIn?.ToString("HH:mm"))', '@(item.TimeOut?.ToString("HH:mm"))', '@item.Notes')"><i class="fas fa-edit"></i></button>
-                                            <a href="/Employees/Details/@item.EmployeeId" class="btn btn-sm btn-outline-info" title="عرض السجل"><i class="fas fa-history"></i></a>
-                                        </div>
+                                    <td>
+                                        <input type="text" name="notes" class="form-control form-control-sm border-0 bg-transparent"
+                                               placeholder="@(isRtl ? "ملاحظات..." : "Notes...")" value="@item.Notes" onchange="markChanged(@item.EmployeeId)">
                                     </td>
+                                    <td class="no-print">
+                                        <button type="submit" class="btn btn-sm btn-gold text-dark fw-bold rounded-circle shadow-sm"
+                                                style="display:none;" id="btn-save-@item.EmployeeId" title="@(isRtl ? "حفظ" : "Save")">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </td>
+                                    @Html.AntiForgeryToken()
+                                    </form>
                                 </tr>
                             }
                         }
                         else
                         {
-                            <tr><td colspan="@(isSuperAdmin ? 9 : 8)" class="text-center py-5 text-muted small">لا توجد سجلات لهذا اليوم</td></tr>
+                            <tr><td colspan="8" class="py-5 text-muted">@(isRtl ? "لا يوجد موظفين" : "No employees found")</td></tr>
                         }
                     </tbody>
                 </table>
             </div>
-        </div>
-        <div class="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center no-print">
-            <small class="text-muted">@(isRtl ? $"إجمالي السجلات: {Model?.Count() ?? 0}" : $"Total Records: {Model?.Count() ?? 0}")</small>
         </div>
     </div>
 </div>
@@ -197,149 +194,31 @@
 <!-- Manual Entry Modal -->
 <div class="modal fade" id="manualEntryModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header bg-dark text-white border-0 px-4 py-3">
-                <h5 class="modal-title fw-bold" id="modalTitle"><i class="fas fa-pen-alt text-gold me-2"></i> تسجيل حضور يدوي</h5>
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header bg-dark text-gold">
+                <h5 class="modal-title">@(isRtl ? "تسجيل حضور يدوي" : "Manual Attendance Entry")</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form action="/Attendance/ManualEntry" method="post" id="attendanceForm">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" id="recordId" value="0" /> 
-                
-                <div class="modal-body p-4">
-                    <div id="selectionFields">
-                        @if (isSuperAdmin)
-                        {
-                            <div class="mb-3">
-                                <label class="form-label fw-bold small text-gold">الشركة</label>
-                                <select id="companySelect" class="form-select bg-light" onchange="loadEmployees(this.value)">
-                                    <option value="">-- اختر الشركة --</option>
-                                    @foreach (var comp in ViewBag.Companies as SelectList)
-                                    {
-                                        <option value="@comp.Value">@comp.Text</option>
-                                    }
-                                </select>
-                            </div>
-                        }
+            <form action="/Attendance/ManualEntry" method="post">
+                <div class="modal-body">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="date" value="@dateString">
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted">الموظف</label>
-                            <select name="employeeId" id="employeeSelect" class="form-select bg-light" required>
-                                <option value="">-- اختر الموظف --</option>
-                                @if (ViewBag.Employees != null)
-                                {
-                                    foreach (var emp in ViewBag.Employees as SelectList)
-                                    {
-                                        <option value="@emp.Value">@emp.Text</option>
-                                    }
-                                }
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted">التاريخ</label>
-                        <input type="date" name="date" class="form-control bg-light" required value="@DateTime.Now.ToString("yyyy-MM-dd")">
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <label class="form-label fw-bold small text-muted">وقت الدخول</label>
-                            <input type="time" name="timeIn" id="timeIn" class="form-control bg-light" required>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label fw-bold small text-muted">وقت الخروج</label>
-                            <input type="time" name="timeOut" id="timeOut" class="form-control bg-light">
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted">ملاحظات</label>
-                        <textarea name="notes" id="notes" class="form-control bg-light" rows="2"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer border-0 px-4 pb-4">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold rounded-pill px-4 shadow-sm hover-scale">حفظ</button>
+                    <p class="text-muted small">@(isRtl ? "يمكنك التعديل مباشرة في الجدول أعلاه، أو استخدام هذا النموذج لإضافة ملاحظات خاصة." : "You can edit directly in the table above, or use this form for special notes.")</p>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        function loadEmployees(companyId) {
-            var empSelect = document.getElementById("employeeSelect");
-            empSelect.innerHTML = "<option value=''>جار التحميل...</option>";
-            
-            if (!companyId) {
-                empSelect.innerHTML = "<option value=''>-- اختر الموظف --</option>";
-                return;
-            }
+<script>
+    function markChanged(id) {
+        document.getElementById('btn-save-' + id).style.display = 'inline-block';
+        document.getElementById('row-' + id).style.backgroundColor = '#fffbf0';
+    }
 
-            fetch('/Attendance/GetEmployeesByCompany?companyId=' + companyId)
-                .then(response => response.json())
-                .then(data => {
-                    empSelect.innerHTML = "<option value=''>-- اختر الموظف --</option>";
-                    data.forEach(item => {
-                        var option = document.createElement("option");
-                        option.value = item.id;
-                        option.text = item.name;
-                        empSelect.appendChild(option);
-                    });
-                });
-        }
-
-        // دالة التصدير للإكسيل (محسنة مع BOM للعربية وتنظيف)
-        function exportToExcel(tableId) {
-            var table = document.getElementById(tableId);
-            var clone = table.cloneNode(true);
-            
-            // إزالة الأعمدة غير المرغوب فيها (مثل الإجراءات)
-            var rows = clone.rows;
-            for (var i = 0; i < rows.length; i++) {
-                var cells = rows[i].cells;
-                for (var j = cells.length - 1; j >= 0; j--) {
-                    if (cells[j].classList.contains('no-print')) {
-                        rows[i].deleteCell(j);
-                    }
-                }
-            }
-
-            var html = clone.outerHTML;
-            // إضافة BOM لضمان دعم اللغة العربية
-            var blob = new Blob(['\ufeff', html], {
-                type: 'application/vnd.ms-excel;charset=utf-8'
-            });
-            
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = 'Attendance_Report.xls';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-
-        function editAttendance(id, timeIn, timeOut, notes) {
-            document.getElementById('modalTitle').innerText = 'تعديل سجل حضور';
-            document.getElementById('attendanceForm').action = '/Attendance/Edit/' + id;
-            document.getElementById('recordId').value = id;
-            document.getElementById('selectionFields').style.display = 'none';
-            document.getElementById('timeIn').value = timeIn;
-            document.getElementById('timeOut').value = timeOut;
-            document.getElementById('notes').value = notes;
-            var myModal = new bootstrap.Modal(document.getElementById('manualEntryModal'));
-            myModal.show();
-        }
-        
-        document.getElementById('manualEntryModal').addEventListener('hidden.bs.modal', function () {
-            document.getElementById('modalTitle').innerText = 'تسجيل حضور يدوي';
-            document.getElementById('attendanceForm').action = '/Attendance/ManualEntry';
-            document.getElementById('recordId').value = 0;
-            document.getElementById('selectionFields').style.display = 'block';
-            document.getElementById('attendanceForm').reset();
-        });
-    </script>
-}
+    function enableEditMode() {
+        var msg = '@(isRtl ? "وضع التعديل السريع مفعل. قم بتغيير الوقت في الجدول وسيظهر زر الحفظ." : "Quick edit mode enabled. Change time in table and save button will appear.")';
+        alert(msg);
+    }
+</script>

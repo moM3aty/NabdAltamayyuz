@@ -2,14 +2,19 @@
 @using System.Globalization
 
 @{
-    ViewData["Title"] = "لوحة الموظف";
-    Layout = "~/Views/Shared/_Layout.cshtml";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    ViewData["Title"] = isRtl ? "لوحة الموظف" : "Employee Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
     bool isCheckedIn = ViewBag.IsCheckedIn ?? false;
     bool isCheckedOut = ViewBag.IsCheckedOut ?? false;
+
+    // إحصائيات المهام
+    int totalTasks = ViewBag.MyTotalTasks ?? 0;
+    int completedTasks = ViewBag.MyCompletedTasks ?? 0;
+    int pendingTasks = ViewBag.MyPendingTasks ?? 0;
+    double completionRate = totalTasks > 0 ? (double)completedTasks / totalTasks * 100 : 0;
 }
 
-<!-- تمت إضافة margin-top: 100px لتفادي التداخل مع الـ Navbar -->
 <div class="container py-5 animate-fade-in" style="margin-top: 120px;">
     <!-- Welcome Section -->
     <div class="row align-items-center mb-5">
@@ -17,7 +22,7 @@
             <h2 class="fw-bold text-dark mb-1">
                 @(isRtl ? "مرحباً بك،" : "Welcome,") <span class="text-gold">@User.Identity.Name</span>
             </h2>
-            <p class="text-muted">@(isRtl ? "نتمنى لك يوم عمل مثمر ومليء بالإنجازات" : "Have a productive day ahead")</p>
+            <p class="text-muted">@(isRtl ? "نتمنى لك يوم عمل مثمر ومليء بالإنجازات" : "Wishing you a productive and successful day")</p>
         </div>
         <div class="col-md-4 text-md-end">
             <div class="d-inline-flex align-items-center bg-white shadow-sm px-4 py-2 rounded-pill border border-gold">
@@ -27,58 +32,94 @@
         </div>
     </div>
 
-    <!-- Attendance Action Card -->
-    <div class="card border-0 shadow-lg mb-5 rounded-4 overflow-hidden bg-dark text-white position-relative">
-        <div class="position-absolute top-0 start-0 w-100 h-100 opacity-20" style="background: url('https://www.transparenttextures.com/patterns/cubes.png');"></div>
-        <div class="card-body p-4 p-lg-5 position-relative z-1 text-center">
-            <h4 class="fw-bold mb-4 text-gold"><i class="fas fa-fingerprint me-2"></i> @(isRtl ? "تسجيل الحضور اليومي" : "Daily Attendance Check")</h4>
+    <div class="row g-4 mb-5">
+        <!-- Attendance Card -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden bg-dark text-white position-relative h-100">
+                <div class="position-absolute top-0 start-0 w-100 h-100 opacity-10" style="background: url('https://www.transparenttextures.com/patterns/cubes.png');"></div>
+                <div class="card-body p-4 p-lg-5 position-relative z-1 text-center d-flex flex-column justify-content-center">
+                    <h4 class="fw-bold mb-4 text-gold"><i class="fas fa-fingerprint me-2"></i> @(isRtl ? "تسجيل الحضور اليومي" : "Daily Attendance Check")</h4>
 
-            <div class="d-flex justify-content-center gap-4 flex-wrap">
-                <!-- Check In Form -->
-                <form action="/Dashboard/CheckIn" method="post">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-lg rounded-4 p-4 shadow-lg hover-scale transition-all @(isCheckedIn ? "btn-secondary disabled" : "btn-success")" style="min-width: 200px;" @(isCheckedIn ? "disabled" : "")>
-                        <i class="fas fa-sign-in-alt fa-2x mb-3 d-block"></i>
-                        <span class="fw-bold fs-5">@(isRtl ? "تسجيل دخول" : "Check In")</span>
-                        @if (isCheckedIn)
-                        {
-                            <div class="small mt-2"><i class="fas fa-check me-1"></i> @(isRtl ? "تم التسجيل" : "Done")</div>
-                        }
-                    </button>
-                </form>
+                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                        <!-- Check In Form -->
+                        <form action="/Dashboard/CheckIn" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-lg rounded-4 p-3 shadow-lg hover-scale transition-all @(isCheckedIn ? "btn-secondary disabled" : "btn-success")" style="min-width: 160px;" @(isCheckedIn ? "disabled" : "")>
+                                <i class="fas fa-sign-in-alt fa-2x mb-2 d-block"></i>
+                                <span class="fw-bold">@(isRtl ? "دخول" : "Check In")</span>
+                                @if (isCheckedIn)
+                                {
+                                    <div class="small mt-1"><i class="fas fa-check me-1"></i> @(isRtl ? "تم" : "Done")</div>
+                                }
+                            </button>
+                        </form>
 
-                <!-- Check Out Form -->
-                <form action="/Dashboard/CheckOut" method="post">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-lg rounded-4 p-4 shadow-lg hover-scale transition-all @(isCheckedOut || !isCheckedIn ? "btn-secondary disabled" : "btn-danger")" style="min-width: 200px;" @(isCheckedOut || !isCheckedIn ? "disabled" : "")>
-                        <i class="fas fa-sign-out-alt fa-2x mb-3 d-block"></i>
-                        <span class="fw-bold fs-5">@(isRtl ? "تسجيل خروج" : "Check Out")</span>
-                        @if (isCheckedOut)
+                        <!-- Check Out Form -->
+                        <form action="/Dashboard/CheckOut" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-lg rounded-4 p-3 shadow-lg hover-scale transition-all @(isCheckedOut || !isCheckedIn ? "btn-secondary disabled" : "btn-danger")" style="min-width: 160px;" @(isCheckedOut || !isCheckedIn ? "disabled" : "")>
+                                <i class="fas fa-sign-out-alt fa-2x mb-2 d-block"></i>
+                                <span class="fw-bold">@(isRtl ? "خروج" : "Check Out")</span>
+                                @if (isCheckedOut)
+                                {
+                                    <div class="small mt-1"><i class="fas fa-check me-1"></i> @(isRtl ? "تم" : "Done")</div>
+                                }
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="mt-4 text-white-50 small">
+                        @if (ViewBag.Message != null)
                         {
-                            <div class="small mt-2"><i class="fas fa-check me-1"></i> @(isRtl ? "تم التسجيل" : "Done")</div>
+                            <span class="badge bg-gold text-dark px-3 py-2 rounded-pill animate-fade-in">@ViewBag.Message</span>
                         }
-                    </button>
-                </form>
+                        else
+                        {
+                            <i class="fas fa-info-circle me-1"></i>
+                            @(isRtl ? "يرجى الالتزام بمواعيد الدوام الرسمي" : "Please adhere to official working hours")
+                        }
+                    </div>
+                </div>
             </div>
+        </div>
 
-            <div class="mt-4 text-white-50 small">
-                @if (ViewBag.Message != null)
-                {
-                    <span class="badge bg-gold text-dark px-3 py-2 rounded-pill animate-fade-in">@ViewBag.Message</span>
-                }
-                else
-                {
-                    <i class="fas fa-info-circle me-1"></i> 
-                    @(isRtl ? "يرجى الالتزام بمواعيد الدوام الرسمي" : "Please adhere to official working hours")
-                }
+        <!-- Task Performance Meter -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-lg rounded-4 h-100 bg-white overflow-hidden">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h6 class="fw-bold text-dark mb-0"><i class="fas fa-chart-pie text-gold me-2"></i> @(isRtl ? "مؤشر إنجاز المهام" : "Task Completion")</h6>
+                </div>
+                <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="mb-3">
+                            <span class="text-muted small">@(isRtl ? "المهام الكلية" : "Total Tasks")</span>
+                            <h3 class="fw-bold text-dark">@totalTasks</h3>
+                        </div>
+                        <div class="d-flex gap-3">
+                            <div>
+                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3">@(isRtl ? "منجز" : "Completed") @completedTasks</span>
+                            </div>
+                            <div>
+                                <span class="badge bg-warning bg-opacity-10 text-dark rounded-pill px-3">@(isRtl ? "متبقي" : "Remaining") @pendingTasks</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="width: 120px; height: 120px;">
+                        <svg viewBox="0 0 36 36" class="circular-chart gold">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle" stroke-dasharray="@Math.Round(completionRate, 1), 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <text x="18" y="20.35" class="percentage">@Math.Round(completionRate)%</text>
+                        </svg>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- My Tasks Section -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold text-dark border-start border-5 border-gold ps-3 mb-0">@(isRtl ? "المهام المسندة إلي" : "My Assigned Tasks")</h4>
-        <span class="badge bg-dark rounded-pill">@(Model?.Count() ?? 0) @(isRtl ? "نشطة" : "Active")</span>
+        <h4 class="fw-bold text-dark border-start border-5 border-gold ps-3 mb-0">@(isRtl ? "المهام الحالية" : "Current Tasks")</h4>
+        <a href="/Tasks" class="btn btn-sm btn-outline-secondary rounded-pill">@(isRtl ? "عرض السجل الكامل" : "View Full Log") <i class="fas fa-arrow-left ms-1"></i></a>
     </div>
 
     <div class="row g-4">
@@ -87,13 +128,13 @@
             foreach (var task in Model)
             {
                 <div class="col-md-6 col-lg-4">
-                    <div class="card border-0 shadow-sm h-100 rounded-4 hover-lift task-card bg-white">
+                    <div class="card border-0 shadow-sm h-100 rounded-4 hover-lift task-card bg-white position-relative">
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <span class="badge bg-gold text-dark rounded-pill px-3">@(isRtl ? "مهمة" : "Task")</span>
-                                <small class="text-danger fw-bold"><i class="far fa-clock me-1"></i> @task.DueDate.ToString("yyyy-MM-dd")</small>
+                                <small class="text-danger fw-bold font-monospace"><i class="far fa-clock me-1"></i> @task.DueDate.ToString("yyyy-MM-dd")</small>
                             </div>
-                            <h5 class="card-title fw-bold text-dark mb-2">@task.Title</h5>
+                            <h5 class="card-title fw-bold text-dark mb-2 text-truncate" title="@task.Title">@task.Title</h5>
                             <p class="card-text text-muted small mb-4 line-clamp-2">@task.Description</p>
 
                             <hr class="border-secondary opacity-10">
@@ -104,7 +145,7 @@
                                 </button>
                                 @if (!string.IsNullOrEmpty(task.AttachmentPath))
                                 {
-                                    <a href="/uploads/@task.AttachmentPath" target="_blank" class="btn btn-outline-secondary btn-sm rounded-pill" title="Morfagat">
+                                    <a href="/uploads/tasks/@task.AttachmentPath" target="_blank" class="btn btn-outline-secondary btn-sm rounded-pill" title="@(isRtl ? "مرفقات" : "Attachments")">
                                         <i class="fas fa-paperclip"></i>
                                     </a>
                                 }
@@ -117,21 +158,64 @@
         else
         {
             <div class="col-12 text-center py-5 bg-light rounded-4 border border-dashed">
-                <i class="fas fa-mug-hot fa-3x text-muted mb-3 opacity-50"></i>
-                <h5 class="text-muted fw-bold">@(isRtl ? "لا توجد مهام حالياً" : "No tasks assigned")</h5>
-                <p class="small text-muted mb-0">@(isRtl ? "استمتع بوقتك!" : "Enjoy your free time!")</p>
+                <i class="fas fa-check-circle fa-3x text-success mb-3 opacity-50"></i>
+                <h5 class="text-muted fw-bold">@(isRtl ? "عمل رائع! لا توجد مهام معلقة" : "Great job! No pending tasks")</h5>
+                <p class="small text-muted mb-0">@(isRtl ? "يمكنك الاطلاع على سجل المهام المنجزة" : "You can check your completed tasks log")</p>
             </div>
         }
     </div>
 </div>
 
+<style>
+    .circular-chart {
+        display: block;
+        margin: 0 auto;
+        max-width: 100%;
+        max-height: 250px;
+    }
+
+    .circle-bg {
+        fill: none;
+        stroke: #eee;
+        stroke-width: 3.8;
+    }
+
+    .circle {
+        fill: none;
+        stroke-width: 2.8;
+        stroke-linecap: round;
+        animation: progress 1s ease-out forwards;
+    }
+
+    .percentage {
+        fill: #333;
+        font-family: sans-serif;
+        font-weight: bold;
+        font-size: 0.5em;
+        text-anchor: middle;
+    }
+
+    .circular-chart.gold .circle {
+        stroke: #D4AF37;
+    }
+
+    @@keyframes progress {
+        0% {
+            stroke-dasharray: 0 100;
+        }
+    }
+</style>
+
 @section Scripts {
     <script>
         function completeTask(id) {
-            if (confirm('@(isRtl ? "هل أنت متأكد من إتمام هذه المهمة؟" : "Are you sure you want to complete this task?")')) {
+            var confirmMsg = '@(isRtl ? "هل أنت متأكد من إتمام هذه المهمة؟" : "Are you sure you want to complete this task?")';
+            if (confirm(confirmMsg)) {
+                var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
                 fetch('/Tasks/Complete/' + id, {
                     method: 'POST',
-                    headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() }
+                    headers: { 'RequestVerificationToken': token }
                 })
                 .then(response => response.json())
                 .then(data => {

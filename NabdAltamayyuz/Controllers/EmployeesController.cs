@@ -24,27 +24,69 @@ namespace NabdAltamayyuz.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        // GET: Employees (تم التحديث لدعم البحث والفلترة)
+        // GET: Employees
         public async Task<IActionResult> Index(string searchString, int? companyId, string statusFilter)
         {
             var query = _context.Users.Include(u => u.Company).AsQueryable();
 
-            // 1. تحديد الصلاحيات (النطاق)
+            // 1. تحديد الصلاحيات والنطاق
             if (User.IsInRole("SuperAdmin"))
             {
-                if (companyId.HasValue) query = query.Where(u => u.CompanyId == companyId);
+                // السوبر أدمن يرى الجميع، ويمكنه الفلترة بالشركة
+                if (companyId.HasValue)
+                {
+                    // جلب الشركة والشركات الفرعية التابعة لها إذا كانت شركة رئيسية
+                    var subCompanyIds = await _context.Companies
+                        .Where(c => c.ParentCompanyId == companyId)
+                        .Select(c => c.Id)
+                        .ToListAsync();
+
+                    subCompanyIds.Add(companyId.Value);
+
+                    query = query.Where(u => subCompanyIds.Contains(u.CompanyId.Value));
+                }
+
+                ViewBag.Companies = new SelectList(await _context.Companies.Where(c => c.ParentCompanyId == null).ToListAsync(), "Id", "Name", companyId);
             }
             else
             {
                 var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 var currentUser = await _context.Users.FindAsync(currentUserId);
-                if (currentUser?.CompanyId != null) query = query.Where(u => u.CompanyId == currentUser.CompanyId);
+
+                // المشرف يرى شركته وفروعها
+                if (currentUser?.CompanyId != null)
+                {
+                    var subCompanyIds = await _context.Companies
+                        .Where(c => c.ParentCompanyId == currentUser.CompanyId)
+                        .Select(c => c.Id)
+                        .ToListAsync();
+
+                    subCompanyIds.Add(currentUser.CompanyId.Value);
+
+                    // إذا تم تحديد شركة معينة في البحث (فرع مثلاً)
+                    if (companyId.HasValue && subCompanyIds.Contains(companyId.Value))
+                    {
+                        query = query.Where(u => u.CompanyId == companyId.Value);
+                    }
+                    else
+                    {
+                        query = query.Where(u => subCompanyIds.Contains(u.CompanyId.Value));
+                    }
+
+                    // قائمة الشركات للفلتر (الرئيسية والفروع)
+                    var myCompanies = await _context.Companies
+                        .Where(c => subCompanyIds.Contains(c.Id))
+                        .Select(c => new { c.Id, Name = c.ParentCompanyId == null ? c.Name : " -- " + c.Name })
+                        .ToListAsync();
+
+                    ViewBag.Companies = new SelectList(myCompanies, "Id", "Name", companyId);
+                }
             }
 
-            // 2. البحث بالاسم أو الهوية
+            // 2. البحث
             if (!string.IsNullOrEmpty(searchString))
             {
-                query = query.Where(u => u.FullName.Contains(searchString) || u.NationalId.Contains(searchString));
+                query = query.Where(u => u.FullName.Contains(searchString) || u.NationalId.Contains(searchString) || u.Email.Contains(searchString) || u.PhoneNumber.Contains(searchString));
             }
 
             // 3. فلترة الحالة
@@ -56,20 +98,17 @@ namespace NabdAltamayyuz.Controllers
                     query = query.Where(u => u.Status == statusFilter && !u.IsSuspended);
             }
 
-            // تجهيز القوائم للـ View (للمالك)
-            if (User.IsInRole("SuperAdmin"))
-            {
-                ViewBag.Companies = new SelectList(await _context.Companies.ToListAsync(), "Id", "Name", companyId);
-            }
-
-            // حفظ قيم البحث الحالية
             ViewBag.CurrentSearch = searchString;
             ViewBag.CurrentStatus = statusFilter;
+            ViewBag.CurrentCompany = companyId;
+
+            // استثناء السوبر أدمن من القائمة للمشرفين
+            query = query.Where(u => u.Role != UserRole.SuperAdmin);
 
             return View(await query.OrderBy(u => u.Role).ThenBy(u => u.FullName).ToListAsync());
         }
 
-        // GET: Employees/Details/5 (تم التحديث لعرض السجلات)
+        // GET: Employees/Details/5
         public async Task<IActionResult> Details(int? id, DateTime? attendanceFrom, DateTime? attendanceTo, string taskStatus)
         {
             if (id == null) return NotFound();
@@ -80,14 +119,22 @@ namespace NabdAltamayyuz.Controllers
 
             if (employee == null) return NotFound();
 
+            // التحقق من الصلاحية
             if (!User.IsInRole("SuperAdmin"))
             {
                 var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 var currentUser = await _context.Users.FindAsync(currentUserId);
-                if (employee.CompanyId != currentUser.CompanyId) return Forbid();
+
+                // السماح برؤية موظفي الشركة الرئيسية والفروع
+                var allowedCompanyIds = await _context.Companies
+                    .Where(c => c.Id == currentUser.CompanyId || c.ParentCompanyId == currentUser.CompanyId)
+                    .Select(c => c.Id)
+                    .ToListAsync();
+
+                if (!allowedCompanyIds.Contains(employee.CompanyId.Value)) return Forbid();
             }
 
-            // جلب سجل الحضور
+            // سجل الحضور
             var attendanceQuery = _context.Attendances.Where(a => a.EmployeeId == id).AsQueryable();
             if (attendanceFrom.HasValue) attendanceQuery = attendanceQuery.Where(a => a.Date >= attendanceFrom.Value);
             if (attendanceTo.HasValue) attendanceQuery = attendanceQuery.Where(a => a.Date <= attendanceTo.Value);
@@ -96,14 +143,25 @@ namespace NabdAltamayyuz.Controllers
             ViewBag.AttFrom = attendanceFrom?.ToString("yyyy-MM-dd");
             ViewBag.AttTo = attendanceTo?.ToString("yyyy-MM-dd");
 
-            // جلب سجل المهام
+            // سجل المهام
             var tasksQuery = _context.WorkTasks.Where(t => t.AssignedToId == id).AsQueryable();
             if (!string.IsNullOrEmpty(taskStatus) && Enum.TryParse(typeof(NabdAltamayyuz.Models.TaskStatus), taskStatus, out object statusVal))
             {
                 tasksQuery = tasksQuery.Where(t => t.Status == (NabdAltamayyuz.Models.TaskStatus)statusVal);
             }
 
-            ViewBag.TasksLog = await tasksQuery.OrderByDescending(t => t.DueDate).ToListAsync();
+            var tasks = await tasksQuery.OrderByDescending(t => t.DueDate).ToListAsync();
+            ViewBag.TasksLog = tasks;
+
+            // حساب نسب الإنجاز
+            int totalTasks = tasks.Count;
+            int completedTasks = tasks.Count(t => t.IsCompleted);
+            double completionRate = totalTasks > 0 ? (double)completedTasks / totalTasks * 100 : 0;
+
+            ViewBag.CompletionRate = Math.Round(completionRate, 1);
+            ViewBag.TotalTasks = totalTasks;
+            ViewBag.CompletedTasks = completedTasks;
+            ViewBag.LateTasks = tasks.Count(t => !t.IsCompleted && t.DueDate < DateTime.Today);
 
             return View(employee);
         }
@@ -115,49 +173,62 @@ namespace NabdAltamayyuz.Controllers
             {
                 ViewBag.Companies = new SelectList(await _context.Companies.ToListAsync(), "Id", "Name");
             }
+            else
+            {
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var user = await _context.Users.FindAsync(userId);
+
+                // جلب الشركة والفروع
+                var myCompanies = await _context.Companies
+                    .Where(c => c.Id == user.CompanyId || c.ParentCompanyId == user.CompanyId)
+                    .Select(c => new { c.Id, Name = c.ParentCompanyId == null ? c.Name : " -- " + c.Name })
+                    .ToListAsync();
+
+                ViewBag.Companies = new SelectList(myCompanies, "Id", "Name", user.CompanyId);
+            }
             return View();
         }
 
-        // POST: Employees/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ApplicationUser model, IFormFile? attachment, UserRole? selectedRole)
         {
-            // 1. تنظيف الـ ModelState (لحل مشكلة عدم الإضافة)
             ModelState.Clear();
 
-            // 2. التحقق اليدوي
+            // التحقق اليدوي
             if (string.IsNullOrWhiteSpace(model.FullName)) ModelState.AddModelError("FullName", "الاسم الكامل مطلوب");
             if (string.IsNullOrWhiteSpace(model.NationalId)) ModelState.AddModelError("NationalId", "رقم الهوية مطلوب");
             if (string.IsNullOrWhiteSpace(model.Email)) ModelState.AddModelError("Email", "البريد الإلكتروني مطلوب");
             if (string.IsNullOrWhiteSpace(model.PhoneNumber)) ModelState.AddModelError("PhoneNumber", "رقم الجوال مطلوب");
             if (string.IsNullOrWhiteSpace(model.JobTitle)) ModelState.AddModelError("JobTitle", "المسمى الوظيفي مطلوب");
 
-            // 3. إعداد البيانات الافتراضية
             model.PasswordHash = "123456";
             model.CreatedAt = DateTime.Now;
             model.Status = "Active";
             model.IsSuspended = false;
 
-            int? targetCompanyId = null;
-
-            // 4. تحديد الشركة
+            // تحديد الشركة
             if (User.IsInRole("SuperAdmin"))
             {
-                targetCompanyId = model.CompanyId;
-                if (targetCompanyId == null) ModelState.AddModelError("CompanyId", "يجب اختيار الشركة");
+                if (model.CompanyId == null) ModelState.AddModelError("CompanyId", "يجب اختيار الشركة");
                 model.Role = selectedRole ?? UserRole.Employee;
             }
             else
             {
+                // للمشرف: يمكنه إضافة موظف لشركته أو أحد فروعها
+                if (model.CompanyId == null)
+                {
+                    var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                    var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+                    model.CompanyId = user.CompanyId;
+                }
+
+                // التحقق من أن الشركة المختارة تابعة للمشرف
                 var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 var currentUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == currentUserId);
 
-                targetCompanyId = currentUser?.CompanyId;
-                model.CompanyId = targetCompanyId;
-
-                if (targetCompanyId == null)
-                    ModelState.AddModelError("", "خطأ: حسابك غير مرتبط بشركة.");
+                var isAllowed = await _context.Companies.AnyAsync(c => c.Id == model.CompanyId && (c.Id == currentUser.CompanyId || c.ParentCompanyId == currentUser.CompanyId));
+                if (!isAllowed) return Forbid();
 
                 if (User.IsInRole("CompanyAdmin"))
                     model.Role = (selectedRole == UserRole.SubAdmin) ? UserRole.SubAdmin : UserRole.Employee;
@@ -165,25 +236,23 @@ namespace NabdAltamayyuz.Controllers
                     model.Role = UserRole.Employee;
             }
 
-            // 5. التحقق من القواعد (تكرار + كوتا)
-            if (ModelState.IsValid && targetCompanyId != null)
+            // التحقق من الحدود (Employees Limit)
+            if (ModelState.IsValid && model.CompanyId != null && model.Role == UserRole.Employee)
             {
+                var company = await _context.Companies.FindAsync(model.CompanyId);
+                // إذا كان فرع، تحقق من حدوده الخاصة إن وجدت، أو من الرئيسي
+                // المنطق الحالي: كل شركة (رئيسية أو فرعية) لها حدها الخاص المسجل في الجدول
+                var currentCount = await _context.Users.CountAsync(u => u.CompanyId == model.CompanyId && u.Role == UserRole.Employee);
+
+                if (currentCount >= company.AllowedEmployees)
+                {
+                    ModelState.AddModelError("", $"عذراً، تم تجاوز الحد المسموح للموظفين في هذه الشركة/الفرع ({company.AllowedEmployees}).");
+                }
+
                 if (await _context.Users.AnyAsync(u => u.Email == model.Email))
                     ModelState.AddModelError("Email", "البريد الإلكتروني مسجل مسبقاً.");
-
-                if (model.Role == UserRole.Employee)
-                {
-                    var company = await _context.Companies.AsNoTracking().FirstOrDefaultAsync(c => c.Id == targetCompanyId);
-                    if (company != null && company.AllowedEmployees > 0)
-                    {
-                        var currentCount = await _context.Users.CountAsync(u => u.CompanyId == targetCompanyId && u.Role == UserRole.Employee);
-                        if (currentCount >= company.AllowedEmployees)
-                            ModelState.AddModelError("", $"عذراً، تجاوزت الحد المسموح ({company.AllowedEmployees} موظف).");
-                    }
-                }
             }
 
-            // 6. الحفظ
             if (ModelState.IsValid)
             {
                 try
@@ -203,20 +272,31 @@ namespace NabdAltamayyuz.Controllers
 
                     _context.Add(model);
                     await _context.SaveChangesAsync();
-
                     TempData["Success"] = "تم إضافة الموظف بنجاح";
                     return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {
-                    ModelState.AddModelError("", $"خطأ قاعدة البيانات: {ex.Message}");
+                    ModelState.AddModelError("", "خطأ في الحفظ: " + ex.Message);
                 }
             }
 
+            // إعادة ملء القوائم عند الخطأ
             if (User.IsInRole("SuperAdmin"))
             {
                 ViewBag.Companies = new SelectList(await _context.Companies.ToListAsync(), "Id", "Name", model.CompanyId);
             }
+            else
+            {
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var user = await _context.Users.FindAsync(userId);
+                var myCompanies = await _context.Companies
+                    .Where(c => c.Id == user.CompanyId || c.ParentCompanyId == user.CompanyId)
+                    .Select(c => new { c.Id, Name = c.ParentCompanyId == null ? c.Name : " -- " + c.Name })
+                    .ToListAsync();
+                ViewBag.Companies = new SelectList(myCompanies, "Id", "Name", model.CompanyId);
+            }
+
             return View(model);
         }
 
@@ -229,112 +309,77 @@ namespace NabdAltamayyuz.Controllers
             return View(employee);
         }
 
-        // POST: Employees/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, ApplicationUser model, IFormFile? attachment, string? newPassword)
         {
             if (id != model.Id) return NotFound();
-
             var userToUpdate = await _context.Users.FindAsync(id);
             if (userToUpdate == null) return NotFound();
 
-            ModelState.Clear();
-            if (string.IsNullOrEmpty(model.FullName)) ModelState.AddModelError("FullName", "الاسم مطلوب");
-            if (string.IsNullOrEmpty(model.NationalId)) ModelState.AddModelError("NationalId", "رقم الهوية مطلوب");
+            userToUpdate.FullName = model.FullName;
+            userToUpdate.NationalId = model.NationalId;
+            userToUpdate.PhoneNumber = model.PhoneNumber;
+            userToUpdate.JobTitle = model.JobTitle;
+            userToUpdate.Status = model.Status;
 
-            if (ModelState.IsValid)
+            if (!string.IsNullOrEmpty(newPassword)) userToUpdate.PasswordHash = newPassword;
+
+            if (attachment != null && attachment.Length > 0)
             {
-                userToUpdate.FullName = model.FullName;
-                userToUpdate.NationalId = model.NationalId;
-                userToUpdate.JobTitle = model.JobTitle;
-                userToUpdate.PhoneNumber = model.PhoneNumber;
-                userToUpdate.Status = model.Status;
-
-                if (!string.IsNullOrEmpty(newPassword))
+                // حفظ المرفق (نفس المنطق السابق)
+                string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads/employees");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(attachment.FileName);
+                string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
-                    userToUpdate.PasswordHash = newPassword;
+                    await attachment.CopyToAsync(fileStream);
                 }
-
-
-                if (attachment != null && attachment.Length > 0)
-                {
-                    string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads/employees");
-                    if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
-                    string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(attachment.FileName);
-                    string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-                    using (var fileStream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await attachment.CopyToAsync(fileStream);
-                    }
-                    userToUpdate.AttachmentPath = uniqueFileName;
-                }
-
-                _context.Update(userToUpdate);
-                await _context.SaveChangesAsync();
-                TempData["Success"] = "تم التحديث بنجاح";
-                return RedirectToAction(nameof(Index));
+                userToUpdate.AttachmentPath = uniqueFileName;
             }
-            return View(model);
+
+            _context.Update(userToUpdate);
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "تم تحديث البيانات بنجاح";
+            return RedirectToAction(nameof(Index));
         }
 
-        // POST: Employees/Suspend/5
         [HttpPost]
         public async Task<IActionResult> Suspend(int id)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
-
-            // التحقق من الصلاحية
-            if (!User.IsInRole("SuperAdmin"))
-            {
-                var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var currentUser = await _context.Users.FindAsync(currentUserId);
-                if (user.CompanyId != currentUser.CompanyId) return Forbid();
-            }
-
             user.IsSuspended = !user.IsSuspended;
             await _context.SaveChangesAsync();
             return Json(new { success = true, message = user.IsSuspended ? "تم تعليق الحساب" : "تم تفعيل الحساب" });
         }
 
-        // POST: Employees/ResetPassword/5
         [HttpPost]
         public async Task<IActionResult> ResetPassword(int id)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
-
-            if (!User.IsInRole("SuperAdmin"))
-            {
-                var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var currentUser = await _context.Users.FindAsync(currentUserId);
-                if (user.CompanyId != currentUser.CompanyId) return Forbid();
-            }
-
             user.PasswordHash = "123456";
             await _context.SaveChangesAsync();
-            TempData["Success"] = "تم إعادة تعيين كلمة المرور إلى 123456";
-
+            TempData["Success"] = "تم إعادة تعيين كلمة المرور";
             return RedirectToAction("Edit", new { id = id });
         }
 
-        // POST: Employees/Delete/5
+        [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
             var employee = await _context.Users.FindAsync(id);
             if (employee != null)
             {
-                // حذف المتعلقات
                 var tasks = _context.WorkTasks.Where(t => t.AssignedToId == id || t.CreatedById == id);
                 _context.WorkTasks.RemoveRange(tasks);
                 var attendances = _context.Attendances.Where(a => a.EmployeeId == id);
                 _context.Attendances.RemoveRange(attendances);
-
                 _context.Users.Remove(employee);
                 await _context.SaveChangesAsync();
-                TempData["Success"] = "تم الحذف بنجاح";
             }
+            TempData["Success"] = "تم الحذف بنجاح";
             return RedirectToAction(nameof(Index));
         }
     }

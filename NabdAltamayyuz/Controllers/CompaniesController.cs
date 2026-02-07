@@ -24,40 +24,34 @@ namespace NabdAltamayyuz.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        // GET: Companies/Index (مع البحث والفلترة)
+        // GET: Companies/Index
         public async Task<IActionResult> Index(string searchString, string statusFilter)
         {
             ViewBag.CurrentFilter = searchString;
             ViewBag.StatusFilter = statusFilter;
 
             var query = _context.Companies
-                .Include(c => c.SubCompanies) // تضمين الفروع
-                .ThenInclude(s => s.Employees) // لتعداد موظفي الفروع
+                .Include(c => c.SubCompanies)
+                .ThenInclude(s => s.Employees)
                 .Include(c => c.Employees)
                 .AsQueryable();
 
             if (User.IsInRole("SuperAdmin"))
             {
-                // المالك يرى الشركات الرئيسية (الجذور) فقط في القائمة الأساسية
-                // الفروع ستظهر داخل الشركات الرئيسية
                 query = query.Where(c => c.ParentCompanyId == null);
             }
             else
             {
-                // المشرف يرى الفروع التابعة لشركته
                 var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 var user = await _context.Users.FindAsync(userId);
-                query = query.Where(c => c.ParentCompanyId == user.CompanyId);
+                query = query.Where(c => c.ParentCompanyId == user.CompanyId || c.Id == user.CompanyId);
             }
 
-            // 1. البحث
             if (!string.IsNullOrEmpty(searchString))
             {
-                // البحث في اسم الشركة أو الرقم الموحد
                 query = query.Where(c => c.Name.Contains(searchString) || c.UnifiedNumber.Contains(searchString));
             }
 
-            // 2. الفلترة
             if (!string.IsNullOrEmpty(statusFilter))
             {
                 var today = DateTime.Now;
@@ -79,7 +73,6 @@ namespace NabdAltamayyuz.Controllers
             return View(companies);
         }
 
-        // GET: Companies/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -104,14 +97,12 @@ namespace NabdAltamayyuz.Controllers
             return View(company);
         }
 
-        // GET: Companies/Create
         [Authorize(Roles = "SuperAdmin")]
         public IActionResult Create()
         {
             return View();
         }
 
-        // POST: Companies/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "SuperAdmin")]
@@ -122,8 +113,10 @@ namespace NabdAltamayyuz.Controllers
             if (string.IsNullOrEmpty(company.NationalAddressShortCode)) company.NationalAddressShortCode = "-";
             if (string.IsNullOrEmpty(company.PhoneNumber)) company.PhoneNumber = "-";
             if (string.IsNullOrEmpty(company.TaxNumber)) company.TaxNumber = "-";
+
             ModelState.Remove(nameof(company.SubCompanies));
             ModelState.Remove(nameof(company.Employees));
+
             if (ModelState.IsValid)
             {
                 await HandleAttachment(company, attachment);
@@ -157,50 +150,92 @@ namespace NabdAltamayyuz.Controllers
                 }
 
                 TempData["Success"] = "تم إضافة الشركة بنجاح";
-                return RedirectToAction("Index"); // العودة لصفحة الشركات بدلاً من الداشبورد
+                return RedirectToAction("Index");
             }
             return View(company);
         }
 
-        // GET: Companies/CreateSub
-        [Authorize(Roles = "CompanyAdmin")]
-        public async Task<IActionResult> CreateSub()
+        [Authorize(Roles = "CompanyAdmin,SuperAdmin")]
+        public async Task<IActionResult> CreateSub(int? parentId)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var user = await _context.Users.Include(u => u.Company).FirstOrDefaultAsync(u => u.Id == userId);
+            Company parentCompany = null;
 
-            if (user?.Company == null) return NotFound();
-
-            var currentSubCount = await _context.Companies.CountAsync(c => c.ParentCompanyId == user.CompanyId);
-            if (currentSubCount >= user.Company.AllowedSubAccounts)
+            if (User.IsInRole("SuperAdmin"))
             {
-                TempData["Error"] = "عذراً، لقد استنفذت عدد الحسابات الفرعية المسموحة.";
+                if (parentId == null) return NotFound();
+                parentCompany = await _context.Companies.FindAsync(parentId);
+            }
+            else
+            {
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var user = await _context.Users.Include(u => u.Company).FirstOrDefaultAsync(u => u.Id == userId);
+                parentCompany = user?.Company;
+            }
+
+            if (parentCompany == null) return NotFound();
+
+            var currentSubCount = await _context.Companies.CountAsync(c => c.ParentCompanyId == parentCompany.Id);
+            if (currentSubCount >= parentCompany.AllowedSubAccounts)
+            {
+                TempData["Error"] = "عذراً، لقد استنفذت عدد الفروع المسموحة لهذه الشركة.";
                 return RedirectToAction("Index");
             }
 
-            return View();
+            var currentEmployees = await _context.Users.CountAsync(u => u.CompanyId == parentCompany.Id && u.Role == UserRole.Employee);
+            var remainingEmployees = parentCompany.AllowedEmployees - currentEmployees;
+
+            var model = new Company
+            {
+                ParentCompanyId = parentCompany.Id,
+                TaxNumber = parentCompany.TaxNumber,
+                SubscriptionStartDate = parentCompany.SubscriptionStartDate,
+                SubscriptionEndDate = parentCompany.SubscriptionEndDate,
+                PaymentTerm = parentCompany.PaymentTerm,
+                NotificationDaysBeforeExpiry = parentCompany.NotificationDaysBeforeExpiry,
+                PricePerEmployee = parentCompany.PricePerEmployee,
+                TaxRate = parentCompany.TaxRate,
+                AllowedEmployees = remainingEmployees > 0 ? remainingEmployees : 0,
+                AllowedSubAccounts = 0
+            };
+
+            model.CalculateTotal();
+
+            ViewBag.ParentCompanyName = parentCompany.Name;
+            ViewBag.MaxEmployeesAllowed = remainingEmployees;
+
+            return View(model);
         }
 
-        // POST: Companies/CreateSub
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "CompanyAdmin")]
+        [Authorize(Roles = "CompanyAdmin,SuperAdmin")]
         public async Task<IActionResult> CreateSub(Company company, IFormFile? attachment, string? adminPassword)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var user = await _context.Users.Include(u => u.Company).FirstOrDefaultAsync(u => u.Id == userId);
+            var parentCompany = await _context.Companies.Include(c => c.Employees).FirstOrDefaultAsync(c => c.Id == company.ParentCompanyId);
+            if (parentCompany == null) return NotFound();
 
-            company.ParentCompanyId = user.CompanyId;
-            company.SubscriptionStartDate = DateTime.Now;
-            company.SubscriptionEndDate = user.Company.SubscriptionEndDate;
+            var currentEmployees = await _context.Users.CountAsync(u => u.CompanyId == parentCompany.Id && u.Role == UserRole.Employee);
+            var remainingEmployeesInParent = parentCompany.AllowedEmployees - currentEmployees;
+
+            if (company.AllowedEmployees > remainingEmployeesInParent)
+            {
+                ModelState.AddModelError("AllowedEmployees", $"عدد الموظفين لا يمكن أن يتجاوز المتبقي في الشركة الرئيسية ({remainingEmployeesInParent})");
+            }
+
+            company.SubscriptionStartDate = parentCompany.SubscriptionStartDate;
+            company.SubscriptionEndDate = parentCompany.SubscriptionEndDate;
+            company.TaxNumber = parentCompany.TaxNumber;
             company.AllowedSubAccounts = 0;
 
             if (string.IsNullOrEmpty(company.NationalAddressShortCode)) company.NationalAddressShortCode = "-";
             if (string.IsNullOrEmpty(company.PhoneNumber)) company.PhoneNumber = "-";
-            if (string.IsNullOrEmpty(company.TaxNumber)) company.TaxNumber = "-";
             if (string.IsNullOrEmpty(company.UnifiedNumber)) company.UnifiedNumber = "-";
 
+            company.CalculateTotal();
+
             ModelState.Remove("ParentCompany");
+            ModelState.Remove("SubCompanies");
+            ModelState.Remove("Employees");
 
             if (ModelState.IsValid)
             {
@@ -237,11 +272,13 @@ namespace NabdAltamayyuz.Controllers
                 TempData["Success"] = "تم إضافة الفرع وإنشاء حساب المدير بنجاح";
                 return RedirectToAction(nameof(Index));
             }
+
+            ViewBag.ParentCompanyName = parentCompany.Name;
+            ViewBag.MaxEmployeesAllowed = remainingEmployeesInParent;
             return View(company);
         }
 
-        // GET: Companies/Edit/5
-        [Authorize(Roles = "SuperAdmin,CompanyAdmin")]
+        [Authorize(Roles = "SuperAdmin,CompanyAdmin,SubAdmin")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -258,10 +295,9 @@ namespace NabdAltamayyuz.Controllers
             return View(company);
         }
 
-        // POST: Companies/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "SuperAdmin,CompanyAdmin")]
+        [Authorize(Roles = "SuperAdmin,CompanyAdmin,SubAdmin")]
         public async Task<IActionResult> Edit(int id, Company company, IFormFile? attachment, string? adminPassword)
         {
             if (id != company.Id) return NotFound();
@@ -271,24 +307,15 @@ namespace NabdAltamayyuz.Controllers
 
             company.CreatedAt = existingCompany.CreatedAt;
             company.ParentCompanyId = existingCompany.ParentCompanyId;
-            company.IsSuspended = existingCompany.IsSuspended; // الحالة لا تتغير من هنا
+            company.IsSuspended = existingCompany.IsSuspended;
 
-            if (string.IsNullOrEmpty(company.NationalAddressShortCode))
-                company.NationalAddressShortCode = existingCompany.NationalAddressShortCode ?? "-";
-            if (string.IsNullOrEmpty(company.PhoneNumber))
-                company.PhoneNumber = existingCompany.PhoneNumber ?? "-";
-            if (string.IsNullOrEmpty(company.TaxNumber))
-                company.TaxNumber = existingCompany.TaxNumber ?? "-";
-
-            if (string.IsNullOrEmpty(company.AttachmentPath))
-                company.AttachmentPath = existingCompany.AttachmentPath;
+            if (string.IsNullOrEmpty(company.NationalAddressShortCode)) company.NationalAddressShortCode = existingCompany.NationalAddressShortCode ?? "-";
+            if (string.IsNullOrEmpty(company.PhoneNumber)) company.PhoneNumber = existingCompany.PhoneNumber ?? "-";
+            if (string.IsNullOrEmpty(company.TaxNumber)) company.TaxNumber = existingCompany.TaxNumber ?? "-";
+            if (string.IsNullOrEmpty(company.AttachmentPath)) company.AttachmentPath = existingCompany.AttachmentPath;
 
             company.CalculateTotal();
 
-            ModelState.Remove(nameof(company.NationalAddressShortCode));
-            ModelState.Remove(nameof(company.PhoneNumber));
-            ModelState.Remove(nameof(company.TaxNumber));
-            ModelState.Remove(nameof(company.AttachmentPath));
             ModelState.Remove(nameof(company.SubCompanies));
             ModelState.Remove(nameof(company.Employees));
 
@@ -321,8 +348,6 @@ namespace NabdAltamayyuz.Controllers
                     if (!await _context.Companies.AnyAsync(e => e.Id == id)) return NotFound();
                     else throw;
                 }
-
-                // تعديل التوجيه: العودة إلى صفحة الشركات بدلاً من التفاصيل
                 return RedirectToAction("Index");
             }
             return View(company);
@@ -355,7 +380,6 @@ namespace NabdAltamayyuz.Controllers
             {
                 var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 var user = await _context.Users.FindAsync(userId);
-                // يسمح للمشرف بتعليق فروعه
                 if (company.ParentCompanyId != user.CompanyId)
                 {
                     return Forbid();

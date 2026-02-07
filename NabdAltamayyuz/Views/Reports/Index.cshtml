@@ -1,71 +1,126 @@
 ﻿@using System.Globalization
 @using NabdAltamayyuz.Models
 @{
-    ViewData["Title"] = "التقارير";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
+    ViewData["Title"] = isRtl ? "مركز التقارير" : "Reports Center";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var isEmployee = User.IsInRole(nameof(UserRole.Employee));
+
+    bool isSuperAdmin = User.IsInRole("SuperAdmin");
+    bool isEmployee = User.IsInRole("Employee");
 }
 
 <div class="container py-5 animate-fade-in" style="margin-top: 120px;">
+
     <div class="text-center mb-5">
-        <h3 class="fw-bold text-dark"><i class="fas fa-file-invoice text-gold me-2"></i> @(isRtl ? "مركز التقارير" : "Reports Center")</h3>
-        <p class="text-muted">@(isRtl ? "استخراج وطباعة تقارير الأداء والحضور والمهام" : "Export and print performance, attendance, and task reports")</p>
+        <div class="icon-box-lg mx-auto bg-dark text-gold rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+            <i class="fas fa-print fa-3x"></i>
+        </div>
+        <h3 class="fw-bold text-dark">@(isRtl ? "مركز التقارير والطباعة" : "Reports & Print Center")</h3>
+        <p class="text-muted">@(isRtl ? "استخراج تقارير تفصيلية بصيغة قابلة للطباعة" : "Generate detailed printable reports")</p>
     </div>
 
     <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
+        <div class="col-lg-8">
             <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-                <div class="card-header bg-dark text-white py-3 px-4">
-                    <h5 class="mb-0 fw-bold text-gold">@(isRtl ? "إعداد التقرير" : "Report Settings")</h5>
+                <div class="card-header bg-dark text-white py-3 px-4 d-flex align-items-center">
+                    <i class="fas fa-sliders-h text-gold me-2"></i>
+                    <h5 class="mb-0 fw-bold">@(isRtl ? "إعدادات التقرير" : "Report Settings")</h5>
                 </div>
-                <div class="card-body p-4 bg-white">
+                <div class="card-body p-4 p-md-5 bg-white">
                     <form action="/Reports/Generate" method="get" target="_blank">
 
-                        <div class="mb-4">
-                            <label class="form-label fw-bold small text-muted">@(isRtl ? "نوع التقرير" : "Report Type")</label>
-                            <div class="row g-3">
-                                <div class="col-6">
-                                    <input type="radio" class="btn-check" name="type" id="typeAttend" value="attendance" checked>
-                                    <label class="btn btn-outline-light text-dark border-secondary w-100 rounded-3 py-3 hover-border-gold" for="typeAttend">
-                                        <i class="fas fa-clock d-block fa-2x mb-2 text-gold"></i>
-                                        @(isRtl ? "الحضور والانصراف" : "Attendance")
-                                    </label>
-                                </div>
-                                <div class="col-6">
-                                    <input type="radio" class="btn-check" name="type" id="typeTasks" value="tasks">
-                                    <label class="btn btn-outline-light text-dark border-secondary w-100 rounded-3 py-3 hover-border-gold" for="typeTasks">
-                                        <i class="fas fa-tasks d-block fa-2x mb-2 text-gold"></i>
-                                        @(isRtl ? (isEmployee ? "مهامي" : "حالة المهام") : (isEmployee ? "My Tasks" : "Tasks Status"))
-                                    </label>
-                                </div>
+                        <!-- 1. نوع التقرير (Tabs Style) -->
+                        <label class="form-label fw-bold small text-muted mb-3">@(isRtl ? "اختر نوع التقرير:" : "Select Report Type:")</label>
+                        <div class="row g-3 mb-4">
+                            <!-- تقرير الحضور -->
+                            <div class="col-md-6">
+                                <input type="radio" class="btn-check" name="type" id="rep_attendance" value="attendance" checked>
+                                <label class="btn btn-outline-light text-dark border-secondary w-100 p-3 h-100 d-flex flex-column align-items-center justify-content-center hover-border-gold" for="rep_attendance">
+                                    <i class="fas fa-clock fa-2x mb-2 text-primary"></i>
+                                    <span class="fw-bold">@(isRtl ? "سجل الحضور" : "Attendance Log")</span>
+                                    <small class="text-muted" style="font-size: 0.7rem;">@(isRtl ? "حركة الحضور، الغياب، الساعات" : "Attendance, Absence, Hours")</small>
+                                </label>
                             </div>
+
+                            <!-- تقرير المهام -->
+                            <div class="col-md-6">
+                                <input type="radio" class="btn-check" name="type" id="rep_tasks" value="tasks">
+                                <label class="btn btn-outline-light text-dark border-secondary w-100 p-3 h-100 d-flex flex-column align-items-center justify-content-center hover-border-gold" for="rep_tasks">
+                                    <i class="fas fa-tasks fa-2x mb-2 text-warning"></i>
+                                    <span class="fw-bold">@(isRtl ? "تقرير المهام" : "Tasks Report")</span>
+                                    <small class="text-muted" style="font-size: 0.7rem;">@(isRtl ? "المنجزة، المتأخرة، نسب الإنجاز" : "Completed, Late, Performance")</small>
+                                </label>
+                            </div>
+
+                            @if (!isEmployee)
+                            {
+                                <!-- تقرير الموظفين -->
+                                <div class="col-md-6">
+                                    <input type="radio" class="btn-check" name="type" id="rep_employees" value="employees">
+                                    <label class="btn btn-outline-light text-dark border-secondary w-100 p-3 h-100 d-flex flex-column align-items-center justify-content-center hover-border-gold" for="rep_employees">
+                                        <i class="fas fa-users fa-2x mb-2 text-success"></i>
+                                        <span class="fw-bold">@(isRtl ? "بيانات الموظفين" : "Employees Data")</span>
+                                        <small class="text-muted" style="font-size: 0.7rem;">@(isRtl ? "بيانات شاملة، الاتصال، الحالة" : "Profile, Contact info, Status")</small>
+                                    </label>
+                                </div>
+
+                                <!-- تقرير الاشتراكات -->
+                                <div class="col-md-6">
+                                    <input type="radio" class="btn-check" name="type" id="rep_subscriptions" value="subscriptions">
+                                    <label class="btn btn-outline-light text-dark border-secondary w-100 p-3 h-100 d-flex flex-column align-items-center justify-content-center hover-border-gold" for="rep_subscriptions">
+                                        <i class="fas fa-file-invoice-dollar fa-2x mb-2 text-danger"></i>
+                                        <span class="fw-bold">
+                                            @if (isSuperAdmin)
+                                            {
+                                                @(isRtl ? "الاشتراكات والفواتير" : "Subscriptions & Invoices")
+                                            }
+                                            else
+                                            {
+
+                                                @(isRtl ? "بيانات الاشتراك والفروع" : "Subscription & Branches")
+                                            }
+                                        </span>
+                                        <small class="text-muted" style="font-size: 0.7rem;">@(isRtl ? "تفاصيل الباقة، التواريخ، التكلفة" : "Plan details, dates, costs")</small>
+                                    </label>
+                                </div>
+                            }
                         </div>
 
-                        <div class="row g-3 mb-3">
-                            <div class="col-6">
-                                <label class="form-label fw-bold small text-muted">@(isRtl ? "من تاريخ" : "From Date")</label>
+                        <hr class="my-4 opacity-10">
+
+                        <!-- 2. الفلاتر -->
+                        <div class="row g-3">
+                            @if (!isEmployee)
+                            {
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small">@(isRtl ? "الشركة / الفرع" : "Company / Branch")</label>
+                                    <select name="companyId" class="form-select bg-light" asp-items="ViewBag.Companies">
+                                        <option value="">@(isRtl ? "-- الكل --" : "-- All --")</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small">@(isRtl ? "بحث (اسم موظف)" : "Search (Employee Name)")</label>
+                                    <input type="text" name="searchString" class="form-control bg-light" placeholder="@(isRtl ? "اختياري..." : "Optional...")">
+                                </div>
+                            }
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">@(isRtl ? "من تاريخ" : "From Date")</label>
                                 <input type="date" name="from" class="form-control bg-light" value="@DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd")">
                             </div>
-                            <div class="col-6">
-                                <label class="form-label fw-bold small text-muted">@(isRtl ? "إلى تاريخ" : "To Date")</label>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">@(isRtl ? "إلى تاريخ" : "To Date")</label>
                                 <input type="date" name="to" class="form-control bg-light" value="@DateTime.Now.ToString("yyyy-MM-dd")">
                             </div>
                         </div>
 
-                        @if (!isEmployee)
-                        {
-                            <div class="mb-4">
-                                <label class="form-label fw-bold small text-muted">@(isRtl ? "بحث عن موظف (اختياري)" : "Search Employee (Optional)")</label>
-                                <input type="text" name="searchEmployee" class="form-control bg-light" placeholder="@(isRtl ? "اسم الموظف..." : "Employee name...")">
-                            </div>
-                        }
-
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold py-3 rounded-pill shadow-sm hover-scale">
-                                <i class="fas fa-print me-2"></i> @(isRtl ? "عرض وطباعة التقرير" : "View & Print Report")
+                        <!-- 3. زر التنفيذ -->
+                        <div class="d-grid mt-5">
+                            <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold py-3 rounded-pill shadow-lg hover-scale">
+                                <i class="fas fa-print me-2"></i> @(isRtl ? "استخراج التقرير" : "Generate Report")
                             </button>
                         </div>
+
                     </form>
                 </div>
             </div>
@@ -75,8 +130,8 @@
 
 <style>
     .btn-check:checked + .btn {
-        background-color: #fdfbf4;
+        background-color: #fffbf0;
         border-color: #D4AF37 !important;
-        box-shadow: 0 0 0 0.25rem rgba(212, 175, 55, 0.25);
+        box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
     }
 </style>
