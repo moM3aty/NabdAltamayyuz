@@ -1,9 +1,10 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.EntityFrameworkCore;
 using NabdAltamayyuz.Data;
 using NabdAltamayyuz.Models;
+using NabdAltamayyuz.Services; // إضافة الـ Namespace
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,25 +37,26 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
+// 5. Register Teleworks Service (الربط مع المنصة)
+builder.Services.AddHttpClient<ITeleworksService, TeleworksService>();
+
 var app = builder.Build();
 
-// 5. Seed Database (????? ???????? ???????)
+// 6. Seed Database
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
-        // ??????? ???? ??????? ???? ???? ????????
         await RoleInitializer.InitializeAsync(services);
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "??? ??? ????? ????? ????? ????????.");
+        logger.LogError(ex, "An error occurred while seeding the database.");
     }
 }
 
-// 6. HTTP Pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");

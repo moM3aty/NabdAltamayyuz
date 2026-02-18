@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NabdAltamayyuz.Data;
 using NabdAltamayyuz.Models;
+using NabdAltamayyuz.Services; // إضافة الـ Namespace
 using System;
 using System.Linq;
 using System.Security.Claims;
@@ -14,125 +15,76 @@ namespace NabdAltamayyuz.Controllers
     public class DashboardController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly ITeleworksService _teleworksService; // حقن الخدمة
 
-        public DashboardController(ApplicationDbContext context)
+        public DashboardController(ApplicationDbContext context, ITeleworksService teleworksService)
         {
             _context = context;
+            _teleworksService = teleworksService;
         }
 
         public IActionResult Index()
         {
-            if (User.IsInRole(UserRole.SuperAdmin.ToString()))
-            {
-                return RedirectToAction("SuperAdmin");
-            }
-            else if (User.IsInRole(UserRole.CompanyAdmin.ToString()) || User.IsInRole(UserRole.SubAdmin.ToString()))
-            {
-                return RedirectToAction("CompanyAdmin");
-            }
-            else
-            {
-                return RedirectToAction("Employee");
-            }
+            if (User.IsInRole("SuperAdmin")) return RedirectToAction("SuperAdmin");
+            else if (User.IsInRole("CompanyAdmin") || User.IsInRole("SubAdmin")) return RedirectToAction("CompanyAdmin");
+            else return RedirectToAction("Employee");
         }
 
-        // 1. Super Admin Dashboard (Updated with Task Stats)
         [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> SuperAdmin()
         {
             ViewBag.CompaniesCount = await _context.Companies.CountAsync();
-            ViewBag.EmployeesCount = await _context.Users.CountAsync();
+            ViewBag.EmployeesCount = await _context.Users.CountAsync(u => u.Role == UserRole.Employee);
 
-            // Task Statistics
             var allTasks = await _context.WorkTasks.ToListAsync();
+            ViewBag.TasksTotal = allTasks.Count;
+            ViewBag.TasksCompleted = allTasks.Count(t => t.Status == Models.TaskStatus.Completed);
+            ViewBag.TasksPending = allTasks.Count(t => t.Status == Models.TaskStatus.Pending);
+            ViewBag.TasksDelayed = allTasks.Count(t => t.Status == Models.TaskStatus.Delayed);
+            ViewBag.TasksOverdue = allTasks.Count(t => t.DueDate < DateTime.Today && t.Status != Models.TaskStatus.Completed);
 
-            ViewBag.TotalTasks = allTasks.Count;
-            ViewBag.CompletedTasks = allTasks.Count(t => t.IsCompleted);
-            ViewBag.PendingTasks = allTasks.Count(t => t.Status == NabdAltamayyuz.Models.TaskStatus.Pending);
-            ViewBag.DelayedTasks = allTasks.Count(t => t.Status == NabdAltamayyuz.Models.TaskStatus.Delayed);
-            ViewBag.LateTasks = allTasks.Count(t => !t.IsCompleted && t.DueDate < DateTime.Today);
-
-            var recentCompanies = await _context.Companies
-                .OrderByDescending(c => c.CreatedAt)
-                .ToListAsync();
-
+            var recentCompanies = await _context.Companies.OrderByDescending(c => c.CreatedAt).Take(5).ToListAsync();
             return View(recentCompanies);
         }
 
-        // 2. Company Admin & Sub Admin Dashboard
         [Authorize(Roles = "CompanyAdmin,SubAdmin")]
         public async Task<IActionResult> CompanyAdmin()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var user = await _context.Users.Include(u => u.Company).FirstOrDefaultAsync(u => u.Id == userId);
-
             if (user?.CompanyId == null) return RedirectToAction("AccessDenied", "Account");
 
-            var employeesCount = await _context.Users.CountAsync(u => u.CompanyId == user.CompanyId && u.Role == UserRole.Employee);
-            ViewBag.EmployeesCount = employeesCount;
-
+            ViewBag.EmployeesCount = await _context.Users.CountAsync(u => u.CompanyId == user.CompanyId && u.Role == UserRole.Employee);
             var today = DateTime.Today;
-            var attendanceList = await _context.Attendances
-                .Include(a => a.Employee)
-                .Where(a => a.Employee.CompanyId == user.CompanyId && a.Date == today)
-                .OrderByDescending(a => a.TimeIn)
-                .ToListAsync();
-
-            ViewBag.AttendanceList = attendanceList;
-
-            var pendingTasks = await _context.WorkTasks
-                .Include(t => t.AssignedTo)
-                .Where(t => t.AssignedTo.CompanyId == user.CompanyId && !t.IsCompleted)
-                .OrderBy(t => t.DueDate)
-                .Take(10)
-                .ToListAsync();
-
-            ViewBag.PendingTasks = pendingTasks;
+            ViewBag.AttendanceList = await _context.Attendances.Include(a => a.Employee).Where(a => a.Employee.CompanyId == user.CompanyId && a.Date == today).OrderByDescending(a => a.TimeIn).ToListAsync();
+            ViewBag.PendingTasks = await _context.WorkTasks.Include(t => t.AssignedTo).Where(t => t.AssignedTo.CompanyId == user.CompanyId && !t.IsCompleted).OrderBy(t => t.DueDate).Take(10).ToListAsync();
 
             if (user.Company != null)
             {
                 var daysLeft = (user.Company.SubscriptionEndDate - DateTime.Now).Days;
-                if (daysLeft < user.Company.NotificationDaysBeforeExpiry && daysLeft > 0)
-                {
-                    ViewBag.AlertMessage = $"تنبيه: اشتراك الشركة سينتهي خلال {daysLeft} يوم.";
-                }
-                else if (daysLeft <= 0)
-                {
-                    ViewBag.ErrorMessage = "تنبيه: اشتراك الشركة منتهي.";
-                }
+                if (daysLeft < user.Company.NotificationDaysBeforeExpiry && daysLeft > 0) ViewBag.AlertMessage = $"تنبيه: الاشتراك ينتهي خلال {daysLeft} يوم.";
+                else if (daysLeft <= 0) ViewBag.ErrorMessage = "تنبيه: الاشتراك منتهي.";
             }
-
             return View();
         }
 
-        // 3. Employee Dashboard (Added Task Completion Stat)
         [Authorize(Roles = "Employee")]
         public async Task<IActionResult> Employee()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var today = DateTime.Today;
-
-            var attendance = await _context.Attendances
-                .FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
+            var attendance = await _context.Attendances.FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
 
             ViewBag.IsCheckedIn = attendance != null && attendance.TimeIn != null;
             ViewBag.IsCheckedOut = attendance != null && attendance.TimeOut != null;
 
             if (TempData["Success"] != null) ViewBag.Message = TempData["Success"];
 
-            var myTasks = await _context.WorkTasks
-                .Where(t => t.AssignedToId == userId)
-                .OrderBy(t => t.DueDate)
-                .ToListAsync();
-
-            // Stats for Employee
-            ViewBag.MyTotalTasks = myTasks.Count;
-            ViewBag.MyCompletedTasks = myTasks.Count(t => t.IsCompleted);
-            ViewBag.MyPendingTasks = myTasks.Count(t => !t.IsCompleted);
-
-            return View(myTasks.Where(t => !t.IsCompleted).ToList());
+            var myTasks = await _context.WorkTasks.Where(t => t.AssignedToId == userId && !t.IsCompleted).OrderBy(t => t.DueDate).ToListAsync();
+            return View(myTasks);
         }
 
+        // --- تسجيل الدخول (مع الربط بالمنصة) ---
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Employee,CompanyAdmin,SubAdmin")]
@@ -140,26 +92,36 @@ namespace NabdAltamayyuz.Controllers
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var today = DateTime.Today;
-
             var existingRecord = await _context.Attendances.FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
 
             if (existingRecord == null)
             {
+                var now = DateTime.Now;
                 var attendance = new Attendance
                 {
                     EmployeeId = userId,
                     Date = today,
                     DayName = today.ToString("dddd", new System.Globalization.CultureInfo("ar-SA")),
-                    TimeIn = DateTime.Now,
+                    TimeIn = now,
                     IsManualEntry = false
                 };
                 _context.Attendances.Add(attendance);
                 await _context.SaveChangesAsync();
-                TempData["Success"] = "تم تسجيل الدخول بنجاح";
+
+                // إرسال البيانات للمنصة
+                var user = await _context.Users.FindAsync(userId);
+                if (user != null && !string.IsNullOrEmpty(user.NationalId))
+                {
+                    // إرسال في الخلفية (Fire and forget or await depending on requirement)
+                    await _teleworksService.SendAttendanceAsync(user.NationalId, today, now, null);
+                }
+
+                TempData["Success"] = "تم تسجيل الدخول";
             }
             return RedirectToAction("Index");
         }
 
+        // --- تسجيل الخروج (مع الربط بالمنصة) ---
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Employee,CompanyAdmin,SubAdmin")]
@@ -167,15 +129,23 @@ namespace NabdAltamayyuz.Controllers
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var today = DateTime.Today;
-
             var record = await _context.Attendances.FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
 
             if (record != null && record.TimeOut == null)
             {
-                record.TimeOut = DateTime.Now;
+                var now = DateTime.Now;
+                record.TimeOut = now;
                 _context.Update(record);
                 await _context.SaveChangesAsync();
-                TempData["Success"] = "تم تسجيل الخروج بنجاح";
+
+                // إرسال البيانات للمنصة
+                var user = await _context.Users.FindAsync(userId);
+                if (user != null && !string.IsNullOrEmpty(user.NationalId))
+                {
+                    await _teleworksService.SendAttendanceAsync(user.NationalId, today, record.TimeIn.Value, now);
+                }
+
+                TempData["Success"] = "تم تسجيل الخروج";
             }
             return RedirectToAction("Index");
         }

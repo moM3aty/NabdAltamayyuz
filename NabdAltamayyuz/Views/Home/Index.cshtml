@@ -8,13 +8,20 @@
 <div class="hero-wrapper" style="background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1920&auto=format&fit=crop');">
     <div class="hero-overlay"></div>
     <div class="container hero-content text-center">
+        <!-- شارة مزود الخدمة المعتمد -->
+        <div class="animate-up mb-3">
+            <span class="badge bg-gold text-dark border border-white px-4 py-2 rounded-pill fs-6 shadow-lg">
+                <i class="fas fa-certificate me-2"></i> @(isRtl ? "مزود خدمة عمل عن بعد معتمد" : "Certified Remote Work Service Provider")
+            </span>
+        </div>
+
         <h1 class="display-3 fw-bolder mb-4 animate-up">
             @(isRtl ? "شريككم الاستراتيجي في" : "Your Strategic Partner in")
             <br />
             <span class="text-gradient-gold">@(isRtl ? "الإدارة والتشغيل الاحترافي" : "Professional Management & Operation")</span>
         </h1>
         <p class="lead mb-5 text-light opacity-75 animate-up delay-100 fs-5">
-            @(isRtl ? "نصيغ الحلول الإدارية المتكاملة، لتمكين شركتكم من التركيز على أهدافها الكبرى. ندير منصاتكم (قوى، التأمينات، مكتب العمل، مقيم، ابشر أعمال، مدد، تم، وغيرها من المنصات الحكومية) بدقة واحترافية." : "We craft integrated administrative solutions to empower your company to focus on its major goals. We manage your platforms (Qiwa, GOSI, Labor Office, Muqeem, Absher Business, Mudad, Tamm, etc.) with precision and professionalism.")
+            @(isRtl ? "نصيغ الحلول الإدارية المتكاملة، لتمكين شركتكم من التركيز على أهدافها الكبرى. ندير منصاتكم الحكومية بدقة واحترافية." : "We craft integrated administrative solutions to empower your company to focus on its major goals.")
         </p>
         <div class="d-flex justify-content-center gap-3 animate-up delay-200 flex-wrap">
             <a href="#services" class="btn btn-premium btn-lg">@(isRtl ? "اكتشف خدماتنا" : "Discover Services")</a>
@@ -22,9 +29,8 @@
         </div>
     </div>
 </div>
-
 <!-- Why Us Section -->
-<section class="section-padding bg-white">
+<<section class="section-padding bg-white">
     <div class="container">
         <div class="text-center mb-5">
             <h6 class="text-gold text-uppercase fw-bold letter-spacing-2">@(isRtl ? "لماذا نحن؟" : "WHY US")</h6>
@@ -39,7 +45,7 @@
                         <i class="fas fa-check-double"></i>
                     </div>
                     <h4 class="fw-bold mb-3">@(isRtl ? "الدقة المتناهية" : "Absolute Accuracy")</h4>
-                    <p class="text-secondary small mb-0">@(isRtl ? "ندرك أن التفاصيل الإدارية هي محرك النمو، لذا نضمن لك امتثالاً كاملاً للأنظمة واللوائح." : "We realize administrative details drive growth, so we ensure full compliance with regulations.")</p>
+                    <p class="text-secondary small mb-0">@(isRtl ? "ندرك أن التفاصيل الإدارية هي محرك النمو." : "We realize administrative details drive growth.")</p>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
