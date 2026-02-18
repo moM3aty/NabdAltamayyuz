@@ -72,3 +72,5 @@ wwwroot\lib\jquery\dist\jquery.js
 wwwroot\lib\jquery\dist\jquery.min.js
 wwwroot\lib\jquery\dist\jquery.min.map
 wwwroot\lib\jquery\LICENSE.txt
+wwwroot\uploads\employees\4d9075b8-2551-46ba-ad29-75e23f8bfce9_WhatsApp Image 2026-02-14 at 5.28.19 PM.jpeg
+wwwroot\uploads\employees\a4b317ae-c78b-46d0-b204-06719af78fb5_WhatsApp Image 2026-02-14 at 5.28.18 PM.jpeg

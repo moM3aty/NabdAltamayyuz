@@ -185,7 +185,7 @@
         var tasksChart = new Chart(ctxTasks, {
             type: 'doughnut',
             data: {
-                labels: ['@(isRtl ? "منجز" : "Completed")', '@(isRtl ? "قيد التنفيذ" : "Pending")'],
+                labels: ['@Html.Raw(isRtl ? "منجز" : "Completed")', '@Html.Raw(isRtl ? "قيد التنفيذ" : "Pending")'],
                 datasets: [{
                     data: [@completedTasks, @openTasks],
                     backgroundColor: ['#198754', '#ffc107'],

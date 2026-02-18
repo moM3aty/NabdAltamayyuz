@@ -236,6 +236,9 @@ namespace NabdAltamayyuz.Controllers
             ModelState.Remove("ParentCompany");
             ModelState.Remove("SubCompanies");
             ModelState.Remove("Employees");
+            ModelState.Remove("UnifiedNumber");
+            ModelState.Remove("NationalAddressShortCode");
+
 
             if (ModelState.IsValid)
             {

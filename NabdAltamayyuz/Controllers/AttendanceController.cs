@@ -288,19 +288,5 @@ namespace NabdAltamayyuz.Controllers
             return Json(new { success = true, message = $"تم إرسال {sentCount} سجل حضور للمنصة عن الأسبوع الماضي." });
         }
     
-
-        public class AttendanceViewModel
-        {
-            public int EmployeeId { get; set; }
-            public string EmployeeName { get; set; }
-            public string CompanyName { get; set; }
-            public string JobTitle { get; set; }
-            public int AttendanceId { get; set; } 
-            public DateTime Date { get; set; }
-            public DateTime? TimeIn { get; set; }
-            public DateTime? TimeOut { get; set; }
-            public string Notes { get; set; }
-            public bool IsPresent { get; set; }
-        }
     }
 }

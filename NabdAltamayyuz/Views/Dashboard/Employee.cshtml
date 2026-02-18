@@ -209,7 +209,7 @@
 @section Scripts {
     <script>
         function completeTask(id) {
-            var confirmMsg = '@(isRtl ? "هل أنت متأكد من إتمام هذه المهمة؟" : "Are you sure you want to complete this task?")';
+            var confirmMsg = '@Html.Raw(isRtl ? "هل أنت متأكد من إتمام هذه المهمة؟" : "Are you sure you want to complete this task?")';
             if (confirm(confirmMsg)) {
                 var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 

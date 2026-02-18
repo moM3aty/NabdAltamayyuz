@@ -148,7 +148,7 @@
             data: {
                 labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
                 datasets: [{
-                    label: '@(isRtl ? "الشركات" : "Companies")',
+                    label: '@Html.Raw(isRtl ? "الشركات" : "Companies")',
                     data: [5, 8, 12, 15, 20, @companiesCount],
                     borderColor: '#D4AF37',
                     backgroundColor: 'rgba(212, 175, 55, 0.1)',
@@ -156,7 +156,7 @@
                     tension: 0.4,
                     fill: true
                 }, {
-                    label: '@(isRtl ? "الموظفين" : "Employees")',
+                    label: '@Html.Raw(isRtl ? "الموظفين" : "Employees")',
                     data: [20, 45, 80, 110, 150, @employeesCount],
                     borderColor: '#0F172A',
                     backgroundColor: 'rgba(15, 23, 42, 0.05)',
@@ -178,9 +178,9 @@
             type: 'doughnut',
             data: {
                 labels: [
-                    '@(isRtl ? "نشط" : "Active")',
-                    '@(isRtl ? "منتهي/قريب" : "Expired/Near")',
-                    '@(isRtl ? "معلق" : "Suspended")'
+                    '@Html.Raw(isRtl ? "نشط" : "Active")',
+                    '@Html.Raw(isRtl ? "منتهي/قريب" : "Expired/Near")',
+                    '@Html.Raw(isRtl ? "معلق" : "Suspended")'
                 ],
                 datasets: [{
                     data: [
