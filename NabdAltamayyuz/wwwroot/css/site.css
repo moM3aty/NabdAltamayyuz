@@ -769,3 +769,9 @@ path {
    svg:hover path {
         fill: #0f172a;
     }
+
+   @media(max-width:612px){
+    .hero-content {
+        padding: 10rem 2rem 2rem 2rem;
+    }
+   }
