@@ -16,7 +16,7 @@ namespace NabdAltamayyuz.Models
             // 1. إنشاء قاعدة البيانات
             await context.Database.EnsureCreatedAsync();
 
-            // 2. الشركة الافتراضية (تحديث لتشمل بيانات الاشتراك)
+            // 2. الشركة الافتراضية (تحديث لتشمل بيانات الاشتراك والربط)
             var mainCompany = await context.Companies.FirstOrDefaultAsync();
             if (mainCompany == null)
             {
@@ -30,6 +30,10 @@ namespace NabdAltamayyuz.Models
                     PhoneNumber = "0562056821",
                     ResponsiblePerson = "المدير العام",
                     NationalAddressShortCode = "RRRD2929",
+
+                    // بيانات منصة العمل عن بعد (مهمة لتجربة الربط)
+                    EstLaborOfficeId = "1", // يمكنك تغييره لاحقاً من واجهة التعديل
+                    EstSequenceNumber = "3333", // يمكنك تغييره لاحقاً من واجهة التعديل
 
                     // بيانات الاشتراك (مهمة لظهور لوحة التحكم بشكل صحيح)
                     SubscriptionStartDate = DateTime.Now,
@@ -53,7 +57,7 @@ namespace NabdAltamayyuz.Models
 
                 context.Companies.Add(mainCompany);
                 await context.SaveChangesAsync();
-                Console.WriteLine("--> تم إنشاء الشركة الافتراضية مع بيانات الاشتراك.");
+                Console.WriteLine("--> تم إنشاء الشركة الافتراضية مع بيانات الاشتراك وبيانات منصة العمل عن بعد.");
             }
 
             // 3. السوبر أدمن

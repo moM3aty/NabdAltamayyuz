@@ -52,6 +52,14 @@ namespace NabdAltamayyuz.Models
         [Display(Name = "الرقم الضريبي")]
         public string TaxNumber { get; set; }
 
+        // --- حقول منصة العمل عن بعد (الجديدة) ---
+        [Display(Name = "رقم مكتب العمل للشركة")]
+        public string? EstLaborOfficeId { get; set; }
+
+        [Display(Name = "الرقم التسلسلي للشركة")]
+        public string? EstSequenceNumber { get; set; }
+        // ----------------------------------------
+
         [EmailAddress]
         [Display(Name = "البريد الإلكتروني")]
         public string Email { get; set; }
@@ -122,7 +130,6 @@ namespace NabdAltamayyuz.Models
         public virtual ICollection<Company> SubCompanies { get; set; }
         public virtual ICollection<ApplicationUser> Employees { get; set; }
     }
-
     // جدول المستخدمين (مشرفين وموظفين)
     public class ApplicationUser
     {

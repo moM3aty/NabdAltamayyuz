@@ -1,8 +1,8 @@
 ﻿@model NabdAltamayyuz.Models.Company
 @using System.Globalization
 @{
+    ViewData["Title"] = "إضافة شركة جديدة";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
-    ViewData["Title"] = isRtl ? "إضافة شركة جديدة" : "Add New Company";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -14,102 +14,121 @@
         </div>
         <div class="card-body p-4 bg-white">
             <form asp-action="Create" enctype="multipart/form-data" method="post">
+
+                <!-- البيانات الأساسية -->
                 <h6 class="text-gold fw-bold mb-3 border-bottom pb-2">@(isRtl ? "البيانات الأساسية" : "Basic Information")</h6>
                 <div class="row g-3 mb-4">
                     <div class="col-md-4">
-                        <label asp-for="Name" class="form-label small fw-bold">@(isRtl ? "اسم الشركة" : "Company Name")</label>
+                        <label asp-for="Name" class="form-label small fw-bold">اسم الشركة</label>
                         <input asp-for="Name" class="form-control bg-light" required />
                         <span asp-validation-for="Name" class="text-danger small"></span>
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="UnifiedNumber" class="form-label small fw-bold">@(isRtl ? "الرقم الموحد" : "Unified Number")</label>
+                        <label asp-for="UnifiedNumber" class="form-label small fw-bold">الرقم الموحد</label>
                         <input asp-for="UnifiedNumber" class="form-control bg-light" />
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="RegistrationNumber" class="form-label small fw-bold">@(isRtl ? "رقم السجل التجاري" : "Commercial Registration No.")</label>
+                        <label asp-for="RegistrationNumber" class="form-label small fw-bold">رقم السجل التجاري</label>
                         <input asp-for="RegistrationNumber" class="form-control bg-light" />
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="TaxNumber" class="form-label small fw-bold">@(isRtl ? "الرقم الضريبي" : "Tax Number")</label>
+                        <label asp-for="TaxNumber" class="form-label small fw-bold">الرقم الضريبي</label>
                         <input asp-for="TaxNumber" class="form-control bg-light" />
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="NationalAddressShortCode" class="form-label small fw-bold">@(isRtl ? "العنوان الوطني (مختصر)" : "National Address (Short)")</label>
+                        <label asp-for="NationalAddressShortCode" class="form-label small fw-bold">العنوان الوطني (مختصر)</label>
                         <input asp-for="NationalAddressShortCode" class="form-control bg-light" />
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="ResponsiblePerson" class="form-label small fw-bold">@(isRtl ? "اسم المسؤول" : "Responsible Person")</label>
+                        <label asp-for="ResponsiblePerson" class="form-label small fw-bold">اسم المسؤول</label>
                         <input asp-for="ResponsiblePerson" class="form-control bg-light" />
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="Email" class="form-label small fw-bold">@(isRtl ? "البريد الإلكتروني (دخول المدير)" : "Email (Manager Login)")</label>
+                        <label asp-for="Email" class="form-label small fw-bold">البريد الإلكتروني (دخول المدير)</label>
                         <input asp-for="Email" class="form-control bg-light" type="email" />
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="PhoneNumber" class="form-label small fw-bold">@(isRtl ? "رقم التواصل" : "Contact Number")</label>
+                        <label asp-for="PhoneNumber" class="form-label small fw-bold">رقم التواصل</label>
                         <input asp-for="PhoneNumber" class="form-control bg-light" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label small fw-bold text-dark">@(isRtl ? "كلمة المرور للمدير" : "Manager Password")</label>
-                        <input type="text" name="adminPassword" class="form-control bg-white border-gold" placeholder="@(isRtl ? "اتركها فارغة لتعيين الافتراضي (123456)" : "Leave empty to set default (123456)")" />
+                        <label class="form-label small fw-bold text-dark">كلمة المرور للمدير</label>
+                        <input type="text" name="adminPassword" class="form-control bg-white border-gold" placeholder="اتركها فارغة لتعيين الافتراضي (123456)" />
                     </div>
                 </div>
 
+                <!-- بيانات الربط بمنصة العمل عن بعد -->
+                <h6 class="text-primary fw-bold mb-3 border-bottom pb-2 pt-2"><i class="fas fa-cloud me-2"></i> بيانات الربط (منصة العمل عن بعد)</h6>
+                <div class="row g-3 mb-4 bg-light p-3 rounded-3 border border-primary border-opacity-25">
+                    <div class="col-md-6">
+                        <label asp-for="EstLaborOfficeId" class="form-label small fw-bold">رقم مكتب العمل للشركة</label>
+                        <input asp-for="EstLaborOfficeId" class="form-control" placeholder="مثال: 1" />
+                        <span class="form-text small text-muted">الرقم التعريفي الخاص بمكتب العمل للمنشأة.</span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="EstSequenceNumber" class="form-label small fw-bold">الرقم التسلسلي للشركة</label>
+                        <input asp-for="EstSequenceNumber" class="form-control" placeholder="مثال: 3333" />
+                        <span class="form-text small text-muted">الرقم التسلسلي المسجل في وزارة الموارد البشرية.</span>
+                    </div>
+                </div>
+
+                <!-- بيانات الاشتراك -->
                 <h6 class="text-gold fw-bold mb-3 border-bottom pb-2 pt-2">@(isRtl ? "بيانات الاشتراك والحدود" : "Subscription & Limits")</h6>
                 <div class="row g-3 mb-4">
                     <div class="col-md-3">
-                        <label asp-for="SubscriptionStartDate" class="form-label small fw-bold">@(isRtl ? "بداية الاشتراك" : "Subscription Start")</label>
+                        <label asp-for="SubscriptionStartDate" class="form-label small fw-bold">بداية الاشتراك</label>
                         <input asp-for="SubscriptionStartDate" class="form-control bg-light" type="date" />
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="SubscriptionEndDate" class="form-label small fw-bold">@(isRtl ? "نهاية الاشتراك" : "Subscription End")</label>
+                        <label asp-for="SubscriptionEndDate" class="form-label small fw-bold">نهاية الاشتراك</label>
                         <input asp-for="SubscriptionEndDate" class="form-control bg-light" type="date" />
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="PaymentTerm" class="form-label small fw-bold">@(isRtl ? "نظام السداد" : "Payment Term")</label>
+                        <label asp-for="PaymentTerm" class="form-label small fw-bold">نظام السداد</label>
                         <select asp-for="PaymentTerm" class="form-select bg-light" asp-items="Html.GetEnumSelectList<NabdAltamayyuz.Models.PaymentTerm>()"></select>
                     </div>
                     <div class="col-md-3">
-                        <label asp-for="NotificationDaysBeforeExpiry" class="form-label small fw-bold">@(isRtl ? "تنبيه قبل (يوم)" : "Alert Before (Days)")</label>
+                        <label asp-for="NotificationDaysBeforeExpiry" class="form-label small fw-bold">تنبيه قبل (يوم)</label>
                         <input asp-for="NotificationDaysBeforeExpiry" class="form-control bg-light" type="number" value="30" />
                     </div>
                     <div class="col-md-6">
-                        <label asp-for="AllowedSubAccounts" class="form-label small fw-bold">@(isRtl ? "عدد الحسابات الفرعية المسموحة" : "Allowed Sub-Accounts")</label>
+                        <label asp-for="AllowedSubAccounts" class="form-label small fw-bold">عدد الحسابات الفرعية المسموحة</label>
                         <input asp-for="AllowedSubAccounts" class="form-control bg-light" type="number" />
                     </div>
                     <div class="col-md-6">
-                        <label asp-for="AllowedEmployees" class="form-label small fw-bold">@(isRtl ? "عدد الموظفين المسموح" : "Allowed Employees")</label>
+                        <label asp-for="AllowedEmployees" class="form-label small fw-bold">عدد الموظفين المسموح</label>
                         <input asp-for="AllowedEmployees" class="form-control bg-light" type="number" />
                     </div>
                 </div>
 
-                <h6 class="text-gold fw-bold mb-3 border-bottom pb-2 pt-2">@(isRtl ? "البيانات المالية (تلقائي)" : "Financials (Auto)")</h6>
+                <!-- البيانات المالية -->
+                <h6 class="text-gold fw-bold mb-3 border-bottom pb-2 pt-2">@(isRtl ? "البيانات المالية" : "Financials")</h6>
                 <div class="row g-3 mb-4 bg-light p-3 rounded-3">
                     <div class="col-md-4">
-                        <label asp-for="PricePerEmployee" class="form-label small fw-bold">@(isRtl ? "سعر الاشتراك للموظف (بدون ضريبة)" : "Price Per Employee (Excl. Tax)")</label>
+                        <label asp-for="PricePerEmployee" class="form-label small fw-bold">سعر الاشتراك للموظف (بدون ضريبة)</label>
                         <div class="input-group">
                             <input asp-for="PricePerEmployee" class="form-control" type="number" step="0.01" id="priceInput" />
                             <span class="input-group-text">SAR</span>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <label asp-for="TaxRate" class="form-label small fw-bold">@(isRtl ? "نسبة الضريبة %" : "Tax Rate %")</label>
+                        <label asp-for="TaxRate" class="form-label small fw-bold">نسبة الضريبة %</label>
                         <input asp-for="TaxRate" class="form-control" type="number" step="0.01" value="15" id="taxInput" readonly />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label small fw-bold text-success">@(isRtl ? "الإجمالي (شامل الضريبة)" : "Total (Incl. Tax)")</label>
+                        <label class="form-label small fw-bold text-success">الإجمالي (شامل الضريبة)</label>
                         <input type="text" class="form-control fw-bold text-success" id="totalOutput" readonly />
                     </div>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label small fw-bold">@(isRtl ? "مرفقات (العقد/السجل)" : "Attachments (Contract/CR)")</label>
+                    <label class="form-label small fw-bold">مرفقات (العقد/السجل)</label>
                     <input type="file" name="attachment" class="form-control" />
                 </div>
 
                 <div class="d-flex justify-content-end">
                     <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold px-5 rounded-pill shadow-sm">
-                        <i class="fas fa-save me-2"></i> @(isRtl ? "حفظ الشركة" : "Save Company")
+                        <i class="fas fa-save me-2"></i> حفظ الشركة
                     </button>
                 </div>
             </form>
@@ -119,7 +138,6 @@
 
 @section Scripts {
     <script>
-        // حسبة تلقائية للإجمالي
         const priceInput = document.getElementById('priceInput');
         const taxInput = document.getElementById('taxInput');
         const totalOutput = document.getElementById('totalOutput');
@@ -131,8 +149,6 @@
             totalOutput.value = total.toFixed(2);
         }
 
-        if(priceInput) {
-            priceInput.addEventListener('input', calculateTotal);
-        }
+        priceInput.addEventListener('input', calculateTotal);
     </script>
 }

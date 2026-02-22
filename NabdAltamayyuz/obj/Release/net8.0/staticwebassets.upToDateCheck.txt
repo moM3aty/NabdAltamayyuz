@@ -74,3 +74,5 @@ wwwroot\images\11.jpg
 wwwroot\images\1.jpg
 wwwroot\favicon.ico
 wwwroot\css\site.css
+wwwroot\uploads\companies\dab3f2dd-3e94-4721-8e03-a780a96b7cc4_1.jpg
+wwwroot\uploads\employees\ddcdf1e7-b0f4-4d75-a2d1-998f73d7b786_1.jpg
