@@ -12,6 +12,7 @@ wwwroot\images\7.jpg
 wwwroot\images\8.jpg
 wwwroot\images\about.jpg
 wwwroot\images\logo.jpg
+wwwroot\images\sec.png
 wwwroot\images\smart.jpg
 wwwroot\images\Swim.jpg
 wwwroot\js\site.js
