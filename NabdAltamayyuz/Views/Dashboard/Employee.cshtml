@@ -8,7 +8,7 @@
     bool isCheckedIn = ViewBag.IsCheckedIn ?? false;
     bool isCheckedOut = ViewBag.IsCheckedOut ?? false;
 
-    // إحصائيات المهام
+    // التعديل 2: قراءة إحصائيات المهام الممررة من الكنترولر وتطبيقها على مؤشر الإنجاز
     int totalTasks = ViewBag.MyTotalTasks ?? 0;
     int completedTasks = ViewBag.MyCompletedTasks ?? 0;
     int pendingTasks = ViewBag.MyPendingTasks ?? 0;
@@ -119,7 +119,7 @@
     <!-- My Tasks Section -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold text-dark border-start border-5 border-gold ps-3 mb-0">@(isRtl ? "المهام الحالية" : "Current Tasks")</h4>
-        <a href="/Tasks" class="btn btn-sm btn-outline-secondary rounded-pill">@(isRtl ? "عرض السجل الكامل" : "View Full Log") <i class="fas fa-arrow-left ms-1"></i></a>
+        <a href="/Tasks" class="btn btn-sm btn-outline-secondary rounded-pill">@(isRtl ? "عرض السجل الكامل" : "View Full Log") <i class="fas fa-arrow-left ms-1 rtl-flip"></i></a>
     </div>
 
     <div class="row g-4">

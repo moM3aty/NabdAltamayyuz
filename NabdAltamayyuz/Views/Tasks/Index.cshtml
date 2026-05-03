@@ -25,7 +25,7 @@
                 <div class="card-body p-3 d-flex align-items-center justify-content-between">
                     <div>
                         <h6 class="text-gold mb-1">@(isRtl ? "نسبة الإنجاز" : "Completion Rate")</h6>
-                        <h3 class="fw-bold mb-0 text-black">@Math.Round(progress, 1)%</h3>
+                        <h3 class="fw-bold mb-0 text-white">@Math.Round(progress, 1)%</h3>
                     </div>
                     <div style="width: 50px; height: 50px;">
                         <svg viewBox="0 0 36 36" class="circular-chart gold">
@@ -111,7 +111,7 @@
         </div>
     </div>
 
-    <!-- Tasks Table (Sijill) -->
+    <!-- Tasks Table -->
     <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -196,7 +196,7 @@
 
     .circle-bg {
         fill: none;
-        stroke: #eee;
+        stroke: rgba(255, 255, 255, 0.1);
         stroke-width: 3.8;
     }
 
@@ -223,7 +223,6 @@
         function exportToExcel(tableId) {
             var table = document.getElementById(tableId);
             var clone = table.cloneNode(true);
-            // Clean up for export
             var rows = clone.rows;
             for (var i = 0; i < rows.length; i++) {
                 var cells = rows[i].cells;

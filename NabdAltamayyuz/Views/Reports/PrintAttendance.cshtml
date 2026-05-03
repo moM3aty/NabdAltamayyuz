@@ -2,20 +2,20 @@
 @using System.Globalization
 @{
     Layout = null;
-    var isRtl = true; // يمكن تغيير هذا لاحقاً ليدعم التبديل الديناميكي
-    // للحصول على اللغة الحالية للترجمة فقط
     var culture = CultureInfo.CurrentCulture.Name.StartsWith("ar") ? "ar" : "en";
     var isArabic = culture == "ar";
+
+    // التعديل 3: استخدام اسم الشركة الممرر من الكنترولر إن وجد
+    var companyName = ViewBag.CompanyName as string ?? (isArabic ? "نبض التميز الذهبي" : "Nabd AlTamayyuz");
 }
 
 <!DOCTYPE html>
-<html lang="@(isArabic ? "ar" : "en")" dir="@(isArabic ? "rtl" : "ltr")">
+<html lang="@culture" dir="@(isArabic ? "rtl" : "ltr")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@(isArabic ? "تقرير الحضور" : "Attendance Report") - @(isArabic ? "نبض التميز الذهبي" : "Golden Pulse")</title>
+    <title>@(isArabic ? "تقرير الحضور" : "Attendance Report") - @companyName</title>
 
-    <!-- استدعاء خط عربي احترافي (Cairo) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -145,7 +145,7 @@
 
     <div class="report-header">
         <div>
-            <div class="company-name"><i class="fas fa-gem me-2"></i> @(isArabic ? "نبض التميز الذهبي" : "Nabd AlTamayyuz")</div>
+            <div class="company-name"><i class="fas fa-building me-2"></i> @companyName</div>
             <div class="report-title">@(isArabic ? "تقرير الحضور والانصراف" : "Attendance Report")</div>
         </div>
         <div class="meta-box">
@@ -175,7 +175,6 @@
                 {
                     <tr>
                         <td style="font-weight:bold;">@item.Date.ToString("yyyy-MM-dd")</td>
-                        <!-- Use CultureInfo to display day name based on current language -->
                         <td>@item.Date.ToString("dddd", CultureInfo.CurrentCulture)</td>
                         <td style="@(isArabic ? "text-align:right; padding-right: 10px;" : "text-align:left; padding-left: 10px;") font-weight:600;">@item.Employee.FullName</td>
                         <td>@item.Employee.JobTitle</td>

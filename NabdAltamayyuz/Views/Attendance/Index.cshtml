@@ -7,41 +7,96 @@
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
     bool isSuperAdmin = User.IsInRole("SuperAdmin");
     bool isCompanyAdmin = User.IsInRole("CompanyAdmin");
-    
-    var today = DateTime.Now;
-    var dayName = today.ToString("dddd", new CultureInfo("ar-SA"));
-    var dateString = today.ToString("yyyy-MM-dd");
+
+    var selectedDateStr = ViewBag.SelectedDate as string;
+    var dayName = ViewBag.DayName as string;
 }
 
-<!-- تنسيقات خاصة بالطباعة -->
 <style>
     @@media print {
-        @@page { size: A4 landscape; margin: 1cm; } /* الطباعة بالعرض */
-        body { background-color: white !important; font-family: 'Cairo', sans-serif; -webkit-print-color-adjust: exact; }
-        .premium-navbar, footer, .btn, .card-header, .card-footer, form, .alert, .no-print, .filters-card { display: none !important; }
-        .container { margin-top: 0 !important; padding: 0 !important; max-width: 100% !important; width: 100% !important; }
-        .card { border: none !important; box-shadow: none !important; }
-        .card-body { padding: 0 !important; }
-        .print-header { display: block !important; margin-bottom: 20px; border-bottom: 2px solid #D4AF37; padding-bottom: 10px; }
-        .table-responsive { overflow: visible !important; }
-        table { width: 100% !important; border-collapse: collapse !important; font-size: 12px; }
-        th { background-color: #0F172A !important; color: white !important; border: 1px solid #000 !important; padding: 5px !important; }
-        td { border: 1px solid #ccc !important; padding: 5px !important; color: black !important; }
-        .badge { border: 1px solid #000; background: transparent !important; color: black !important; padding: 2px 5px; }
+        @@page {
+            size: A4 landscape;
+            margin: 1cm;
+        }
+
+        body {
+            background-color: white !important;
+            font-family: 'Cairo', sans-serif;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .premium-navbar, footer, .btn, .card-header, .card-footer, form, .alert, .no-print, .filters-card {
+            display: none !important;
+        }
+
+        .container {
+            margin-top: 0 !important;
+            padding: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .card-body {
+            padding: 0 !important;
+        }
+
+        .print-header {
+            display: block !important;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #D4AF37;
+            padding-bottom: 10px;
+        }
+
+        .table-responsive {
+            overflow: visible !important;
+        }
+
+        table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            font-size: 12px;
+        }
+
+        th {
+            background-color: #0F172A !important;
+            color: white !important;
+            border: 1px solid #000 !important;
+            padding: 5px !important;
+        }
+
+        td {
+            border: 1px solid #ccc !important;
+            padding: 5px !important;
+            color: black !important;
+        }
+
+        .badge {
+            border: 1px solid #000;
+            background: transparent !important;
+            color: black !important;
+            padding: 2px 5px;
+        }
     }
-    .print-header { display: none; }
+
+    .print-header {
+        display: none;
+    }
 </style>
 
-<!-- رمز حماية للـ AJAX -->
 @Html.AntiForgeryToken()
 
 <div class="container py-5 animate-fade-in" style="margin-top: 120px;">
-    
+
     <!-- ترويسة الطباعة -->
     <div class="print-header text-center">
         <div class="row align-items-center">
             <div class="col-4 text-end"><small>تاريخ: @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</small></div>
-            <div class="col-4"><h3 class="fw-bold mb-1">نبض التميز الذهبي</h3><h5 class="text-muted">تقرير الحضور اليومي</h5></div>
+            <div class="col-4"><h3 class="fw-bold mb-1">نبض التميز الذهبي</h3><h5 class="text-muted">تقرير الحضور - @selectedDateStr</h5></div>
             <div class="col-4 text-start"><small>@User.Identity.Name</small></div>
         </div>
     </div>
@@ -50,26 +105,20 @@
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3 no-print">
         <div>
             <h3 class="fw-bold text-dark mb-1">
-                <i class="fas fa-clipboard-list text-gold me-2"></i> @(isRtl ? "سجل الحضور والانصراف" : "Attendance Sheet")
+                <i class="fas fa-clipboard-list text-gold me-2"></i> @(isRtl ? "سجل الحضور والانصراف الشامل" : "Comprehensive Attendance")
             </h3>
             <div class="d-flex align-items-center mt-2 text-muted">
                 <span class="badge bg-gold text-dark me-2">@dayName</span>
-                <span><i class="far fa-calendar-alt me-1"></i> @dateString</span>
+                <span class="fw-bold"><i class="far fa-calendar-alt me-1"></i> @selectedDateStr</span>
             </div>
         </div>
         <div class="d-flex gap-2 flex-wrap justify-content-center">
-            
-            <!-- زر إرسال التقارير لمنصة العمل عن بعد (يظهر للمديرين فقط) -->
             @if (isSuperAdmin || isCompanyAdmin)
             {
                 <button class="btn btn-primary shadow-sm rounded-pill px-4 hover-scale" onclick="submitWeeklyReport()">
-                    <i class="fas fa-cloud-upload-alt me-2"></i> إرسال لمنصة العمل عن بعد
+                    <i class="fas fa-cloud-upload-alt me-2"></i> إرسال للمنصة
                 </button>
             }
-
-            <button class="btn btn-gold bg-dark text-gold fw-bold shadow-sm rounded-pill px-4 hover-scale" data-bs-toggle="modal" data-bs-target="#manualEntryModal">
-                <i class="fas fa-plus me-2"></i> @(isRtl ? "تسجيل يدوي" : "Manual Entry")
-            </button>
             <div class="dropdown">
                 <button class="btn btn-outline-secondary shadow-sm rounded-pill px-4 dropdown-toggle" type="button" data-bs-toggle="dropdown">
                     <i class="fas fa-download me-2"></i> @(isRtl ? "تصدير" : "Export")
@@ -112,12 +161,12 @@
                 </div>
 
                 <div class="col-md-2">
-                    <label class="form-label fw-bold small text-muted">التاريخ</label>
-                    <input type="date" name="date" class="form-control bg-light border-0 shadow-sm" value="@(ViewBag.SelectedDate ?? dateString)">
+                    <label class="form-label fw-bold small text-muted">تاريخ اليوم</label>
+                    <input type="date" name="date" class="form-control bg-light border-0 shadow-sm fw-bold text-primary" value="@selectedDateStr" onchange="this.form.submit()">
                 </div>
 
                 <div class="col-md-2">
-                    <label class="form-label fw-bold small text-muted">الحالة</label>
+                    <label class="form-label fw-bold small text-muted">الحالة الوظيفية</label>
                     <select name="status" class="form-select bg-light border-0 shadow-sm">
                         <option value="">-- الكل --</option>
                         <option value="Active" selected="@(ViewBag.CurrentStatus == "Active")">نشط</option>
@@ -126,13 +175,13 @@
                 </div>
 
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-dark w-100 fw-bold rounded-pill shadow-sm">عرض</button>
+                    <button type="submit" class="btn btn-dark w-100 fw-bold rounded-pill shadow-sm">بحث وفلترة</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Attendance Table -->
+    <!-- Attendance Table - التعديل 4: عرض الجميع مع أزرار سريعة -->
     <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -140,13 +189,15 @@
                     <thead class="bg-dark text-white">
                         <tr>
                             <th class="py-3 px-3 text-start">@(isRtl ? "الموظف" : "Employee")</th>
-                            @if(isSuperAdmin) { <th class="py-3">الشركة</th> }
-                            <th class="py-3">@(isRtl ? "اليوم" : "Day")</th>
-                            <th class="py-3">@(isRtl ? "دخول" : "In")</th>
-                            <th class="py-3">@(isRtl ? "خروج" : "Out")</th>
-                            <th class="py-3">@(isRtl ? "ساعات" : "Hrs")</th>
-                            <th class="py-3">@(isRtl ? "الحالة" : "Status")</th>
-                            <th class="py-3 text-end pe-4 no-print">@(isRtl ? "إجراءات" : "Actions")</th>
+                            @if (isSuperAdmin)
+                            {
+                                <th class="py-3">الشركة</th>
+                            }
+                            <th class="py-3">@(isRtl ? "حالة الحضور" : "Status")</th>
+                            <th class="py-3">@(isRtl ? "وقت الدخول" : "Time In")</th>
+                            <th class="py-3">@(isRtl ? "وقت الخروج" : "Time Out")</th>
+                            <th class="py-3">@(isRtl ? "الساعات" : "Hrs")</th>
+                            <th class="py-3 text-end pe-4 no-print">@(isRtl ? "تسجيل / تعديل (سريع)" : "Quick Actions")</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -154,10 +205,14 @@
                         {
                             foreach (var item in Model)
                             {
-                                <tr>
+                                var isAbsent = (item.Id == 0 || item.TimeIn == null);
+                                var isWorking = (!isAbsent && item.TimeOut == null);
+                                var isCompleted = (!isAbsent && item.TimeOut != null);
+
+                                <tr class="@(isAbsent ? "bg-danger bg-opacity-10" : "")">
                                     <td class="text-start px-3">
                                         <div class="d-flex align-items-center">
-                                            <div class="avatar-circle bg-light text-gold rounded-circle d-flex align-items-center justify-content-center me-2 border border-gold no-print" style="width: 35px; height: 35px;">
+                                            <div class="avatar-circle @(isAbsent ? "bg-danger text-white" : "bg-light text-gold") rounded-circle d-flex align-items-center justify-content-center me-2 border border-gold no-print" style="width: 35px; height: 35px;">
                                                 <span class="fw-bold small">@item.Employee.FullName.Substring(0, 1).ToUpper()</span>
                                             </div>
                                             <div>
@@ -166,28 +221,60 @@
                                             </div>
                                         </div>
                                     </td>
-                                    @if(isSuperAdmin) { <td class="small text-muted">@(item.Employee.Company?.Name ?? "-")</td> }
-                                    <td class="small">@item.DayName <br> <span class="text-muted" style="font-size:0.7rem;">@item.Date.ToString("MM-dd")</span></td>
-                                    <td class="text-success ltr font-monospace fw-bold small">@(item.TimeIn?.ToString("HH:mm") ?? "--")</td>
-                                    <td class="text-danger ltr font-monospace fw-bold small">@(item.TimeOut?.ToString("HH:mm") ?? "--")</td>
+                                    @if (isSuperAdmin)
+                                    {
+                                        <td class="small text-muted">@(item.Employee.Company?.Name ?? "-")</td>
+                                    }
+
                                     <td>
-                                        @if (item.TimeIn.HasValue && item.TimeOut.HasValue)
+                                        @if (isAbsent)
                                         {
-                                            <span class="badge bg-light text-dark border">@((item.TimeOut.Value - item.TimeIn.Value).TotalHours.ToString("0.0"))</span>
+                                            <span class="badge bg-danger rounded-pill px-3 py-2">غائب</span>
                                         }
-                                        else { <span class="text-muted">--</span> }
+                                        else if (isWorking)
+                                        {
+
+                                            <span class="badge bg-warning text-dark rounded-pill px-3 py-2">حاضر (جاري)</span>
+                                        }
+                                        else
+                                        {
+
+                                            <span class="badge bg-success rounded-pill px-3 py-2">حاضر (مكتمل)</span>
+                                        }
+
+                                        @if (item.IsManualEntry)
+                                        {
+                                            <i class="fas fa-pen text-info ms-1 small" title="تم التعديل يدوياً"></i>
+                                        }
                                     </td>
+
+                                    <td class="text-success ltr font-monospace fw-bold small">@(item.TimeIn?.ToString("HH:mm") ?? "--:--")</td>
+                                    <td class="text-danger ltr font-monospace fw-bold small">@(item.TimeOut?.ToString("HH:mm") ?? "--:--")</td>
+
                                     <td>
-                                        @if (item.TimeIn == null) { <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill">غياب</span> }
-                                        else if (item.TimeOut == null) { <span class="badge bg-warning bg-opacity-10 text-dark rounded-pill">جاري</span> }
-                                        else { <span class="badge bg-success bg-opacity-10 text-success rounded-pill">مكتمل</span> }
-                                        
-                                        @if(item.IsManualEntry) { <i class="fas fa-pen text-info ms-1 small" title="يدوي"></i> }
+                                        @if (isCompleted)
+                                        {
+                                            <span class="badge bg-light text-dark border fw-bold">@((item.TimeOut.Value - item.TimeIn.Value).TotalHours.ToString("0.0"))</span>
+                                        }
+                                        else
+                                        {
+
+                                            <span class="text-muted">--</span>
+                                        }
                                     </td>
+
                                     <td class="text-end pe-4 no-print">
-                                        <div class="btn-group">
-                                            <button class="btn btn-sm btn-outline-primary" title="تعديل" onclick="editAttendance(@item.Id, '@(item.TimeIn?.ToString("HH:mm"))', '@(item.TimeOut?.ToString("HH:mm"))', '@item.Notes')"><i class="fas fa-edit"></i></button>
-                                            <a href="/Employees/Details/@item.EmployeeId" class="btn btn-sm btn-outline-info" title="عرض السجل"><i class="fas fa-history"></i></a>
+                                        <div class="d-flex justify-content-end gap-1">
+                                            @if (isAbsent)
+                                            {
+                                                <button class="btn btn-sm btn-success rounded-pill px-3 shadow-sm" onclick="quickAction(@item.EmployeeId, '@selectedDateStr', 'In')"><i class="fas fa-sign-in-alt me-1"></i> دخول</button>
+                                            }
+                                            else if (isWorking)
+                                            {
+                                                <button class="btn btn-sm btn-danger rounded-pill px-3 shadow-sm" onclick="quickAction(@item.EmployeeId, '@selectedDateStr', 'Out')"><i class="fas fa-sign-out-alt me-1"></i> انصراف</button>
+                                            }
+
+                                            <button class="btn btn-sm btn-outline-dark rounded-circle ms-2" title="تعديل السجل" onclick="openManualEntry(@item.EmployeeId, '@item.Employee.FullName', '@(item.TimeIn?.ToString("HH:mm"))', '@(item.TimeOut?.ToString("HH:mm"))', '@item.Notes')"><i class="fas fa-edit"></i></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -195,14 +282,18 @@
                         }
                         else
                         {
-                            <tr><td colspan="@(isSuperAdmin ? 9 : 8)" class="text-center py-5 text-muted small">لا توجد سجلات لهذا اليوم</td></tr>
+                            <tr><td colspan="@(isSuperAdmin ? 7 : 6)" class="text-center py-5 text-muted small">لا يوجد موظفين لعرضهم</td></tr>
                         }
                     </tbody>
                 </table>
             </div>
         </div>
         <div class="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center no-print">
-            <small class="text-muted">@(isRtl ? $"إجمالي السجلات: {Model?.Count() ?? 0}" : $"Total Records: {Model?.Count() ?? 0}")</small>
+            <small class="text-muted">@(isRtl ? $"إجمالي الموظفين: {Model?.Count() ?? 0}" : $"Total Employees: {Model?.Count() ?? 0}")</small>
+            <div class="d-flex gap-3 small">
+                <span class="text-success"><i class="fas fa-circle"></i> حاضر: @(Model?.Count(x => x.TimeIn != null) ?? 0)</span>
+                <span class="text-danger"><i class="fas fa-circle"></i> غائب: @(Model?.Count(x => x.TimeIn == null) ?? 0)</span>
+            </div>
         </div>
     </div>
 </div>
@@ -212,68 +303,40 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
             <div class="modal-header bg-dark text-white border-0 px-4 py-3">
-                <h5 class="modal-title fw-bold" id="modalTitle"><i class="fas fa-pen-alt text-gold me-2"></i> تسجيل حضور يدوي</h5>
+                <h5 class="modal-title fw-bold" id="modalTitle"><i class="fas fa-pen-alt text-gold me-2"></i> تعديل السجل يدوياً</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form action="/Attendance/ManualEntry" method="post" id="attendanceForm">
                 @Html.AntiForgeryToken()
-                <input type="hidden" name="id" id="recordId" value="0" /> 
-                
+                <input type="hidden" name="employeeId" id="modalEmployeeId" />
+                <input type="hidden" name="date" value="@selectedDateStr" />
+
                 <div class="modal-body p-4">
-                    <div id="selectionFields">
-                        @if (isSuperAdmin)
-                        {
-                            <div class="mb-3">
-                                <label class="form-label fw-bold small text-gold">الشركة</label>
-                                <select id="companySelect" class="form-select bg-light" onchange="loadEmployees(this.value)">
-                                    <option value="">-- اختر الشركة --</option>
-                                    @foreach (var comp in ViewBag.Companies as SelectList)
-                                    {
-                                        <option value="@comp.Value">@comp.Text</option>
-                                    }
-                                </select>
-                            </div>
-                        }
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted">الموظف</label>
-                            <select name="employeeId" id="employeeSelect" class="form-select bg-light" required>
-                                <option value="">-- اختر الموظف --</option>
-                                @if (ViewBag.Employees != null)
-                                {
-                                    foreach (var emp in ViewBag.Employees as SelectList)
-                                    {
-                                        <option value="@emp.Value">@emp.Text</option>
-                                    }
-                                }
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted">التاريخ</label>
-                        <input type="date" name="date" class="form-control bg-light" required value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                    <div class="alert alert-light border-gold border-start border-4 mb-4">
+                        <strong class="text-dark d-block mb-1">الموظف:</strong>
+                        <span id="modalEmployeeName" class="text-gold fw-bold fs-5"></span>
+                        <div class="small text-muted mt-1">التاريخ: @selectedDateStr</div>
                     </div>
 
                     <div class="row g-3 mb-3">
                         <div class="col-6">
                             <label class="form-label fw-bold small text-muted">وقت الدخول</label>
-                            <input type="time" name="timeIn" id="timeIn" class="form-control bg-light" required>
+                            <input type="time" name="timeIn" id="modalTimeIn" class="form-control bg-light text-success fw-bold">
                         </div>
                         <div class="col-6">
                             <label class="form-label fw-bold small text-muted">وقت الخروج</label>
-                            <input type="time" name="timeOut" id="timeOut" class="form-control bg-light">
+                            <input type="time" name="timeOut" id="modalTimeOut" class="form-control bg-light text-danger fw-bold">
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted">ملاحظات</label>
-                        <textarea name="notes" id="notes" class="form-control bg-light" rows="2"></textarea>
+                        <label class="form-label fw-bold small text-muted">ملاحظات (سبب التعديل)</label>
+                        <textarea name="notes" id="modalNotes" class="form-control bg-light" rows="2" placeholder="اختياري..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">إلغاء</button>
-                    <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold rounded-pill px-4 shadow-sm hover-scale">حفظ</button>
+                    <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold rounded-pill px-4 shadow-sm hover-scale">حفظ البيانات</button>
                 </div>
             </form>
         </div>
@@ -282,74 +345,53 @@
 
 @section Scripts {
     <script>
-        // دالة إرسال التقارير المجمعة عبر AJAX
-        function submitWeeklyReport() {
+        // الدالة الجديدة للتسجيل السريع
+        function quickAction(employeeId, dateStr, actionType) {
             var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-            var companyId = '';
-            
-            // إذا كان المستخدم سوبر أدمن، نأخذ الـ ID الخاص بالشركة المختارة في الفلتر (إن وجد)
-            var filterCompanySelect = document.getElementById("filterCompanyId");
-            if (filterCompanySelect) {
-                if (!filterCompanySelect.value) {
-                    alert("يرجى اختيار الشركة من الفلتر (القائمة المنسدلة) بالأعلى أولاً قبل الإرسال.");
-                    return; // إيقاف العملية حتى يختار الشركة
+
+            // تعطيل الصفحة مؤقتاً
+            document.body.style.cursor = 'wait';
+
+            fetch('/Attendance/QuickAction', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': token
+                },
+                body: new URLSearchParams({
+                    'employeeId': employeeId,
+                    'date': dateStr,
+                    'actionType': actionType
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    location.reload(); // إعادة التحميل لظهور الزر الجديد والوقت
+                } else {
+                    alert("خطأ: " + data.message);
+                    document.body.style.cursor = 'default';
                 }
-                companyId = filterCompanySelect.value;
-            }
-
-            if (confirm("هل أنت متأكد من رغبتك في تجميع وإرسال إحصائيات المهام والحضور عن الأسبوع الماضي إلى منصة العمل عن بعد؟")) {
-                
-                // إظهار حالة التحميل
-                var btn = event.currentTarget;
-                var originalHtml = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> جاري الإرسال...';
-                btn.disabled = true;
-
-                fetch('/Attendance/SubmitWeeklyData?companyId=' + companyId, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'RequestVerificationToken': token
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    alert(data.message);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert("حدث خطأ غير متوقع أثناء محاولة الاتصال بالخادم.");
-                })
-                .finally(() => {
-                    // إعادة الزر لحالته الطبيعية
-                    btn.innerHTML = originalHtml;
-                    btn.disabled = false;
-                });
-            }
+            })
+            .catch(err => {
+                alert("حدث خطأ في الاتصال");
+                document.body.style.cursor = 'default';
+            });
         }
 
-        function loadEmployees(companyId) {
-            var empSelect = document.getElementById("employeeSelect");
-            empSelect.innerHTML = "<option value=''>جار التحميل...</option>";
-            
-            if (!companyId) {
-                empSelect.innerHTML = "<option value=''>-- اختر الموظف --</option>";
-                return;
-            }
+        // فتح نافذة التعديل اليدوي
+        function openManualEntry(empId, empName, timeIn, timeOut, notes) {
+            document.getElementById('modalEmployeeId').value = empId;
+            document.getElementById('modalEmployeeName').innerText = empName;
+            document.getElementById('modalTimeIn').value = timeIn !== '--:--' ? timeIn : '';
+            document.getElementById('modalTimeOut').value = timeOut !== '--:--' ? timeOut : '';
+            document.getElementById('modalNotes').value = notes !== 'null' && notes !== '' ? notes : '';
 
-            fetch('/Attendance/GetEmployeesByCompany?companyId=' + companyId)
-                .then(response => response.json())
-                .then(data => {
-                    empSelect.innerHTML = "<option value=''>-- اختر الموظف --</option>";
-                    data.forEach(item => {
-                        var option = document.createElement("option");
-                        option.value = item.id;
-                        option.text = item.name;
-                        empSelect.appendChild(option);
-                    });
-                });
+            var myModal = new bootstrap.Modal(document.getElementById('manualEntryModal'));
+            myModal.show();
         }
 
+        // دالة التصدير للإكسل
         function exportToExcel(tableId) {
             let table = document.getElementById(tableId);
             var clone = table.cloneNode(true);
@@ -357,7 +399,7 @@
             for (var i = 0; i < rows.length; i++) {
                 var cells = rows[i].cells;
                 for (var j = cells.length - 1; j >= 0; j--) {
-                    if (cells[j].classList.contains('no-print')) {
+                    if (cells[j].classList.contains('no-print') || cells[j].querySelector('button')) {
                         rows[i].deleteCell(j);
                     }
                 }
@@ -367,28 +409,39 @@
             var url = URL.createObjectURL(blob);
             let a = document.createElement('a');
             a.href = url;
-            a.download = 'Attendance_Report.xls';
+            a.download = 'Attendance_Report_@selectedDateStr .xls';
             a.click();
         }
 
-        function editAttendance(id, timeIn, timeOut, notes) {
-            document.getElementById('modalTitle').innerText = 'تعديل سجل حضور';
-            document.getElementById('attendanceForm').action = '/Attendance/Edit/' + id;
-            document.getElementById('recordId').value = id;
-            document.getElementById('selectionFields').style.display = 'none';
-            document.getElementById('timeIn').value = timeIn;
-            document.getElementById('timeOut').value = timeOut;
-            document.getElementById('notes').value = notes;
-            var myModal = new bootstrap.Modal(document.getElementById('manualEntryModal'));
-            myModal.show();
+        // دالة الإرسال للمنصة
+        function submitWeeklyReport() {
+            var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            var companyId = '';
+            var filterCompanySelect = document.getElementById("filterCompanyId");
+
+            if (filterCompanySelect) {
+                if (!filterCompanySelect.value) {
+                    alert("يرجى اختيار الشركة من الفلتر أولاً.");
+                    return;
+                }
+                companyId = filterCompanySelect.value;
+            }
+
+            if (confirm("إرسال بيانات الحضور عن الأسبوع الماضي إلى منصة العمل عن بعد؟")) {
+                var btn = event.currentTarget;
+                var originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> جاري الإرسال...';
+                btn.disabled = true;
+
+                fetch('/Attendance/SubmitWeeklyData?companyId=' + companyId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token }
+                })
+                .then(res => res.json())
+                .then(data => alert(data.message))
+                .catch(err => alert("حدث خطأ في الاتصال"))
+                .finally(() => { btn.innerHTML = originalHtml; btn.disabled = false; });
+            }
         }
-        
-        document.getElementById('manualEntryModal').addEventListener('hidden.bs.modal', function () {
-            document.getElementById('modalTitle').innerText = 'تسجيل حضور يدوي';
-            document.getElementById('attendanceForm').action = '/Attendance/ManualEntry';
-            document.getElementById('recordId').value = 0;
-            document.getElementById('selectionFields').style.display = 'block';
-            document.getElementById('attendanceForm').reset();
-        });
     </script>
 }

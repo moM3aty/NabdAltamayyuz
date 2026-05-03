@@ -94,13 +94,16 @@
                             {
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small">@(isRtl ? "الشركة / الفرع" : "Company / Branch")</label>
-                                    <select name="companyId" class="form-select bg-light" asp-items="ViewBag.Companies">
+                                    <select name="companyId" id="companySelect" class="form-select bg-light" asp-items="ViewBag.Companies" onchange="loadEmployees(this.value)">
                                         <option value="">@(isRtl ? "-- الكل --" : "-- All --")</option>
                                     </select>
                                 </div>
+                                <!-- التعديل 5: استبدال الحقل النصي بقائمة منسدلة للموظفين -->
                                 <div class="col-md-12">
-                                    <label class="form-label fw-bold small">@(isRtl ? "بحث (اسم موظف)" : "Search (Employee Name)")</label>
-                                    <input type="text" name="searchString" class="form-control bg-light" placeholder="@(isRtl ? "اختياري..." : "Optional...")">
+                                    <label class="form-label fw-bold small">@(isRtl ? "تخصيص موظف محدد" : "Specific Employee")</label>
+                                    <select name="employeeId" id="employeeSelect" class="form-select bg-light" asp-items="ViewBag.Employees">
+                                        <option value="">@(isRtl ? "-- الكل (جميع الموظفين) --" : "-- All Employees --")</option>
+                                    </select>
                                 </div>
                             }
 
@@ -135,3 +138,36 @@
         box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
     }
 </style>
+
+@section Scripts {
+    <script>
+        function loadEmployees(companyId) {
+            var empSelect = document.getElementById("employeeSelect");
+            var defaultText = '@(isRtl ? "-- الكل (جميع الموظفين) --" : "-- All Employees --")';
+            var loadingText = '@(isRtl ? "جار التحميل..." : "Loading...")';
+            
+            empSelect.innerHTML = "<option>" + loadingText + "</option>";
+
+            if (!companyId) {
+                empSelect.innerHTML = "<option value=''>" + defaultText + "</option>";
+                return;
+            }
+
+            // استخدام دالة الجلب المتاحة في Attendance Controller
+            fetch('/Attendance/GetEmployeesByCompany?companyId=' + companyId)
+                .then(res => res.json())
+                .then(data => {
+                    empSelect.innerHTML = "<option value=''>" + defaultText + "</option>";
+                    data.forEach(item => {
+                        var opt = document.createElement("option");
+                        opt.value = item.id;
+                        opt.text = item.name;
+                        empSelect.appendChild(opt);
+                    });
+                })
+                .catch(err => {
+                    empSelect.innerHTML = "<option value=''>" + defaultText + "</option>";
+                });
+        }
+    </script>
+}

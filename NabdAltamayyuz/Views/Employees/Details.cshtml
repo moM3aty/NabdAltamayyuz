@@ -10,7 +10,7 @@
     var attendanceLog = ViewBag.AttendanceLog as List<Attendance>;
     var tasksLog = ViewBag.TasksLog as List<WorkTask>;
 
-    // إحصائيات المهام للمقياس
+    // التعديل 2: تأكيد استقبال بيانات مؤشر الأداء التي تم تعديلها في الكنترولر
     double completionRate = ViewBag.CompletionRate ?? 0;
     int totalTasks = ViewBag.TotalTasks ?? 0;
     int completedTasks = ViewBag.CompletedTasks ?? 0;
@@ -18,13 +18,13 @@
 }
 
 <div class="container py-5 animate-fade-in" style="margin-top: 100px;">
-    <!-- Employee Info Card (بطاقة الموظف المحسنة) -->
+    <!-- Employee Info Card -->
     <div class="card border-0 shadow-lg rounded-4 mb-5 overflow-hidden">
         <div class="card-header bg-dark text-white p-4 d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold text-gold"><i class="fas fa-id-badge me-2"></i> @(isRtl ? "بطاقة الموظف" : "Employee Card")</h5>
             <div class="d-flex gap-2">
                 <a href="/Employees/Edit/@Model.Id" class="btn btn-sm btn-gold text-dark fw-bold rounded-pill"><i class="fas fa-pen me-1"></i> @(isRtl ? "تعديل" : "Edit")</a>
-                <a href="/Employees" class="btn btn-sm btn-outline-light rounded-pill"><i class="fas fa-arrow-left me-1"></i> @(isRtl ? "عودة" : "Back")</a>
+                <a href="/Employees" class="btn btn-sm btn-outline-light rounded-pill"><i class="fas fa-arrow-left me-1 rtl-flip"></i> @(isRtl ? "عودة" : "Back")</a>
             </div>
         </div>
         <div class="card-body p-4 bg-white">

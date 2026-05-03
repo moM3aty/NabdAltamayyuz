@@ -5,6 +5,9 @@
     Layout = null;
     var culture = CultureInfo.CurrentCulture.Name.StartsWith("ar") ? "ar" : "en";
     var isArabic = culture == "ar";
+
+    // التعديل 3: استخدام اسم الشركة الممرر من الكنترولر إن وجد
+    var companyName = ViewBag.CompanyName as string ?? (isArabic ? "نبض التميز الذهبي" : "Nabd AlTamayyuz");
 }
 
 <!DOCTYPE html>
@@ -12,7 +15,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@(isArabic ? "تقرير المهام" : "Tasks Report") - @(isArabic ? "نبض التميز الذهبي" : "Golden Pulse")</title>
+    <title>@(isArabic ? "تقرير المهام" : "Tasks Report") - @companyName</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -137,7 +140,7 @@
 
     <div class="report-header">
         <div>
-            <div class="company-name">@(isArabic ? "نبض التميز الذهبي" : "Nabd AlTamayyuz")</div>
+            <div class="company-name"><i class="fas fa-building me-2"></i> @companyName</div>
             <div class="report-title">@(isArabic ? "تقرير حالة المهام" : "Tasks Status Report")</div>
         </div>
         <div class="meta-box">
@@ -187,7 +190,7 @@
                     <td class="text-start-custom" style="color: #64748b;">
                         @if (!string.IsNullOrEmpty(item.StatusReason))
                         {
-                            <span style="color:#b91c1c; font-weight:bold;">@(isArabic ? "السبب:" : "Reason:")</span> 
+                            <span style="color:#b91c1c; font-weight:bold;">@(isArabic ? "السبب:" : "Reason:")</span>
                             @item.StatusReason
                         }
                         else

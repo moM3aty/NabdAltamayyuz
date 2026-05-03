@@ -10,6 +10,7 @@ using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace NabdAltamayyuz.Controllers
 {
@@ -42,33 +43,20 @@ namespace NabdAltamayyuz.Controllers
         }
 
         // ---------------------------------------------------------
-        // 2. سجل الحضور العام (للمدراء والمالك)
+        // 2. سجل الحضور العام (للمدراء والمالك) - التعديل 4: عرض جميع الموظفين
         // ---------------------------------------------------------
         [Authorize(Roles = "CompanyAdmin,SuperAdmin,SubAdmin")]
         public async Task<IActionResult> Index(int? companyId, string searchEmployee, DateTime? date, string status)
         {
-            var query = _context.Attendances
-                .Include(a => a.Employee)
-                .ThenInclude(e => e.Company)
-                .AsQueryable();
+            var selectedDate = date ?? DateTime.Today;
 
-            // أ. تحديد الصلاحيات وتجهيز القوائم
+            // جلب الموظفين بناءً على الصلاحية والشركة
+            var usersQuery = _context.Users.Include(u => u.Company).Where(u => u.Role == UserRole.Employee);
+
             if (User.IsInRole("SuperAdmin"))
             {
-                if (companyId.HasValue) query = query.Where(a => a.Employee.CompanyId == companyId);
-
+                if (companyId.HasValue) usersQuery = usersQuery.Where(u => u.CompanyId == companyId);
                 ViewBag.Companies = new SelectList(await _context.Companies.ToListAsync(), "Id", "Name", companyId);
-
-                // إذا تم اختيار شركة في الفلتر، نملأ قائمة الموظفين
-                if (companyId.HasValue)
-                {
-                    var employees = await _context.Users
-                        .Where(u => u.CompanyId == companyId && u.Role == UserRole.Employee)
-                        .Select(u => new { Id = u.Id, Name = u.FullName })
-                        .OrderBy(x => x.Name)
-                        .ToListAsync();
-                    ViewBag.Employees = new SelectList(employees, "Id", "Name");
-                }
             }
             else
             {
@@ -77,56 +65,156 @@ namespace NabdAltamayyuz.Controllers
 
                 if (user?.CompanyId != null)
                 {
-                    query = query.Where(a => a.Employee.CompanyId == user.CompanyId);
-
-                    var employees = await _context.Users
-                        .Where(u => u.CompanyId == user.CompanyId && u.Role == UserRole.Employee)
-                        .Select(u => new { Id = u.Id, Name = u.FullName })
-                        .OrderBy(x => x.Name)
-                        .ToListAsync();
-                    ViewBag.Employees = new SelectList(employees, "Id", "Name");
+                    // جلب موظفي الشركة وفروعها (أو الشركة الحالية فقط حسب سياسة العمل)
+                    usersQuery = usersQuery.Where(u => u.CompanyId == user.CompanyId);
                 }
             }
 
-            // ب. فلتر التاريخ (الافتراضي: اليوم)
-            var selectedDate = date ?? DateTime.Today;
-            query = query.Where(a => a.Date == selectedDate);
+            // فلتر البحث بالاسم
+            if (!string.IsNullOrEmpty(searchEmployee))
+            {
+                usersQuery = usersQuery.Where(u => u.FullName.Contains(searchEmployee));
+            }
+
+            // فلتر الحالة (نشط/غير نشط)
+            if (!string.IsNullOrEmpty(status))
+            {
+                usersQuery = usersQuery.Where(u => u.Status == status);
+            }
+
+            var employees = await usersQuery.OrderBy(u => u.FullName).ToListAsync();
+
+            // جلب سجلات الحضور لليوم المحدد فقط للموظفين المعنيين
+            var empIds = employees.Select(e => e.Id).ToList();
+            var attendances = await _context.Attendances
+                .Where(a => a.Date == selectedDate && empIds.Contains(a.EmployeeId))
+                .ToListAsync();
+
+            // دمج البيانات: إظهار الموظف سواء كان له سجل أو لا
+            var resultList = new List<Attendance>();
+            foreach (var emp in employees)
+            {
+                var record = attendances.FirstOrDefault(a => a.EmployeeId == emp.Id);
+                if (record != null)
+                {
+                    record.Employee = emp;
+                    resultList.Add(record);
+                }
+                else
+                {
+                    // موظف غائب (ليس له سجل في هذا اليوم)
+                    resultList.Add(new Attendance
+                    {
+                        Id = 0, // 0 يعني لا يوجد سجل فعلي في قاعدة البيانات
+                        EmployeeId = emp.Id,
+                        Employee = emp,
+                        Date = selectedDate,
+                        DayName = selectedDate.ToString("dddd", new CultureInfo("ar-SA")),
+                        TimeIn = null,
+                        TimeOut = null
+                    });
+                }
+            }
 
             ViewBag.SelectedDate = selectedDate.ToString("yyyy-MM-dd");
             ViewBag.DayName = selectedDate.ToString("dddd", new CultureInfo("ar-SA"));
-
-            // ج. فلتر البحث بالاسم
-            if (!string.IsNullOrEmpty(searchEmployee))
-            {
-                query = query.Where(a => a.Employee.FullName.Contains(searchEmployee));
-            }
-
-            // د. فلتر الحالة (نشط/غير نشط للموظف)
-            if (!string.IsNullOrEmpty(status))
-            {
-                query = query.Where(a => a.Employee.Status == status);
-            }
-
             ViewBag.CurrentSearch = searchEmployee;
             ViewBag.CurrentStatus = status;
             ViewBag.CurrentCompany = companyId;
 
-            var data = await query.OrderByDescending(a => a.TimeIn).ToListAsync();
-            return View(data);
+            // ترتيب القائمة: الحاضرين أولاً ثم الغائبين، وأبجدياً
+            var sortedList = resultList
+                .OrderByDescending(a => a.TimeIn.HasValue)
+                .ThenBy(a => a.Employee.FullName)
+                .ToList();
+
+            return View(sortedList);
         }
 
         // ---------------------------------------------------------
-        // 3. التسجيل اليدوي (للمدراء)
+        // إجراء سريع: تسجيل الدخول / الانصراف من الجدول مباشرة
         // ---------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "CompanyAdmin,SuperAdmin,SubAdmin")]
-        public async Task<IActionResult> ManualEntry(int employeeId, DateTime date, DateTime timeIn, DateTime? timeOut, string notes)
+        public async Task<IActionResult> QuickAction(int employeeId, DateTime date, string actionType)
+        {
+            var employee = await _context.Users.FindAsync(employeeId);
+            if (employee == null) return Json(new { success = false, message = "الموظف غير موجود" });
+
+            // التحقق من الصلاحية
+            if (!User.IsInRole("SuperAdmin"))
+            {
+                var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var currentUser = await _context.Users.FindAsync(currentUserId);
+                if (employee.CompanyId != currentUser.CompanyId) return Json(new { success = false, message = "لا تملك صلاحية" });
+            }
+
+            var record = await _context.Attendances.FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.Date == date.Date);
+            var nowTime = DateTime.Now;
+            var actionDateTime = new DateTime(date.Year, date.Month, date.Day, nowTime.Hour, nowTime.Minute, nowTime.Second);
+
+            if (actionType == "In")
+            {
+                if (record != null && record.TimeIn != null) return Json(new { success = false, message = "تم تسجيل الدخول مسبقاً" });
+
+                if (record == null)
+                {
+                    record = new Attendance
+                    {
+                        EmployeeId = employeeId,
+                        Date = date.Date,
+                        DayName = date.ToString("dddd", new CultureInfo("ar-SA")),
+                        TimeIn = actionDateTime,
+                        IsManualEntry = true
+                    };
+                    _context.Attendances.Add(record);
+                }
+                else
+                {
+                    record.TimeIn = actionDateTime;
+                    record.IsManualEntry = true;
+                    _context.Update(record);
+                }
+
+                await _context.SaveChangesAsync();
+
+                if (!string.IsNullOrEmpty(employee.NationalId))
+                {
+                    await _teleworksService.SendAttendanceAsync(employee.NationalId, date.Date, actionDateTime, null);
+                }
+            }
+            else if (actionType == "Out")
+            {
+                if (record == null || record.TimeIn == null) return Json(new { success = false, message = "يجب تسجيل الدخول أولاً" });
+                if (record.TimeOut != null) return Json(new { success = false, message = "تم تسجيل الانصراف مسبقاً" });
+
+                record.TimeOut = actionDateTime;
+                record.IsManualEntry = true;
+                _context.Update(record);
+                await _context.SaveChangesAsync();
+
+                if (!string.IsNullOrEmpty(employee.NationalId))
+                {
+                    await _teleworksService.SendAttendanceAsync(employee.NationalId, date.Date, record.TimeIn.Value, actionDateTime);
+                }
+            }
+
+            return Json(new { success = true, message = "تم تسجيل الحركة بنجاح" });
+        }
+
+
+        // ---------------------------------------------------------
+        // 3. التسجيل والتعديل اليدوي من النافذة المنبثقة
+        // ---------------------------------------------------------
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "CompanyAdmin,SuperAdmin,SubAdmin")]
+        public async Task<IActionResult> ManualEntry(int employeeId, DateTime date, DateTime? timeIn, DateTime? timeOut, string notes)
         {
             var employee = await _context.Users.FindAsync(employeeId);
             if (employee == null) return NotFound();
 
-            // التحقق من الصلاحية (للمشرفين فقط)
             if (!User.IsInRole("SuperAdmin"))
             {
                 var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -139,16 +227,14 @@ namespace NabdAltamayyuz.Controllers
 
             if (existingRecord != null)
             {
-                // تحديث سجل موجود
                 existingRecord.TimeIn = timeIn;
                 existingRecord.TimeOut = timeOut;
-                existingRecord.Notes = notes + " (تعديل يدوي)";
+                existingRecord.Notes = notes;
                 existingRecord.IsManualEntry = true;
                 _context.Update(existingRecord);
             }
-            else
+            else if (timeIn.HasValue || timeOut.HasValue || !string.IsNullOrEmpty(notes))
             {
-                // إضافة سجل جديد
                 var attendance = new Attendance
                 {
                     EmployeeId = employeeId,
@@ -164,79 +250,27 @@ namespace NabdAltamayyuz.Controllers
 
             await _context.SaveChangesAsync();
 
-            // إرسال البيانات للمنصة (Teleworks API)
-            if (!string.IsNullOrEmpty(employee.NationalId))
+            if (!string.IsNullOrEmpty(employee.NationalId) && timeIn.HasValue)
             {
-                await _teleworksService.SendAttendanceAsync(employee.NationalId, date, timeIn, timeOut);
+                await _teleworksService.SendAttendanceAsync(employee.NationalId, date, timeIn.Value, timeOut);
             }
 
-            TempData["Success"] = "تم حفظ سجل الحضور";
+            TempData["Success"] = "تم حفظ التعديلات بنجاح";
             return RedirectToAction(nameof(Index), new { date = date.ToString("yyyy-MM-dd") });
         }
 
         // ---------------------------------------------------------
-        // 4. تعديل سجل (Edit)
-        // ---------------------------------------------------------
-        [Authorize(Roles = "CompanyAdmin,SuperAdmin,SubAdmin")]
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var attendance = await _context.Attendances
-                .Include(a => a.Employee)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (attendance == null) return NotFound();
-
-            if (!User.IsInRole("SuperAdmin"))
-            {
-                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var user = await _context.Users.FindAsync(userId);
-                if (attendance.Employee.CompanyId != user.CompanyId) return Forbid();
-            }
-
-            return View(attendance); // تحتاج لإنشاء View بسيط (Edit.cshtml) لهذا الغرض أو استخدام المودال في Index
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "CompanyAdmin,SuperAdmin,SubAdmin")]
-        public async Task<IActionResult> Edit(int id, Attendance model)
-        {
-            if (id != model.Id) return NotFound();
-
-            var attendance = await _context.Attendances
-                .Include(a => a.Employee)
-                .FirstOrDefaultAsync(a => a.Id == id);
-
-            if (attendance == null) return NotFound();
-
-            // تحديث الحقول
-            attendance.TimeIn = model.TimeIn;
-            attendance.TimeOut = model.TimeOut;
-            attendance.Notes = model.Notes;
-            attendance.IsManualEntry = true;
-
-            _context.Update(attendance);
-            await _context.SaveChangesAsync();
-
-            // تحديث المنصة
-            if (attendance.Employee != null && !string.IsNullOrEmpty(attendance.Employee.NationalId) && attendance.TimeIn.HasValue)
-            {
-                await _teleworksService.SendAttendanceAsync(attendance.Employee.NationalId, attendance.Date, attendance.TimeIn.Value, attendance.TimeOut);
-            }
-
-            TempData["Success"] = "تم تحديث السجل بنجاح";
-            return RedirectToAction(nameof(Index), new { date = attendance.Date.ToString("yyyy-MM-dd") });
-        }
-
-        // ---------------------------------------------------------
-        // 5. AJAX: جلب الموظفين لشركة محددة (للسوبر أدمن)
+        // 5. AJAX: جلب الموظفين لشركة محددة (للسوبر أدمن والتقارير)
         // ---------------------------------------------------------
         [HttpGet]
         public async Task<IActionResult> GetEmployeesByCompany(int companyId)
         {
-            if (!User.IsInRole("SuperAdmin")) return Forbid();
+            if (!User.IsInRole("SuperAdmin"))
+            {
+                var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var currentUser = await _context.Users.FindAsync(currentUserId);
+                if (companyId != currentUser.CompanyId) return Forbid();
+            }
 
             var employees = await _context.Users
                 .Where(u => u.CompanyId == companyId && u.Role == UserRole.Employee)
@@ -254,7 +288,6 @@ namespace NabdAltamayyuz.Controllers
         [Authorize(Roles = "CompanyAdmin,SuperAdmin")]
         public async Task<IActionResult> SubmitWeeklyData(int? companyId)
         {
-            // الأسبوع الماضي
             var endDate = DateTime.Today;
             var startDate = endDate.AddDays(-6);
 
@@ -287,6 +320,5 @@ namespace NabdAltamayyuz.Controllers
 
             return Json(new { success = true, message = $"تم إرسال {sentCount} سجل حضور للمنصة عن الأسبوع الماضي." });
         }
-    
     }
 }

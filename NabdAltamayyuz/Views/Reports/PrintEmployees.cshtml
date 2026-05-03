@@ -4,6 +4,9 @@
     Layout = null;
     var culture = CultureInfo.CurrentCulture.Name.StartsWith("ar") ? "ar" : "en";
     var isArabic = culture == "ar";
+
+    // التعديل 3: استخدام اسم الشركة الممرر من الكنترولر إن وجد
+    var companyName = ViewBag.CompanyName as string ?? (isArabic ? "نبض التميز الذهبي" : "Nabd AlTamayyuz");
 }
 
 <!DOCTYPE html>
@@ -11,7 +14,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@(isArabic ? "تقرير بيانات الموظفين" : "Employees Data Report") - @(isArabic ? "نبض التميز الذهبي" : "Golden Pulse")</title>
+    <title>@(isArabic ? "تقرير بيانات الموظفين" : "Employees Data Report") - @companyName</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -128,7 +131,7 @@
 
     <div class="report-header">
         <div>
-            <div class="company-name">@(isArabic ? "نبض التميز الذهبي" : "Nabd AlTamayyuz")</div>
+            <div class="company-name"><i class="fas fa-building me-2"></i> @companyName</div>
             <div class="report-title">@(isArabic ? "سجل بيانات الموظفين" : "Employees Data Record")</div>
         </div>
         <div class="meta-box">

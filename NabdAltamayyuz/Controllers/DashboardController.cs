@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NabdAltamayyuz.Data;
 using NabdAltamayyuz.Models;
-using NabdAltamayyuz.Services; // إضافة الـ Namespace
+using NabdAltamayyuz.Services;
 using System;
 using System.Linq;
 using System.Security.Claims;
@@ -15,7 +15,7 @@ namespace NabdAltamayyuz.Controllers
     public class DashboardController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly ITeleworksService _teleworksService; // حقن الخدمة
+        private readonly ITeleworksService _teleworksService;
 
         public DashboardController(ApplicationDbContext context, ITeleworksService teleworksService)
         {
@@ -80,7 +80,15 @@ namespace NabdAltamayyuz.Controllers
 
             if (TempData["Success"] != null) ViewBag.Message = TempData["Success"];
 
+            // جلب المهام غير المكتملة للعرض في القائمة
             var myTasks = await _context.WorkTasks.Where(t => t.AssignedToId == userId && !t.IsCompleted).OrderBy(t => t.DueDate).ToListAsync();
+
+            // --- التعديل 2: جلب جميع المهام لحساب الإحصائيات لمؤشر الإنجاز ---
+            var allMyTasks = await _context.WorkTasks.Where(t => t.AssignedToId == userId).ToListAsync();
+            ViewBag.MyTotalTasks = allMyTasks.Count;
+            ViewBag.MyCompletedTasks = allMyTasks.Count(t => t.IsCompleted);
+            ViewBag.MyPendingTasks = allMyTasks.Count(t => !t.IsCompleted);
+
             return View(myTasks);
         }
 

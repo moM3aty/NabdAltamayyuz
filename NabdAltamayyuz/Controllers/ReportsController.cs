@@ -40,13 +40,18 @@ namespace NabdAltamayyuz.Controllers
                     .Select(c => new { c.Id, Name = c.ParentCompanyId == null ? c.Name : " -- " + c.Name })
                     .ToListAsync();
                 ViewBag.Companies = new SelectList(companies, "Id", "Name");
+
+                // تحميل الموظفين للشركة الحالية ليكون الدروب داون جاهزاً
+                var employees = await _context.Users.Where(u => u.CompanyId == user.CompanyId && u.Role == UserRole.Employee).ToListAsync();
+                ViewBag.Employees = new SelectList(employees, "Id", "FullName");
             }
 
             return View();
         }
 
         // GET: Reports/Generate
-        public async Task<IActionResult> Generate(string type, DateTime? from, DateTime? to, int? companyId, string searchString)
+        // التعديل 5 و 3: تغيير searchString إلى employeeId للبحث الدقيق، وتمرير اسم الشركة
+        public async Task<IActionResult> Generate(string type, DateTime? from, DateTime? to, int? companyId, int? employeeId)
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var userRole = User.FindFirstValue(ClaimTypes.Role);
@@ -56,13 +61,24 @@ namespace NabdAltamayyuz.Controllers
             ViewBag.ToDate = to?.ToString("yyyy-MM-dd") ?? "-";
             ViewBag.PrintDate = DateTime.Now;
 
+            // تحديد اسم الشركة لطباعته في ترويسة التقرير (التعديل 3)
+            if (companyId.HasValue)
+            {
+                var comp = await _context.Companies.FindAsync(companyId.Value);
+                ViewBag.CompanyName = comp?.Name;
+            }
+            else
+            {
+                var currentUser = await _context.Users.Include(u => u.Company).FirstOrDefaultAsync(u => u.Id == userId);
+                ViewBag.CompanyName = currentUser?.Company?.Name ?? "التقرير الشامل للمنصة";
+            }
+
             // تحديد نطاق الشركات المسموح بها
             IQueryable<int> allowedCompanyIds;
             if (userRole == "SuperAdmin")
             {
                 if (companyId.HasValue)
                 {
-                    // إذا اختار شركة محددة، نجلبها مع فروعها
                     var subIds = await _context.Companies.Where(c => c.ParentCompanyId == companyId).Select(c => c.Id).ToListAsync();
                     subIds.Add(companyId.Value);
                     allowedCompanyIds = subIds.AsQueryable();
@@ -100,7 +116,8 @@ namespace NabdAltamayyuz.Controllers
                 else
                 {
                     query = query.Where(a => allowedCompanyIds.Contains(a.Employee.CompanyId.Value));
-                    if (!string.IsNullOrEmpty(searchString)) query = query.Where(a => a.Employee.FullName.Contains(searchString));
+                    // التعديل 5: الفلترة بـ ID الموظف وليس نصياً
+                    if (employeeId.HasValue) query = query.Where(a => a.EmployeeId == employeeId.Value);
                 }
 
                 if (from.HasValue) query = query.Where(a => a.Date >= from.Value);
@@ -122,6 +139,7 @@ namespace NabdAltamayyuz.Controllers
                 else
                 {
                     query = query.Where(t => allowedCompanyIds.Contains(t.AssignedTo.CompanyId.Value));
+                    if (employeeId.HasValue) query = query.Where(t => t.AssignedToId == employeeId.Value);
                 }
 
                 if (from.HasValue) query = query.Where(t => t.DueDate >= from.Value);
@@ -142,13 +160,10 @@ namespace NabdAltamayyuz.Controllers
                     .Where(c => allowedCompanyIds.Contains(c.Id))
                     .AsQueryable();
 
-                // للسوبر أدمن: يمكنه رؤية الشركات الرئيسية وفروعها بشكل منظم
-                // للمشرف: يرى شركته وفروعها
-
                 var data = await query.OrderByDescending(c => c.SubscriptionEndDate).ToListAsync();
 
                 // حساب إجماليات للتقرير
-                ViewBag.TotalRevenue = data.Sum(c => c.TotalPricePerEmployee * c.AllowedEmployees); // معادلة تقريبية
+                ViewBag.TotalRevenue = data.Sum(c => c.TotalPricePerEmployee * c.AllowedEmployees);
 
                 return View("PrintSubscriptions", data);
             }
@@ -163,10 +178,10 @@ namespace NabdAltamayyuz.Controllers
                     .Where(u => allowedCompanyIds.Contains(u.CompanyId.Value) && u.Role == UserRole.Employee)
                     .AsQueryable();
 
-                if (!string.IsNullOrEmpty(searchString)) query = query.Where(u => u.FullName.Contains(searchString));
+                if (employeeId.HasValue) query = query.Where(u => u.Id == employeeId.Value);
 
                 var data = await query.OrderBy(u => u.CompanyId).ThenBy(u => u.FullName).ToListAsync();
-                return View("PrintEmployees", data); // تحتاج لإنشاء هذا الـ View إذا لم يكن موجوداً، أو استخدام تصميم مشابه
+                return View("PrintEmployees", data);
             }
 
             return BadRequest("نوع التقرير غير صالح");

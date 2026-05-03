@@ -27,7 +27,6 @@ namespace NabdAltamayyuz.Controllers
         // GET: Employees
         public async Task<IActionResult> Index(string searchString, int? companyId, string statusFilter)
         {
-            // التعديل الأساسي: فلترة القائمة لتشمل الموظفين فقط (استبعاد المديرين والمشرفين)
             var query = _context.Users
                 .Include(u => u.Company)
                 .Where(u => u.Role == UserRole.Employee)
@@ -57,7 +56,7 @@ namespace NabdAltamayyuz.Controllers
                     query = query.Where(u => u.Status == statusFilter && !u.IsSuspended);
             }
 
-            query = query.OrderBy(u => u.FullName); // ترتيب أبجدي بما أن كلهم موظفين
+            query = query.OrderBy(u => u.FullName);
 
             if (User.IsInRole("SuperAdmin"))
             {
@@ -105,6 +104,13 @@ namespace NabdAltamayyuz.Controllers
 
             ViewBag.TasksLog = await tasksQuery.OrderByDescending(t => t.DueDate).ToListAsync();
 
+            // --- التعديل 2: جلب كافة مهام الموظف لحساب إحصائيات مؤشر الإنجاز بشكل سليم ---
+            var allTasksForStats = await _context.WorkTasks.Where(t => t.AssignedToId == id).ToListAsync();
+            ViewBag.TotalTasks = allTasksForStats.Count;
+            ViewBag.CompletedTasks = allTasksForStats.Count(t => t.IsCompleted);
+            ViewBag.LateTasks = allTasksForStats.Count(t => !t.IsCompleted && t.DueDate < DateTime.Today);
+            ViewBag.CompletionRate = allTasksForStats.Count > 0 ? Math.Round((double)ViewBag.CompletedTasks / allTasksForStats.Count * 100, 1) : 0;
+
             return View(employee);
         }
 
@@ -142,7 +148,6 @@ namespace NabdAltamayyuz.Controllers
             {
                 targetCompanyId = model.CompanyId;
                 if (targetCompanyId == null) ModelState.AddModelError("CompanyId", "يجب اختيار الشركة");
-                // السوبر أدمن يمكنه اختيار الدور، لكن الافتراضي موظف
                 model.Role = selectedRole ?? UserRole.Employee;
             }
             else
@@ -156,9 +161,6 @@ namespace NabdAltamayyuz.Controllers
                 if (targetCompanyId == null)
                     ModelState.AddModelError("", "خطأ: حسابك غير مرتبط بشركة.");
 
-                // إذا كان المدير يضيف شخصاً، فهو يضيف "موظف" بشكل افتراضي
-                // إلا إذا اخترنا منطقاً آخر لإضافة مشرفين فرعيين
-                // حسب طلبك الأخير: إزالة المديرين من الموظفين، لذا هنا سنركز على إضافة الموظفين
                 model.Role = UserRole.Employee;
             }
 
