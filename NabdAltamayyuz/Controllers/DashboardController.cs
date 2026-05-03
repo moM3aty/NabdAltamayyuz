@@ -55,13 +55,16 @@ namespace NabdAltamayyuz.Controllers
             if (user?.CompanyId == null) return RedirectToAction("AccessDenied", "Account");
 
             ViewBag.EmployeesCount = await _context.Users.CountAsync(u => u.CompanyId == user.CompanyId && u.Role == UserRole.Employee);
-            var today = DateTime.Today;
+
+            // ضبط الوقت لتوقيت السعودية بشكل ثابت
+            var today = DateTime.UtcNow.AddHours(3).Date;
+
             ViewBag.AttendanceList = await _context.Attendances.Include(a => a.Employee).Where(a => a.Employee.CompanyId == user.CompanyId && a.Date == today).OrderByDescending(a => a.TimeIn).ToListAsync();
             ViewBag.PendingTasks = await _context.WorkTasks.Include(t => t.AssignedTo).Where(t => t.AssignedTo.CompanyId == user.CompanyId && !t.IsCompleted).OrderBy(t => t.DueDate).Take(10).ToListAsync();
 
             if (user.Company != null)
             {
-                var daysLeft = (user.Company.SubscriptionEndDate - DateTime.Now).Days;
+                var daysLeft = (user.Company.SubscriptionEndDate - DateTime.UtcNow.AddHours(3)).Days;
                 if (daysLeft < user.Company.NotificationDaysBeforeExpiry && daysLeft > 0) ViewBag.AlertMessage = $"تنبيه: الاشتراك ينتهي خلال {daysLeft} يوم.";
                 else if (daysLeft <= 0) ViewBag.ErrorMessage = "تنبيه: الاشتراك منتهي.";
             }
@@ -72,7 +75,10 @@ namespace NabdAltamayyuz.Controllers
         public async Task<IActionResult> Employee()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var today = DateTime.Today;
+
+            // ضبط الوقت لتوقيت السعودية بشكل ثابت
+            var today = DateTime.UtcNow.AddHours(3).Date;
+
             var attendance = await _context.Attendances.FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
 
             ViewBag.IsCheckedIn = attendance != null && attendance.TimeIn != null;
@@ -80,10 +86,8 @@ namespace NabdAltamayyuz.Controllers
 
             if (TempData["Success"] != null) ViewBag.Message = TempData["Success"];
 
-            // جلب المهام غير المكتملة للعرض في القائمة
             var myTasks = await _context.WorkTasks.Where(t => t.AssignedToId == userId && !t.IsCompleted).OrderBy(t => t.DueDate).ToListAsync();
 
-            // --- التعديل 2: جلب جميع المهام لحساب الإحصائيات لمؤشر الإنجاز ---
             var allMyTasks = await _context.WorkTasks.Where(t => t.AssignedToId == userId).ToListAsync();
             ViewBag.MyTotalTasks = allMyTasks.Count;
             ViewBag.MyCompletedTasks = allMyTasks.Count(t => t.IsCompleted);
@@ -99,18 +103,21 @@ namespace NabdAltamayyuz.Controllers
         public async Task<IActionResult> CheckIn()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var today = DateTime.Today;
+
+            // إصلاح مشكلة المنطقة الزمنية بتثبيت توقيت السعودية (UTC + 3)
+            var nowTime = DateTime.UtcNow.AddHours(3);
+            var today = nowTime.Date;
+
             var existingRecord = await _context.Attendances.FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
 
             if (existingRecord == null)
             {
-                var now = DateTime.Now;
                 var attendance = new Attendance
                 {
                     EmployeeId = userId,
                     Date = today,
                     DayName = today.ToString("dddd", new System.Globalization.CultureInfo("ar-SA")),
-                    TimeIn = now,
+                    TimeIn = nowTime,
                     IsManualEntry = false
                 };
                 _context.Attendances.Add(attendance);
@@ -120,11 +127,10 @@ namespace NabdAltamayyuz.Controllers
                 var user = await _context.Users.FindAsync(userId);
                 if (user != null && !string.IsNullOrEmpty(user.NationalId))
                 {
-                    // إرسال في الخلفية (Fire and forget or await depending on requirement)
-                    await _teleworksService.SendAttendanceAsync(user.NationalId, today, now, null);
+                    await _teleworksService.SendAttendanceAsync(user.NationalId, today, nowTime, null);
                 }
 
-                TempData["Success"] = "تم تسجيل الدخول";
+                TempData["Success"] = "تم تسجيل الدخول بنجاح";
             }
             return RedirectToAction("Index");
         }
@@ -136,13 +142,16 @@ namespace NabdAltamayyuz.Controllers
         public async Task<IActionResult> CheckOut()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var today = DateTime.Today;
+
+            // إصلاح مشكلة المنطقة الزمنية بتثبيت توقيت السعودية (UTC + 3)
+            var nowTime = DateTime.UtcNow.AddHours(3);
+            var today = nowTime.Date;
+
             var record = await _context.Attendances.FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
 
             if (record != null && record.TimeOut == null)
             {
-                var now = DateTime.Now;
-                record.TimeOut = now;
+                record.TimeOut = nowTime;
                 _context.Update(record);
                 await _context.SaveChangesAsync();
 
@@ -150,10 +159,10 @@ namespace NabdAltamayyuz.Controllers
                 var user = await _context.Users.FindAsync(userId);
                 if (user != null && !string.IsNullOrEmpty(user.NationalId))
                 {
-                    await _teleworksService.SendAttendanceAsync(user.NationalId, today, record.TimeIn.Value, now);
+                    await _teleworksService.SendAttendanceAsync(user.NationalId, today, record.TimeIn.Value, nowTime);
                 }
 
-                TempData["Success"] = "تم تسجيل الخروج";
+                TempData["Success"] = "تم تسجيل الخروج بنجاح";
             }
             return RedirectToAction("Index");
         }

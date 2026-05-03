@@ -24,7 +24,6 @@ namespace NabdAltamayyuz.Controllers
         // GET: Reports/Index
         public async Task<IActionResult> Index()
         {
-            // تجهيز قائمة الشركات للفلتر في صفحة التقارير
             if (User.IsInRole("SuperAdmin"))
             {
                 ViewBag.Companies = new SelectList(await _context.Companies.Where(c => c.ParentCompanyId == null).ToListAsync(), "Id", "Name");
@@ -34,14 +33,12 @@ namespace NabdAltamayyuz.Controllers
                 var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 var user = await _context.Users.FindAsync(userId);
 
-                // جلب الشركة الرئيسية والفروع
                 var companies = await _context.Companies
                     .Where(c => c.Id == user.CompanyId || c.ParentCompanyId == user.CompanyId)
                     .Select(c => new { c.Id, Name = c.ParentCompanyId == null ? c.Name : " -- " + c.Name })
                     .ToListAsync();
                 ViewBag.Companies = new SelectList(companies, "Id", "Name");
 
-                // تحميل الموظفين للشركة الحالية ليكون الدروب داون جاهزاً
                 var employees = await _context.Users.Where(u => u.CompanyId == user.CompanyId && u.Role == UserRole.Employee).ToListAsync();
                 ViewBag.Employees = new SelectList(employees, "Id", "FullName");
             }
@@ -50,7 +47,6 @@ namespace NabdAltamayyuz.Controllers
         }
 
         // GET: Reports/Generate
-        // التعديل 5 و 3: تغيير searchString إلى employeeId للبحث الدقيق، وتمرير اسم الشركة
         public async Task<IActionResult> Generate(string type, DateTime? from, DateTime? to, int? companyId, int? employeeId)
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -59,9 +55,11 @@ namespace NabdAltamayyuz.Controllers
             ViewBag.ReportType = type;
             ViewBag.FromDate = from?.ToString("yyyy-MM-dd") ?? "-";
             ViewBag.ToDate = to?.ToString("yyyy-MM-dd") ?? "-";
-            ViewBag.PrintDate = DateTime.Now;
+            ViewBag.PrintDate = DateTime.UtcNow.AddHours(3);
 
-            // تحديد اسم الشركة لطباعته في ترويسة التقرير (التعديل 3)
+            // التعديل 4: ضمان ظهور اسم شركة الموظف بشكل دائم
+            var currentUser = await _context.Users.Include(u => u.Company).FirstOrDefaultAsync(u => u.Id == userId);
+
             if (companyId.HasValue)
             {
                 var comp = await _context.Companies.FindAsync(companyId.Value);
@@ -69,11 +67,10 @@ namespace NabdAltamayyuz.Controllers
             }
             else
             {
-                var currentUser = await _context.Users.Include(u => u.Company).FirstOrDefaultAsync(u => u.Id == userId);
-                ViewBag.CompanyName = currentUser?.Company?.Name ?? "التقرير الشامل للمنصة";
+                // إذا كان موظف أو لم يتم تحديد شركة، اجلب اسم شركته الفعلية
+                ViewBag.CompanyName = currentUser?.Company?.Name ?? "نبض التميز الذهبي";
             }
 
-            // تحديد نطاق الشركات المسموح بها
             IQueryable<int> allowedCompanyIds;
             if (userRole == "SuperAdmin")
             {
@@ -90,7 +87,6 @@ namespace NabdAltamayyuz.Controllers
             }
             else if (userRole != "Employee")
             {
-                var currentUser = await _context.Users.FindAsync(userId);
                 var subIds = await _context.Companies.Where(c => c.ParentCompanyId == currentUser.CompanyId).Select(c => c.Id).ToListAsync();
                 subIds.Add(currentUser.CompanyId.Value);
 
@@ -99,12 +95,11 @@ namespace NabdAltamayyuz.Controllers
                 else
                     allowedCompanyIds = subIds.AsQueryable();
             }
-            else // Employee
+            else
             {
                 allowedCompanyIds = Enumerable.Empty<int>().AsQueryable();
             }
 
-            // 1. تقرير الحضور
             if (type == "attendance")
             {
                 var query = _context.Attendances.Include(a => a.Employee).ThenInclude(e => e.Company).AsQueryable();
@@ -116,7 +111,6 @@ namespace NabdAltamayyuz.Controllers
                 else
                 {
                     query = query.Where(a => allowedCompanyIds.Contains(a.Employee.CompanyId.Value));
-                    // التعديل 5: الفلترة بـ ID الموظف وليس نصياً
                     if (employeeId.HasValue) query = query.Where(a => a.EmployeeId == employeeId.Value);
                 }
 
@@ -127,13 +121,16 @@ namespace NabdAltamayyuz.Controllers
                 return View("PrintAttendance", data);
             }
 
-            // 2. تقرير المهام
             else if (type == "tasks")
             {
-                var query = _context.WorkTasks.Include(t => t.AssignedTo).ThenInclude(e => e.Company).Include(t => t.CreatedBy).AsQueryable();
+                var query = _context.WorkTasks
+                    .Include(t => t.AssignedTo).ThenInclude(e => e.Company)
+                    .Include(t => t.CreatedBy)
+                    .AsQueryable();
 
                 if (userRole == "Employee")
                 {
+                    // التعديل 4: التأكد من جلب المهام للموظف بنجاح
                     query = query.Where(t => t.AssignedToId == userId);
                 }
                 else
@@ -149,7 +146,6 @@ namespace NabdAltamayyuz.Controllers
                 return View("PrintTasks", data);
             }
 
-            // 3. تقرير الاشتراكات والفواتير (للمشرفين والسوبر أدمن)
             else if (type == "subscriptions")
             {
                 if (userRole == "Employee") return Forbid();
@@ -161,14 +157,11 @@ namespace NabdAltamayyuz.Controllers
                     .AsQueryable();
 
                 var data = await query.OrderByDescending(c => c.SubscriptionEndDate).ToListAsync();
-
-                // حساب إجماليات للتقرير
                 ViewBag.TotalRevenue = data.Sum(c => c.TotalPricePerEmployee * c.AllowedEmployees);
 
                 return View("PrintSubscriptions", data);
             }
 
-            // 4. تقرير الموظفين الشامل
             else if (type == "employees")
             {
                 if (userRole == "Employee") return Forbid();

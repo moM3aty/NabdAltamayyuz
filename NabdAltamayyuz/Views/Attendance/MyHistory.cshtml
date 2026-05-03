@@ -5,17 +5,131 @@
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
     ViewData["Title"] = isRtl ? "سجل حضوري" : "My Attendance";
     Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // جلب اسم الشركة من الكنترولر للطباعة (التعديل 5)
+    var companyName = ViewBag.CompanyName as string ?? "نبض التميز الذهبي";
 }
 
+<!-- التعديل 5: إضافة تنسيقات الطباعة لمنع قص الجدول وإضافة ترويسة صحيحة -->
+<style>
+    @@media print {
+        @@page {
+            size: A4 portrait;
+            margin: 1.5cm;
+        }
+
+        body {
+            background-color: white !important;
+            font-family: 'Cairo', sans-serif;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .premium-navbar, footer, .btn, .alert, .no-print, .mb-4.d-flex {
+            display: none !important;
+        }
+
+        .container {
+            margin-top: 0 !important;
+            padding: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .card-body {
+            padding: 0 !important;
+        }
+
+        .print-header {
+            display: flex !important;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #D4AF37;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+            .print-header h4 {
+                color: #D4AF37;
+                font-weight: bold;
+                margin: 0;
+            }
+
+            .print-header h5 {
+                color: #0F172A;
+                font-weight: bold;
+                margin: 5px 0 0 0;
+            }
+
+            .print-header p {
+                color: #64748b;
+                font-size: 12px;
+                margin: 0;
+            }
+
+        .table-responsive {
+            overflow: visible !important;
+        }
+
+        table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            font-size: 13px;
+        }
+
+        th {
+            background-color: #0F172A !important;
+            color: white !important;
+            border: 1px solid #000 !important;
+            padding: 10px !important;
+        }
+
+        td {
+            border: 1px solid #ccc !important;
+            padding: 8px !important;
+            color: black !important;
+        }
+
+        .badge {
+            border: 1px solid #000;
+            background: transparent !important;
+            color: black !important;
+            padding: 3px 8px;
+        }
+    }
+
+    .print-header {
+        display: none;
+    }
+</style>
+
 <div class="container py-5 animate-fade-in" style="margin-top: 120px;">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+
+    <!-- ترويسة مخصصة تظهر فقط عند الطباعة -->
+    <div class="print-header">
+        <div>
+            <h4><i class="fas fa-building me-2"></i> @companyName</h4>
+            <h5>@(isRtl ? "سجل الحضور والانصراف للموظف" : "Employee Attendance Log")</h5>
+        </div>
+        <div style="text-align: @(isRtl ? "left" : "right")">
+            <p><strong>@(isRtl ? "اسم الموظف:" : "Employee:")</strong> @User.Identity.Name</p>
+            <p><strong>@(isRtl ? "تاريخ الطباعة:" : "Print Date:")</strong> @DateTime.UtcNow.AddHours(3).ToString("yyyy-MM-dd HH:mm")</p>
+        </div>
+    </div>
+
+    <!-- ترويسة الواجهة (تختفي في الطباعة) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
         <div>
             <h3 class="fw-bold text-dark"><i class="fas fa-history text-gold me-2"></i> @(isRtl ? "سجل الحضور الشخصي" : "My Attendance History")</h3>
             <p class="text-muted small">@(isRtl ? "عرض سجلات الدوام لآخر 30 يوم" : "Showing records for the last 30 days")</p>
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-outline-secondary shadow-sm rounded-pill px-4" onclick="window.print()">
-                <i class="fas fa-print me-2"></i> @(isRtl ? "طباعة" : "Print")
+                <i class="fas fa-print me-2"></i> @(isRtl ? "طباعة السجل" : "Print Log")
             </button>
         </div>
     </div>
@@ -41,8 +155,7 @@
                             {
                                 <tr>
                                     <td><span class="fw-bold">@item.Date.ToString("yyyy-MM-dd")</span></td>
-                                    <!-- عرض اسم اليوم حسب لغة المتصفح بدلاً من المسجل في قاعدة البيانات -->
-                                    <td>@item.Date.ToString("dddd")</td>
+                                    <td>@item.Date.ToString("dddd", CultureInfo.CurrentCulture)</td>
                                     <td class="text-success font-monospace" dir="ltr">@(item.TimeIn?.ToString("hh:mm tt") ?? "--")</td>
                                     <td class="text-danger font-monospace" dir="ltr">@(item.TimeOut?.ToString("hh:mm tt") ?? "--")</td>
                                     <td>
