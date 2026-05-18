@@ -129,7 +129,7 @@ namespace NabdAltamayyuz.Controllers
         }
 
         // ---------------------------------------------------------
-        // إجراء سريع: تسجيل الدخول / الانصراف من الجدول مباشرة
+        // إجراء سريع: تسجيل الدخول / الانصراف من الجدول مباشرة بدون Reload
         // ---------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -151,6 +151,7 @@ namespace NabdAltamayyuz.Controllers
             // حل مشكلة تأخير الوقت (استخدام توقيت السعودية الثابت UTC+3)
             var nowTime = DateTime.UtcNow.AddHours(3);
             var actionDateTime = new DateTime(date.Year, date.Month, date.Day, nowTime.Hour, nowTime.Minute, nowTime.Second);
+            var timeString = actionDateTime.ToString("HH:mm");
 
             if (actionType == "In")
             {
@@ -177,6 +178,8 @@ namespace NabdAltamayyuz.Controllers
 
                 await _context.SaveChangesAsync();
                 if (!string.IsNullOrEmpty(employee.NationalId)) await _teleworksService.SendAttendanceAsync(employee.NationalId, date.Date, actionDateTime, null);
+
+                return Json(new { success = true, message = "تم تسجيل الدخول بنجاح", timeStr = timeString });
             }
             else if (actionType == "Out")
             {
@@ -189,9 +192,12 @@ namespace NabdAltamayyuz.Controllers
                 await _context.SaveChangesAsync();
 
                 if (!string.IsNullOrEmpty(employee.NationalId)) await _teleworksService.SendAttendanceAsync(employee.NationalId, date.Date, record.TimeIn.Value, actionDateTime);
+
+                var totalHours = (record.TimeOut.Value - record.TimeIn.Value).TotalHours.ToString("0.0");
+                return Json(new { success = true, message = "تم تسجيل الانصراف بنجاح", timeStr = timeString, totalHours = totalHours });
             }
 
-            return Json(new { success = true, message = "تم تسجيل الحركة بنجاح" });
+            return Json(new { success = false, message = "إجراء غير معروف" });
         }
 
 
@@ -221,7 +227,7 @@ namespace NabdAltamayyuz.Controllers
                 existingRecord.TimeIn = timeIn;
                 existingRecord.TimeOut = timeOut;
 
-                // التعديل 3: إزالة الإضافة الإجبارية لكلمة "تعديل يدوي" للحفاظ على الملاحظات نظيفة
+                // إزالة الإضافة الإجبارية لكلمة "تعديل يدوي" للحفاظ على الملاحظات نظيفة
                 existingRecord.Notes = notes;
                 existingRecord.IsManualEntry = true;
                 _context.Update(existingRecord);

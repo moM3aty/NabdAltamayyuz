@@ -181,7 +181,7 @@
         </div>
     </div>
 
-    <!-- Attendance Table - التعديل 4: عرض الجميع مع أزرار سريعة -->
+    <!-- Attendance Table - التحديث الفوري للأي ديز والصفوف -->
     <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -209,10 +209,10 @@
                                 var isWorking = (!isAbsent && item.TimeOut == null);
                                 var isCompleted = (!isAbsent && item.TimeOut != null);
 
-                                <tr class="@(isAbsent ? "bg-danger bg-opacity-10" : "")">
+                                <tr id="tr-@item.EmployeeId" class="@(isAbsent ? "bg-danger bg-opacity-10" : "")">
                                     <td class="text-start px-3">
                                         <div class="d-flex align-items-center">
-                                            <div class="avatar-circle @(isAbsent ? "bg-danger text-white" : "bg-light text-gold") rounded-circle d-flex align-items-center justify-content-center me-2 border border-gold no-print" style="width: 35px; height: 35px;">
+                                            <div id="avatar-@item.EmployeeId" class="avatar-circle @(isAbsent ? "bg-danger text-white" : "bg-light text-gold") rounded-circle d-flex align-items-center justify-content-center me-2 border border-gold no-print" style="width: 35px; height: 35px;">
                                                 <span class="fw-bold small">@item.Employee.FullName.Substring(0, 1).ToUpper()</span>
                                             </div>
                                             <div>
@@ -226,7 +226,7 @@
                                         <td class="small text-muted">@(item.Employee.Company?.Name ?? "-")</td>
                                     }
 
-                                    <td>
+                                    <td id="status-@item.EmployeeId">
                                         @if (isAbsent)
                                         {
                                             <span class="badge bg-danger rounded-pill px-3 py-2">غائب</span>
@@ -248,10 +248,10 @@
                                         }
                                     </td>
 
-                                    <td class="text-success ltr font-monospace fw-bold small">@(item.TimeIn?.ToString("HH:mm") ?? "--:--")</td>
-                                    <td class="text-danger ltr font-monospace fw-bold small">@(item.TimeOut?.ToString("HH:mm") ?? "--:--")</td>
+                                    <td id="timeIn-@item.EmployeeId" class="text-success ltr font-monospace fw-bold small">@(item.TimeIn?.ToString("HH:mm") ?? "--:--")</td>
+                                    <td id="timeOut-@item.EmployeeId" class="text-danger ltr font-monospace fw-bold small">@(item.TimeOut?.ToString("HH:mm") ?? "--:--")</td>
 
-                                    <td>
+                                    <td id="totalHours-@item.EmployeeId">
                                         @if (isCompleted)
                                         {
                                             <span class="badge bg-light text-dark border fw-bold">@((item.TimeOut.Value - item.TimeIn.Value).TotalHours.ToString("0.0"))</span>
@@ -264,17 +264,17 @@
                                     </td>
 
                                     <td class="text-end pe-4 no-print">
-                                        <div class="d-flex justify-content-end gap-1">
+                                        <div class="d-flex justify-content-end gap-1" id="actions-@item.EmployeeId">
                                             @if (isAbsent)
                                             {
-                                                <button class="btn btn-sm btn-success rounded-pill px-3 shadow-sm" onclick="quickAction(@item.EmployeeId, '@selectedDateStr', 'In')"><i class="fas fa-sign-in-alt me-1"></i> دخول</button>
+                                                <button class="btn btn-sm btn-success rounded-pill px-3 shadow-sm" onclick="quickAction(event, @item.EmployeeId, '@selectedDateStr', 'In')"><i class="fas fa-sign-in-alt me-1"></i> دخول</button>
                                             }
                                             else if (isWorking)
                                             {
-                                                <button class="btn btn-sm btn-danger rounded-pill px-3 shadow-sm" onclick="quickAction(@item.EmployeeId, '@selectedDateStr', 'Out')"><i class="fas fa-sign-out-alt me-1"></i> انصراف</button>
+                                                <button class="btn btn-sm btn-danger rounded-pill px-3 shadow-sm" onclick="quickAction(event, @item.EmployeeId, '@selectedDateStr', 'Out')"><i class="fas fa-sign-out-alt me-1"></i> انصراف</button>
                                             }
 
-                                            <button class="btn btn-sm btn-outline-dark rounded-circle ms-2" title="تعديل السجل" onclick="openManualEntry(@item.EmployeeId, '@item.Employee.FullName', '@(item.TimeIn?.ToString("HH:mm"))', '@(item.TimeOut?.ToString("HH:mm"))', '@item.Notes')"><i class="fas fa-edit"></i></button>
+                                            <button class="btn btn-sm btn-outline-dark rounded-circle ms-2" title="تعديل السجل" onclick="openManualEntry(@item.EmployeeId, document.querySelector('#tr-@item.EmployeeId .fw-bold.text-dark.small').innerText, document.getElementById('timeIn-@item.EmployeeId').innerText, document.getElementById('timeOut-@item.EmployeeId').innerText, '@item.Notes')"><i class="fas fa-edit"></i></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -345,12 +345,15 @@
 
 @section Scripts {
     <script>
-        // الدالة الجديدة للتسجيل السريع
-        function quickAction(employeeId, dateStr, actionType) {
+        // الدالة الجديدة للتسجيل السريع (AJAX بدون Reload)
+        function quickAction(event, employeeId, dateStr, actionType) {
             var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
-            // تعطيل الصفحة مؤقتاً
-            document.body.style.cursor = 'wait';
+            // تحويل الزر لوضع التحميل لمنع الضغط المتكرر
+            var btn = event.currentTarget;
+            var originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
 
             fetch('/Attendance/QuickAction', {
                 method: 'POST',
@@ -367,15 +370,47 @@
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    location.reload(); // إعادة التحميل لظهور الزر الجديد والوقت
+                    var tr = document.getElementById('tr-' + employeeId);
+                    var avatar = document.getElementById('avatar-' + employeeId);
+                    var empName = document.querySelector('#tr-' + employeeId + ' .fw-bold.text-dark.small').innerText;
+
+                    tr.classList.remove('bg-danger', 'bg-opacity-10');
+                    avatar.classList.remove('bg-danger', 'text-white');
+                    avatar.classList.add('bg-light', 'text-gold');
+
+                    var actionsDiv = document.getElementById('actions-' + employeeId);
+
+                    if (actionType === 'In') {
+                        document.getElementById('timeIn-' + employeeId).innerText = data.timeStr;
+                        document.getElementById('status-' + employeeId).innerHTML = '<span class="badge bg-warning text-dark rounded-pill px-3 py-2">حاضر (جاري)</span> <i class="fas fa-pen text-info ms-1 small" title="تسجيل سريع"></i>';
+
+                        actionsDiv.innerHTML = `
+                            <button class="btn btn-sm btn-danger rounded-pill px-3 shadow-sm" onclick="quickAction(event, ${employeeId}, '${dateStr}', 'Out')"><i class="fas fa-sign-out-alt me-1"></i> انصراف</button>
+                            <button class="btn btn-sm btn-outline-dark rounded-circle ms-2" onclick="openManualEntry(${employeeId}, '${empName}', '${data.timeStr}', '--:--', '')"><i class="fas fa-edit"></i></button>
+                        `;
+                    }
+                    else if (actionType === 'Out') {
+                        document.getElementById('timeOut-' + employeeId).innerText = data.timeStr;
+                        document.getElementById('status-' + employeeId).innerHTML = '<span class="badge bg-success rounded-pill px-3 py-2">حاضر (مكتمل)</span> <i class="fas fa-pen text-info ms-1 small" title="تسجيل سريع"></i>';
+
+                        document.getElementById('totalHours-' + employeeId).innerHTML = `<span class="badge bg-light text-dark border fw-bold">${data.totalHours}</span>`;
+
+                        var currentInTime = document.getElementById('timeIn-' + employeeId).innerText;
+                        actionsDiv.innerHTML = `
+                            <span class="text-success small fw-bold me-2 mt-1"><i class="fas fa-check-double"></i> تمت الحركة</span>
+                            <button class="btn btn-sm btn-outline-dark rounded-circle ms-2" onclick="openManualEntry(${employeeId}, '${empName}', '${currentInTime}', '${data.timeStr}', '')"><i class="fas fa-edit"></i></button>
+                        `;
+                    }
                 } else {
                     alert("خطأ: " + data.message);
-                    document.body.style.cursor = 'default';
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
                 }
             })
             .catch(err => {
                 alert("حدث خطأ في الاتصال");
-                document.body.style.cursor = 'default';
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
             });
         }
 
