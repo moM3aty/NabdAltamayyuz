@@ -5,6 +5,7 @@
     ViewData["Title"] = CultureInfo.CurrentCulture.Name.StartsWith("ar") ? "تفاصيل الشركة" : "Company Details";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
     Layout = "~/Views/Shared/_Layout.cshtml";
+    bool isSuperAdmin = User.IsInRole("SuperAdmin");
 }
 
 <div class="container py-5 animate-fade-in" style="margin-top: 100px;">
@@ -19,6 +20,11 @@
             </a>
         </div>
     </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success border-0 bg-success bg-opacity-10 text-success rounded-3 mb-4"><i class="fas fa-check-circle me-2"></i> @TempData["Success"]</div>
+    }
 
     <div class="row g-4">
         <!-- Main Info Card -->
@@ -105,6 +111,81 @@
                 </div>
             </div>
 
+            <!-- إضافة قسم المشروعات والمهن -->
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
+                <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-project-diagram text-gold me-2"></i> @(isRtl ? "المشروعات والمهن" : "Projects & Roles")</h6>
+                    <button class="btn btn-sm btn-dark rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#addProjectModal">
+                        <i class="fas fa-plus me-1"></i> @(isRtl ? "إضافة مشروع" : "Add Project")
+                    </button>
+                </div>
+                <div class="card-body p-4">
+                    @if (Model.Projects != null && Model.Projects.Any())
+                    {
+                        <div class="accordion" id="projectsAccordion">
+                            @foreach (var project in Model.Projects)
+                            {
+                                <div class="accordion-item border mb-3 rounded-3 overflow-hidden shadow-sm">
+                                    <h2 class="accordion-header" id="heading-@project.Id">
+                                        <button class="accordion-button collapsed bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@project.Id">
+                                            <div class="d-flex justify-content-between align-items-center w-100 pe-3">
+                                                <span class="fw-bold text-dark"><i class="fas fa-folder-open text-primary me-2"></i> @project.Name</span>
+                                                <span class="badge bg-secondary">@(isRtl ? "البدء:" : "Start:") @project.StartDate.ToString("yyyy-MM-dd")</span>
+                                            </div>
+                                        </button>
+                                    </h2>
+                                    <div id="collapse-@project.Id" class="accordion-collapse collapse" data-bs-parent="#projectsAccordion">
+                                        <div class="accordion-body">
+                                            <p class="small text-muted mb-3">@project.Description</p>
+
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h6 class="fw-bold small mb-0">@(isRtl ? "المهن / الفرص المتاحة:" : "Job Roles / Opportunities:")</h6>
+                                                <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="openRoleModal(@project.Id, '@project.Name')">
+                                                    <i class="fas fa-plus me-1"></i> @(isRtl ? "إضافة مهنة" : "Add Role")
+                                                </button>
+                                            </div>
+
+                                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                                @if (project.JobRoles != null && project.JobRoles.Any())
+                                                {
+                                                    foreach (var role in project.JobRoles)
+                                                    {
+                                                        <span class="badge bg-dark bg-opacity-10 text-dark border px-3 py-2 rounded-pill">
+                                                            <i class="fas fa-user-tag text-gold me-1"></i> @role.Name
+                                                        </span>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted small">@(isRtl ? "لا توجد مهن مضافة" : "No roles added")</span>
+                                                }
+                                            </div>
+
+                                            <hr class="opacity-10 my-3">
+                                            <div class="text-end">
+                                                <form asp-action="DeleteProject" method="post" onsubmit="return confirm('@(isRtl ? "هل أنت متأكد من حذف المشروع بكافة مهنه؟" : "Delete project and all its roles?")')">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@project.Id" />
+                                                    <input type="hidden" name="companyId" value="@Model.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill"><i class="fas fa-trash me-1"></i> @(isRtl ? "حذف المشروع" : "Delete Project")</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-project-diagram fa-2x mb-2 opacity-25"></i>
+                            <p class="mb-0 small">@(isRtl ? "لا توجد مشاريع مضافة لهذه الشركة" : "No projects added for this company")</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
             <!-- Sub Companies Section -->
             @if (Model.SubCompanies != null && Model.SubCompanies.Any())
             {
@@ -141,51 +222,43 @@
                     </div>
                 </div>
             }
-
-            <!-- Subscription Details -->
-            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-                <div class="card-header bg-white py-3 px-4 border-bottom">
-                    <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-file-contract text-gold me-2"></i> @(isRtl ? "تفاصيل الاشتراك" : "Subscription Details")</h6>
-                </div>
-                <div class="card-body p-4">
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <div class="border-start border-4 border-gold ps-3">
-                                <small class="text-muted">@(isRtl ? "فترة الاشتراك" : "Subscription Period")</small>
-                                <div class="fw-bold fs-5 mt-1">
-                                    @Model.SubscriptionStartDate.ToString("dd MMM yyyy") <i class="fas fa-arrow-left mx-2 text-muted small rtl-flip"></i> @Model.SubscriptionEndDate.ToString("dd MMM yyyy")
-                                </div>
-                                @{
-                                    var daysLeft = (Model.SubscriptionEndDate - DateTime.Now).Days;
-                                    var badgeColor = daysLeft < 30 ? "text-danger" : "text-success";
-                                    var statusText = daysLeft > 0
-                                    ? (isRtl ? $"متبقي {daysLeft} يوم" : $"{daysLeft} days remaining")
-                                    : (isRtl ? "منتهي الصلاحية" : "Expired");
-                                }
-                                <small class="@badgeColor fw-bold mt-1 d-block">
-                                    @statusText
-                                </small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="row text-center">
-                                <div class="col-6">
-                                    <h3 class="fw-bold mb-0">@Model.AllowedEmployees</h3>
-                                    <small class="text-muted">@(isRtl ? "موظف مسموح" : "Allowed Employees")</small>
-                                </div>
-                                <div class="col-6 border-start">
-                                    <h3 class="fw-bold mb-0">@Model.AllowedSubAccounts</h3>
-                                    <small class="text-muted">@(isRtl ? "فرع مسموح" : "Allowed Branches")</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Sidebar: Financials & Attachments -->
         <div class="col-lg-4">
+            <!-- Subscription Details -->
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
+                <div class="card-header bg-white py-3 px-4 border-bottom">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-file-contract text-gold me-2"></i> @(isRtl ? "تفاصيل الاشتراك" : "Subscription Details")</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="border-start border-4 border-gold ps-3 mb-4">
+                        <small class="text-muted">@(isRtl ? "فترة الاشتراك" : "Subscription Period")</small>
+                        <div class="fw-bold fs-6 mt-1">
+                            @Model.SubscriptionStartDate.ToString("dd MMM yyyy") <i class="fas fa-arrow-left mx-2 text-muted small rtl-flip"></i> @Model.SubscriptionEndDate.ToString("dd MMM yyyy")
+                        </div>
+                        @{
+                            var daysLeft = (Model.SubscriptionEndDate - DateTime.Now).Days;
+                            var badgeColor = daysLeft < 30 ? "text-danger" : "text-success";
+                            var statusText = daysLeft > 0 ? (isRtl ? $"متبقي {daysLeft} يوم" : $"{daysLeft} days remaining") : (isRtl ? "منتهي الصلاحية" : "Expired");
+                        }
+                        <small class="@badgeColor fw-bold mt-1 d-block">
+                            @statusText
+                        </small>
+                    </div>
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h3 class="fw-bold mb-0 text-dark">@Model.AllowedEmployees</h3>
+                            <small class="text-muted">@(isRtl ? "موظف مسموح" : "Allowed Employees")</small>
+                        </div>
+                        <div class="col-6 border-start">
+                            <h3 class="fw-bold mb-0 text-dark">@Model.AllowedSubAccounts</h3>
+                            <small class="text-muted">@(isRtl ? "فرع مسموح" : "Allowed Branches")</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Financial Card -->
             <div class="card border-0 shadow-lg rounded-4 mb-4 bg-dark text-white">
                 <div class="card-body p-4 position-relative overflow-hidden">
@@ -245,3 +318,78 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Add Project -->
+<div class="modal fade" id="addProjectModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0 py-3 px-4">
+                <h6 class="modal-title fw-bold text-gold"><i class="fas fa-plus me-2"></i> @(isRtl ? "إضافة مشروع جديد" : "Add New Project")</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="AddProject" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="companyId" value="@Model.Id" />
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">@(isRtl ? "اسم المشروع" : "Project Name")</label>
+                        <input type="text" name="projectName" class="form-control bg-light" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">@(isRtl ? "تاريخ البدء" : "Start Date")</label>
+                        <input type="date" name="startDate" class="form-control bg-light" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">@(isRtl ? "الوصف" : "Description")</label>
+                        <textarea name="description" class="form-control bg-light" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">@(isRtl ? "إلغاء" : "Cancel")</button>
+                    <button type="submit" class="btn btn-dark btn-gold text-gold fw-bold rounded-pill px-4">@(isRtl ? "إضافة" : "Add")</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Add Job Role -->
+<div class="modal fade" id="addRoleModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0 py-3 px-4">
+                <h6 class="modal-title fw-bold text-gold"><i class="fas fa-user-tag me-2"></i> @(isRtl ? "إضافة مهنة للمشروع" : "Add Job Role")</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="AddJobRole" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="companyId" value="@Model.Id" />
+                <input type="hidden" name="projectId" id="modalProjectId" />
+
+                <div class="modal-body p-4">
+                    <div class="alert alert-light border border-gold small mb-3">
+                        <strong>@(isRtl ? "المشروع:" : "Project:")</strong> <span id="modalProjectName" class="text-dark"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">@(isRtl ? "المسمى الوظيفي / المهنة" : "Job Role Name")</label>
+                        <input type="text" name="roleName" class="form-control bg-light" required placeholder="@(isRtl ? "مثال: مهندس برمجيات" : "e.g. Software Engineer")" />
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">@(isRtl ? "إلغاء" : "Cancel")</button>
+                    <button type="submit" class="btn btn-dark btn-gold text-gold fw-bold rounded-pill px-4">@(isRtl ? "إضافة" : "Add")</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openRoleModal(projectId, projectName) {
+            document.getElementById('modalProjectId').value = projectId;
+            document.getElementById('modalProjectName').innerText = projectName;
+            new bootstrap.Modal(document.getElementById('addRoleModal')).show();
+        }
+    </script>
+}

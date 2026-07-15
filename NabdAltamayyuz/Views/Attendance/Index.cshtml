@@ -92,7 +92,6 @@
 
 <div class="container py-5 animate-fade-in" style="margin-top: 120px;">
 
-    <!-- ترويسة الطباعة -->
     <div class="print-header text-center">
         <div class="row align-items-center">
             <div class="col-4 text-end"><small>تاريخ: @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</small></div>
@@ -181,7 +180,7 @@
         </div>
     </div>
 
-    <!-- Attendance Table - التحديث الفوري للأي ديز والصفوف -->
+    <!-- Attendance Table -->
     <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -229,22 +228,22 @@
                                     <td id="status-@item.EmployeeId">
                                         @if (isAbsent)
                                         {
-                                            <span class="badge bg-danger rounded-pill px-3 py-2">غائب</span>
+                                            if (!string.IsNullOrEmpty(item.Notes) && item.Notes.Contains("إجازة"))
+                                            {
+                                                <span class="badge bg-info text-dark rounded-pill px-3 py-2">@item.Notes</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger rounded-pill px-3 py-2">غائب</span>
+                                            }
                                         }
                                         else if (isWorking)
                                         {
-
                                             <span class="badge bg-warning text-dark rounded-pill px-3 py-2">حاضر (جاري)</span>
                                         }
                                         else
                                         {
-
                                             <span class="badge bg-success rounded-pill px-3 py-2">حاضر (مكتمل)</span>
-                                        }
-
-                                        @if (item.IsManualEntry)
-                                        {
-                                            <i class="fas fa-pen text-info ms-1 small" title="تم التعديل يدوياً"></i>
                                         }
                                     </td>
 
@@ -258,7 +257,6 @@
                                         }
                                         else
                                         {
-
                                             <span class="text-muted">--</span>
                                         }
                                     </td>
@@ -268,13 +266,15 @@
                                             @if (isAbsent)
                                             {
                                                 <button class="btn btn-sm btn-success rounded-pill px-3 shadow-sm" onclick="quickAction(event, @item.EmployeeId, '@selectedDateStr', 'In')"><i class="fas fa-sign-in-alt me-1"></i> دخول</button>
+                                                <!-- زر تسجيل الإجازة للموظف الغائب -->
+                                                <button class="btn btn-sm btn-outline-info rounded-pill ms-1" title="تسجيل إجازة للموظف" onclick="openLeaveModal(@item.EmployeeId, '@item.Employee.FullName', '@selectedDateStr')"><i class="fas fa-umbrella-beach"></i> إجازة</button>
                                             }
                                             else if (isWorking)
                                             {
                                                 <button class="btn btn-sm btn-danger rounded-pill px-3 shadow-sm" onclick="quickAction(event, @item.EmployeeId, '@selectedDateStr', 'Out')"><i class="fas fa-sign-out-alt me-1"></i> انصراف</button>
                                             }
 
-                                            <button class="btn btn-sm btn-outline-dark rounded-circle ms-2" title="تعديل السجل" onclick="openManualEntry(@item.EmployeeId, document.querySelector('#tr-@item.EmployeeId .fw-bold.text-dark.small').innerText, document.getElementById('timeIn-@item.EmployeeId').innerText, document.getElementById('timeOut-@item.EmployeeId').innerText, '@item.Notes')"><i class="fas fa-edit"></i></button>
+                                            <button class="btn btn-sm btn-outline-dark rounded-circle ms-2" title="تعديل السجل" onclick="openManualEntry(@item.EmployeeId, '@item.Employee.FullName', '@(item.TimeIn?.ToString("HH:mm"))', '@(item.TimeOut?.ToString("HH:mm"))', '@item.Notes')"><i class="fas fa-edit"></i></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -288,17 +288,10 @@
                 </table>
             </div>
         </div>
-        <div class="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center no-print">
-            <small class="text-muted">@(isRtl ? $"إجمالي الموظفين: {Model?.Count() ?? 0}" : $"Total Employees: {Model?.Count() ?? 0}")</small>
-            <div class="d-flex gap-3 small">
-                <span class="text-success"><i class="fas fa-circle"></i> حاضر: @(Model?.Count(x => x.TimeIn != null) ?? 0)</span>
-                <span class="text-danger"><i class="fas fa-circle"></i> غائب: @(Model?.Count(x => x.TimeIn == null) ?? 0)</span>
-            </div>
-        </div>
     </div>
 </div>
 
-<!-- Manual Entry / Edit Modal -->
+<!-- Modal Manual Entry -->
 <div class="modal fade" id="manualEntryModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
@@ -343,13 +336,65 @@
     </div>
 </div>
 
+<!-- Modal Add Leave (For Manager) -->
+<div class="modal fade" id="addLeaveModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0 py-3 px-4">
+                <h5 class="modal-title fw-bold text-gold"><i class="fas fa-umbrella-beach me-2"></i> تسجيل إجازة للموظف</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/Leaves/Create" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="EmployeeId" id="leaveEmpId" />
+                <div class="modal-body p-4">
+                    <div class="alert alert-light border-gold border-start border-4 mb-3">
+                        <strong class="text-dark">الموظف:</strong> <span id="leaveEmpName" class="text-gold fw-bold"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">نوع الإجازة</label>
+                        <select name="Type" id="leaveTypeSelect" class="form-select bg-light" required onchange="if(this.value==='Other') document.getElementById('customLeaveType').style.display='block'; else document.getElementById('customLeaveType').style.display='none';">
+                            <option value="Annual">سنوية</option>
+                            <option value="Unpaid">بدون أجر</option>
+                            <option value="Sick">مرضية</option>
+                            <option value="Marriage">زواج</option>
+                            <option value="Maternity">مولود</option>
+                            <option value="Exams">اختبارات</option>
+                            <option value="Hajj">حج</option>
+                            <option value="Death">وفاة</option>
+                            <option value="Other">أخرى</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="customLeaveType" style="display: none;">
+                        <input type="text" name="CustomTypeName" class="form-control" placeholder="حدد نوع الإجازة..." />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold small">من تاريخ</label>
+                            <input type="date" name="StartDate" id="leaveStartDate" class="form-control bg-light" required readonly />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold small">إلى تاريخ</label>
+                            <input type="date" name="EndDate" id="leaveEndDate" class="form-control bg-light" required />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold rounded-pill px-5 shadow-sm">حفظ الإجازة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
-        // الدالة الجديدة للتسجيل السريع (AJAX بدون Reload)
         function quickAction(event, employeeId, dateStr, actionType) {
             var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
-            // تحويل الزر لوضع التحميل لمنع الضغط المتكرر
             var btn = event.currentTarget;
             var originalHtml = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -382,7 +427,7 @@
 
                     if (actionType === 'In') {
                         document.getElementById('timeIn-' + employeeId).innerText = data.timeStr;
-                        document.getElementById('status-' + employeeId).innerHTML = '<span class="badge bg-warning text-dark rounded-pill px-3 py-2">حاضر (جاري)</span> <i class="fas fa-pen text-info ms-1 small" title="تسجيل سريع"></i>';
+                        document.getElementById('status-' + employeeId).innerHTML = '<span class="badge bg-warning text-dark rounded-pill px-3 py-2">حاضر (جاري)</span>';
 
                         actionsDiv.innerHTML = `
                             <button class="btn btn-sm btn-danger rounded-pill px-3 shadow-sm" onclick="quickAction(event, ${employeeId}, '${dateStr}', 'Out')"><i class="fas fa-sign-out-alt me-1"></i> انصراف</button>
@@ -391,7 +436,7 @@
                     }
                     else if (actionType === 'Out') {
                         document.getElementById('timeOut-' + employeeId).innerText = data.timeStr;
-                        document.getElementById('status-' + employeeId).innerHTML = '<span class="badge bg-success rounded-pill px-3 py-2">حاضر (مكتمل)</span> <i class="fas fa-pen text-info ms-1 small" title="تسجيل سريع"></i>';
+                        document.getElementById('status-' + employeeId).innerHTML = '<span class="badge bg-success rounded-pill px-3 py-2">حاضر (مكتمل)</span>';
 
                         document.getElementById('totalHours-' + employeeId).innerHTML = `<span class="badge bg-light text-dark border fw-bold">${data.totalHours}</span>`;
 
@@ -414,7 +459,6 @@
             });
         }
 
-        // فتح نافذة التعديل اليدوي
         function openManualEntry(empId, empName, timeIn, timeOut, notes) {
             document.getElementById('modalEmployeeId').value = empId;
             document.getElementById('modalEmployeeName').innerText = empName;
@@ -426,7 +470,14 @@
             myModal.show();
         }
 
-        // دالة التصدير للإكسل
+        function openLeaveModal(empId, empName, dateStr) {
+            document.getElementById('leaveEmpId').value = empId;
+            document.getElementById('leaveEmpName').innerText = empName;
+            document.getElementById('leaveStartDate').value = dateStr;
+            document.getElementById('leaveEndDate').value = dateStr;
+            new bootstrap.Modal(document.getElementById('addLeaveModal')).show();
+        }
+
         function exportToExcel(tableId) {
             let table = document.getElementById(tableId);
             var clone = table.cloneNode(true);
@@ -448,7 +499,6 @@
             a.click();
         }
 
-        // دالة الإرسال للمنصة
         function submitWeeklyReport() {
             var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
             var companyId = '';

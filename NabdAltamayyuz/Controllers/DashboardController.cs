@@ -56,14 +56,14 @@ namespace NabdAltamayyuz.Controllers
 
             ViewBag.EmployeesCount = await _context.Users.CountAsync(u => u.CompanyId == user.CompanyId && u.Role == UserRole.Employee);
 
-            // ضبط الوقت لتوقيت السعودية بشكل ثابت
+            // استخدام توقيت السعودية
             var today = DateTime.UtcNow.AddHours(3).Date;
-
             ViewBag.AttendanceList = await _context.Attendances.Include(a => a.Employee).Where(a => a.Employee.CompanyId == user.CompanyId && a.Date == today).OrderByDescending(a => a.TimeIn).ToListAsync();
             ViewBag.PendingTasks = await _context.WorkTasks.Include(t => t.AssignedTo).Where(t => t.AssignedTo.CompanyId == user.CompanyId && !t.IsCompleted).OrderBy(t => t.DueDate).Take(10).ToListAsync();
 
             if (user.Company != null)
             {
+                // استخدام توقيت السعودية
                 var daysLeft = (user.Company.SubscriptionEndDate - DateTime.UtcNow.AddHours(3)).Days;
                 if (daysLeft < user.Company.NotificationDaysBeforeExpiry && daysLeft > 0) ViewBag.AlertMessage = $"تنبيه: الاشتراك ينتهي خلال {daysLeft} يوم.";
                 else if (daysLeft <= 0) ViewBag.ErrorMessage = "تنبيه: الاشتراك منتهي.";
@@ -76,9 +76,8 @@ namespace NabdAltamayyuz.Controllers
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-            // ضبط الوقت لتوقيت السعودية بشكل ثابت
+            // استخدام توقيت السعودية
             var today = DateTime.UtcNow.AddHours(3).Date;
-
             var attendance = await _context.Attendances.FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
 
             ViewBag.IsCheckedIn = attendance != null && attendance.TimeIn != null;
@@ -104,7 +103,7 @@ namespace NabdAltamayyuz.Controllers
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-            // إصلاح مشكلة المنطقة الزمنية بتثبيت توقيت السعودية (UTC + 3)
+            // ضبط الوقت لتوقيت السعودية (UTC+3)
             var nowTime = DateTime.UtcNow.AddHours(3);
             var today = nowTime.Date;
 
@@ -127,10 +126,11 @@ namespace NabdAltamayyuz.Controllers
                 var user = await _context.Users.FindAsync(userId);
                 if (user != null && !string.IsNullOrEmpty(user.NationalId))
                 {
+                    // إرسال في الخلفية
                     await _teleworksService.SendAttendanceAsync(user.NationalId, today, nowTime, null);
                 }
 
-                TempData["Success"] = "تم تسجيل الدخول بنجاح";
+                TempData["Success"] = "تم تسجيل الدخول";
             }
             return RedirectToAction("Index");
         }
@@ -143,7 +143,7 @@ namespace NabdAltamayyuz.Controllers
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-            // إصلاح مشكلة المنطقة الزمنية بتثبيت توقيت السعودية (UTC + 3)
+            // ضبط الوقت لتوقيت السعودية (UTC+3)
             var nowTime = DateTime.UtcNow.AddHours(3);
             var today = nowTime.Date;
 
@@ -162,7 +162,7 @@ namespace NabdAltamayyuz.Controllers
                     await _teleworksService.SendAttendanceAsync(user.NationalId, today, record.TimeIn.Value, nowTime);
                 }
 
-                TempData["Success"] = "تم تسجيل الخروج بنجاح";
+                TempData["Success"] = "تم تسجيل الخروج";
             }
             return RedirectToAction("Index");
         }

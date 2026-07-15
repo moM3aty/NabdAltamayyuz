@@ -20,67 +20,79 @@
     </div>
 
     <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-lg-10">
             <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-                <div class="card-header bg-dark text-white py-3 px-4 d-flex align-items-center">
-                    <i class="fas fa-sliders-h text-gold me-2"></i>
-                    <h5 class="mb-0 fw-bold">@(isRtl ? "إعدادات التقرير" : "Report Settings")</h5>
+                <div class="card-header bg-dark text-white py-3 px-4 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-sliders-h text-gold me-2"></i>
+                        <h5 class="mb-0 fw-bold">@(isRtl ? "إعدادات التقرير" : "Report Settings")</h5>
+                    </div>
+                    @if (!isEmployee)
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-light rounded-pill" onclick="syncMonthlyTeleworks()">
+                            <i class="fas fa-cloud-upload-alt me-1"></i> ترحيل التفاعل الشهري للمنصة
+                        </button>
+                    }
                 </div>
                 <div class="card-body p-4 p-md-5 bg-white">
                     <form action="/Reports/Generate" method="get" target="_blank">
 
-                        <!-- 1. نوع التقرير (Tabs Style) -->
+                        <!-- 1. نوع التقرير -->
                         <label class="form-label fw-bold small text-muted mb-3">@(isRtl ? "اختر نوع التقرير:" : "Select Report Type:")</label>
                         <div class="row g-3 mb-4">
                             <!-- تقرير الحضور -->
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <input type="radio" class="btn-check" name="type" id="rep_attendance" value="attendance" checked>
                                 <label class="btn btn-outline-light text-dark border-secondary w-100 p-3 h-100 d-flex flex-column align-items-center justify-content-center hover-border-gold" for="rep_attendance">
                                     <i class="fas fa-clock fa-2x mb-2 text-primary"></i>
-                                    <span class="fw-bold">@(isRtl ? "سجل الحضور" : "Attendance Log")</span>
-                                    <small class="text-muted" style="font-size: 0.7rem;">@(isRtl ? "حركة الحضور، الغياب، الساعات" : "Attendance, Absence, Hours")</small>
+                                    <span class="fw-bold">@(isRtl ? "سجل الحضور" : "Attendance")</span>
                                 </label>
                             </div>
 
                             <!-- تقرير المهام -->
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <input type="radio" class="btn-check" name="type" id="rep_tasks" value="tasks">
                                 <label class="btn btn-outline-light text-dark border-secondary w-100 p-3 h-100 d-flex flex-column align-items-center justify-content-center hover-border-gold" for="rep_tasks">
                                     <i class="fas fa-tasks fa-2x mb-2 text-warning"></i>
-                                    <span class="fw-bold">@(isRtl ? "تقرير المهام" : "Tasks Report")</span>
-                                    <small class="text-muted" style="font-size: 0.7rem;">@(isRtl ? "المنجزة، المتأخرة، نسب الإنجاز" : "Completed, Late, Performance")</small>
+                                    <span class="fw-bold">@(isRtl ? "تقرير المهام" : "Tasks")</span>
+                                </label>
+                            </div>
+                            
+                            <!-- تقرير الإجازات -->
+                            <div class="col-md-4">
+                                <input type="radio" class="btn-check" name="type" id="rep_leaves" value="leaves">
+                                <label class="btn btn-outline-light text-dark border-secondary w-100 p-3 h-100 d-flex flex-column align-items-center justify-content-center hover-border-gold" for="rep_leaves">
+                                    <i class="fas fa-umbrella-beach fa-2x mb-2 text-info"></i>
+                                    <span class="fw-bold">@(isRtl ? "سجل الإجازات" : "Leaves")</span>
                                 </label>
                             </div>
 
                             @if (!isEmployee)
                             {
+                                <!-- تقرير نسبة التفاعل -->
+                                <div class="col-md-4">
+                                    <input type="radio" class="btn-check" name="type" id="rep_interaction" value="interaction">
+                                    <label class="btn btn-outline-light text-dark border-secondary w-100 p-3 h-100 d-flex flex-column align-items-center justify-content-center hover-border-gold" for="rep_interaction">
+                                        <i class="fas fa-chart-line fa-2x mb-2 text-success"></i>
+                                        <span class="fw-bold">@(isRtl ? "نسبة التفاعل الشهري" : "Monthly Interaction")</span>
+                                    </label>
+                                </div>
+
                                 <!-- تقرير الموظفين -->
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <input type="radio" class="btn-check" name="type" id="rep_employees" value="employees">
                                     <label class="btn btn-outline-light text-dark border-secondary w-100 p-3 h-100 d-flex flex-column align-items-center justify-content-center hover-border-gold" for="rep_employees">
-                                        <i class="fas fa-users fa-2x mb-2 text-success"></i>
-                                        <span class="fw-bold">@(isRtl ? "بيانات الموظفين" : "Employees Data")</span>
-                                        <small class="text-muted" style="font-size: 0.7rem;">@(isRtl ? "بيانات شاملة، الاتصال، الحالة" : "Profile, Contact info, Status")</small>
+                                        <i class="fas fa-users fa-2x mb-2 text-secondary"></i>
+                                        <span class="fw-bold">@(isRtl ? "بيانات الموظفين" : "Employees")</span>
                                     </label>
                                 </div>
 
                                 <!-- تقرير الاشتراكات -->
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <input type="radio" class="btn-check" name="type" id="rep_subscriptions" value="subscriptions">
                                     <label class="btn btn-outline-light text-dark border-secondary w-100 p-3 h-100 d-flex flex-column align-items-center justify-content-center hover-border-gold" for="rep_subscriptions">
                                         <i class="fas fa-file-invoice-dollar fa-2x mb-2 text-danger"></i>
-                                        <span class="fw-bold">
-                                            @if (isSuperAdmin)
-                                            {
-                                                @(isRtl ? "الاشتراكات والفواتير" : "Subscriptions & Invoices")
-                                            }
-                                            else
-                                            {
-
-                                                @(isRtl ? "بيانات الاشتراك والفروع" : "Subscription & Branches")
-                                            }
-                                        </span>
-                                        <small class="text-muted" style="font-size: 0.7rem;">@(isRtl ? "تفاصيل الباقة، التواريخ، التكلفة" : "Plan details, dates, costs")</small>
+                                        <span class="fw-bold">@(isRtl ? "الاشتراكات" : "Subscriptions")</span>
                                     </label>
                                 </div>
                             }
@@ -92,14 +104,13 @@
                         <div class="row g-3">
                             @if (!isEmployee)
                             {
-                                <div class="col-md-12">
+                                <div class="col-md-6">
                                     <label class="form-label fw-bold small">@(isRtl ? "الشركة / الفرع" : "Company / Branch")</label>
                                     <select name="companyId" id="companySelect" class="form-select bg-light" asp-items="ViewBag.Companies" onchange="loadEmployees(this.value)">
                                         <option value="">@(isRtl ? "-- الكل --" : "-- All --")</option>
                                     </select>
                                 </div>
-                                <!-- التعديل 5: استبدال الحقل النصي بقائمة منسدلة للموظفين -->
-                                <div class="col-md-12">
+                                <div class="col-md-6">
                                     <label class="form-label fw-bold small">@(isRtl ? "تخصيص موظف محدد" : "Specific Employee")</label>
                                     <select name="employeeId" id="employeeSelect" class="form-select bg-light" asp-items="ViewBag.Employees">
                                         <option value="">@(isRtl ? "-- الكل (جميع الموظفين) --" : "-- All Employees --")</option>
@@ -108,8 +119,8 @@
                             }
 
                             <div class="col-md-6">
-                                <label class="form-label fw-bold small">@(isRtl ? "من تاريخ" : "From Date")</label>
-                                <input type="date" name="from" class="form-control bg-light" value="@DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd")">
+                                <label class="form-label fw-bold small">@(isRtl ? "من تاريخ / شهر التفاعل" : "From Date / Month")</label>
+                                <input type="date" name="from" id="fromDate" class="form-control bg-light" value="@DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd")">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold small">@(isRtl ? "إلى تاريخ" : "To Date")</label>
@@ -144,16 +155,8 @@
         function loadEmployees(companyId) {
             var empSelect = document.getElementById("employeeSelect");
             var defaultText = '@(isRtl ? "-- الكل (جميع الموظفين) --" : "-- All Employees --")';
-            var loadingText = '@(isRtl ? "جار التحميل..." : "Loading...")';
-            
-            empSelect.innerHTML = "<option>" + loadingText + "</option>";
-
-            if (!companyId) {
-                empSelect.innerHTML = "<option value=''>" + defaultText + "</option>";
-                return;
-            }
-
-            // استخدام دالة الجلب المتاحة في Attendance Controller
+            empSelect.innerHTML = "<option>جار التحميل...</option>";
+            if (!companyId) { empSelect.innerHTML = "<option value=''>" + defaultText + "</option>"; return; }
             fetch('/Attendance/GetEmployeesByCompany?companyId=' + companyId)
                 .then(res => res.json())
                 .then(data => {
@@ -164,10 +167,23 @@
                         opt.text = item.name;
                         empSelect.appendChild(opt);
                     });
-                })
-                .catch(err => {
-                    empSelect.innerHTML = "<option value=''>" + defaultText + "</option>";
+                }).catch(err => { empSelect.innerHTML = "<option value=''>" + defaultText + "</option>"; });
+        }
+
+        // دالة ترحيل التفاعل الشهري للمنصة
+        function syncMonthlyTeleworks() {
+            var compId = document.getElementById("companySelect") ? document.getElementById("companySelect").value : '';
+            var monthStr = document.getElementById("fromDate").value; 
+            
+            if(confirm('هل أنت متأكد من إرسال سجلات التفاعل الشهري للمنصة لهذا الشهر؟')) {
+                var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                fetch('/Reports/SyncMonthlyInteraction?companyId=' + compId + '&dateStr=' + monthStr, {
+                    method: 'POST',
+                    headers: { 'RequestVerificationToken': token }
+                }).then(res => res.json()).then(data => {
+                    alert(data.message);
                 });
+            }
         }
     </script>
 }

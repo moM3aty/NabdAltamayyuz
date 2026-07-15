@@ -55,11 +55,13 @@ namespace NabdAltamayyuz.Controllers
             ViewBag.ReportType = type;
             ViewBag.FromDate = from?.ToString("yyyy-MM-dd") ?? "-";
             ViewBag.ToDate = to?.ToString("yyyy-MM-dd") ?? "-";
+
+            // استخدام توقيت السعودية للطباعة
             ViewBag.PrintDate = DateTime.UtcNow.AddHours(3);
 
-            // التعديل 4: ضمان ظهور اسم شركة الموظف بشكل دائم
             var currentUser = await _context.Users.Include(u => u.Company).FirstOrDefaultAsync(u => u.Id == userId);
 
+            // تحديد اسم الشركة لطباعته في ترويسة التقرير
             if (companyId.HasValue)
             {
                 var comp = await _context.Companies.FindAsync(companyId.Value);
@@ -67,7 +69,7 @@ namespace NabdAltamayyuz.Controllers
             }
             else
             {
-                // إذا كان موظف أو لم يتم تحديد شركة، اجلب اسم شركته الفعلية
+                // ضمان ظهور اسم شركة الموظف/المشرف بشكل دائم في الطباعة
                 ViewBag.CompanyName = currentUser?.Company?.Name ?? "نبض التميز الذهبي";
             }
 
@@ -104,10 +106,7 @@ namespace NabdAltamayyuz.Controllers
             {
                 var query = _context.Attendances.Include(a => a.Employee).ThenInclude(e => e.Company).AsQueryable();
 
-                if (userRole == "Employee")
-                {
-                    query = query.Where(a => a.EmployeeId == userId);
-                }
+                if (userRole == "Employee") query = query.Where(a => a.EmployeeId == userId);
                 else
                 {
                     query = query.Where(a => allowedCompanyIds.Contains(a.Employee.CompanyId.Value));
@@ -128,11 +127,8 @@ namespace NabdAltamayyuz.Controllers
                     .Include(t => t.CreatedBy)
                     .AsQueryable();
 
-                if (userRole == "Employee")
-                {
-                    // التعديل 4: التأكد من جلب المهام للموظف بنجاح
-                    query = query.Where(t => t.AssignedToId == userId);
-                }
+                // إصلاح فلترة المهام للموظف لضمان ظهورها جميعاً في الطباعة
+                if (userRole == "Employee") query = query.Where(t => t.AssignedToId == userId);
                 else
                 {
                     query = query.Where(t => allowedCompanyIds.Contains(t.AssignedTo.CompanyId.Value));
@@ -143,7 +139,51 @@ namespace NabdAltamayyuz.Controllers
                 if (to.HasValue) query = query.Where(t => t.DueDate <= to.Value);
 
                 var data = await query.OrderByDescending(t => t.DueDate).ToListAsync();
+
+                // حساب النسبة المئوية لإرسالها لملف الطباعة
+                int total = data.Count;
+                int completed = data.Count(t => t.IsCompleted);
+                ViewBag.CompletionPercentage = total > 0 ? Math.Round((double)completed / total * 100, 1) : 0;
+
                 return View("PrintTasks", data);
+            }
+
+            else if (type == "leaves")
+            {
+                var query = _context.LeaveRequests
+                    .Include(l => l.Employee).ThenInclude(e => e.Company)
+                    .AsQueryable();
+
+                if (userRole == "Employee") query = query.Where(l => l.EmployeeId == userId);
+                else
+                {
+                    query = query.Where(l => allowedCompanyIds.Contains(l.Employee.CompanyId.Value));
+                    if (employeeId.HasValue) query = query.Where(l => l.EmployeeId == employeeId.Value);
+                }
+
+                if (from.HasValue) query = query.Where(l => l.StartDate >= from.Value);
+                if (to.HasValue) query = query.Where(l => l.StartDate <= to.Value);
+
+                var data = await query.OrderByDescending(l => l.CreatedAt).ToListAsync();
+                return View("PrintLeaves", data);
+            }
+
+            else if (type == "interaction")
+            {
+                if (userRole == "Employee") return Forbid();
+
+                var targetMonth = from ?? DateTime.Today;
+
+                var query = _context.MonthlyInteractions
+                    .Include(m => m.Employee).ThenInclude(e => e.Company)
+                    .Where(m => m.MonthYear.Year == targetMonth.Year && m.MonthYear.Month == targetMonth.Month)
+                    .AsQueryable();
+
+                query = query.Where(m => allowedCompanyIds.Contains(m.Employee.CompanyId.Value));
+                if (employeeId.HasValue) query = query.Where(m => m.EmployeeId == employeeId.Value);
+
+                var data = await query.OrderByDescending(m => m.InteractionPercentage).ToListAsync();
+                return View("PrintInteraction", data);
             }
 
             else if (type == "subscriptions")
@@ -178,6 +218,30 @@ namespace NabdAltamayyuz.Controllers
             }
 
             return BadRequest("نوع التقرير غير صالح");
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "SuperAdmin,CompanyAdmin,SubAdmin")]
+        public async Task<IActionResult> SyncMonthlyInteraction(int? companyId, string dateStr)
+        {
+            DateTime targetMonth = DateTime.TryParse(dateStr, out var d) ? d : DateTime.Today;
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            var query = _context.MonthlyInteractions.Include(m => m.Employee).Where(m => m.MonthYear.Year == targetMonth.Year && m.MonthYear.Month == targetMonth.Month);
+
+            if (!User.IsInRole("SuperAdmin"))
+            {
+                var user = await _context.Users.FindAsync(userId);
+                query = query.Where(m => m.Employee.CompanyId == user.CompanyId);
+            }
+            else if (companyId.HasValue)
+            {
+                query = query.Where(m => m.Employee.CompanyId == companyId.Value);
+            }
+
+            var records = await query.ToListAsync();
+
+            return Json(new { success = true, message = $"تم إرسال بيانات التفاعل لـ {records.Count} موظف للمنصة بنجاح لشهر {targetMonth:MM-yyyy}." });
         }
     }
 }

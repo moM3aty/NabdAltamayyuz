@@ -29,6 +29,7 @@ namespace NabdAltamayyuz.Controllers
         {
             var query = _context.Users
                 .Include(u => u.Company)
+                .Include(u => u.Project) // جلب المشروع
                 .Where(u => u.Role == UserRole.Employee)
                 .AsQueryable();
 
@@ -71,12 +72,14 @@ namespace NabdAltamayyuz.Controllers
         }
 
         // GET: Employees/Details/5
-        public async Task<IActionResult> Details(int? id, DateTime? attendanceFrom, DateTime? attendanceTo, string taskStatus)
+        public async Task<IActionResult> Details(int? id, DateTime? attendanceFrom, DateTime? attendanceTo, string taskStatus, string interactionMonth)
         {
             if (id == null) return NotFound();
 
             var employee = await _context.Users
                 .Include(u => u.Company)
+                .Include(u => u.Project)
+                .Include(u => u.ProjectJobRole)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (employee == null) return NotFound();
@@ -91,7 +94,6 @@ namespace NabdAltamayyuz.Controllers
             var attendanceQuery = _context.Attendances.Where(a => a.EmployeeId == id).AsQueryable();
             if (attendanceFrom.HasValue) attendanceQuery = attendanceQuery.Where(a => a.Date >= attendanceFrom.Value);
             if (attendanceTo.HasValue) attendanceQuery = attendanceQuery.Where(a => a.Date <= attendanceTo.Value);
-
             ViewBag.AttendanceLog = await attendanceQuery.OrderByDescending(a => a.Date).ToListAsync();
             ViewBag.AttFrom = attendanceFrom?.ToString("yyyy-MM-dd");
             ViewBag.AttTo = attendanceTo?.ToString("yyyy-MM-dd");
@@ -101,18 +103,86 @@ namespace NabdAltamayyuz.Controllers
             {
                 tasksQuery = tasksQuery.Where(t => t.Status == (NabdAltamayyuz.Models.TaskStatus)statusVal);
             }
-
             ViewBag.TasksLog = await tasksQuery.OrderByDescending(t => t.DueDate).ToListAsync();
 
-            // --- التعديل 2: جلب كافة مهام الموظف لحساب إحصائيات مؤشر الإنجاز بشكل سليم ---
+            // إحصائيات المهام العامة
             var allTasksForStats = await _context.WorkTasks.Where(t => t.AssignedToId == id).ToListAsync();
             ViewBag.TotalTasks = allTasksForStats.Count;
             ViewBag.CompletedTasks = allTasksForStats.Count(t => t.IsCompleted);
             ViewBag.LateTasks = allTasksForStats.Count(t => !t.IsCompleted && t.DueDate < DateTime.Today);
             ViewBag.CompletionRate = allTasksForStats.Count > 0 ? Math.Round((double)ViewBag.CompletedTasks / allTasksForStats.Count * 100, 1) : 0;
 
+            // --- منطق إنشاء وجلب سجل التفاعل الشهري ---
+            DateTime targetMonth;
+            if (!string.IsNullOrEmpty(interactionMonth) && DateTime.TryParse(interactionMonth + "-01", out DateTime parsedMonth))
+            {
+                targetMonth = parsedMonth;
+            }
+            else
+            {
+                targetMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            }
+
+            var interaction = await _context.MonthlyInteractions.FirstOrDefaultAsync(m => m.EmployeeId == id && m.MonthYear.Year == targetMonth.Year && m.MonthYear.Month == targetMonth.Month);
+
+            if (interaction == null)
+            {
+                interaction = new MonthlyInteraction
+                {
+                    EmployeeId = id.Value,
+                    MonthYear = targetMonth,
+                    RequiredHours = 176 // المقرر التلقائي
+                };
+                _context.MonthlyInteractions.Add(interaction);
+                await _context.SaveChangesAsync();
+            }
+
+            if (!interaction.IsManuallyEdited)
+            {
+                // حساب ساعات الحضور الفعلية لهذا الشهر
+                var monthAttendances = await _context.Attendances
+                    .Where(a => a.EmployeeId == id && a.Date.Year == targetMonth.Year && a.Date.Month == targetMonth.Month && a.TimeIn != null && a.TimeOut != null)
+                    .ToListAsync();
+
+                double totalHours = monthAttendances.Sum(a => (a.TimeOut.Value - a.TimeIn.Value).TotalHours);
+                interaction.CompletedHours = Math.Round(totalHours, 1);
+
+                // حساب المهام المسندة والمنجزة لهذا الشهر
+                var monthTasks = await _context.WorkTasks
+                    .Where(t => t.AssignedToId == id && t.DueDate.Year == targetMonth.Year && t.DueDate.Month == targetMonth.Month)
+                    .ToListAsync();
+
+                interaction.TotalTasks = monthTasks.Count;
+                interaction.CompletedTasks = monthTasks.Count(t => t.IsCompleted);
+
+                _context.Update(interaction);
+                await _context.SaveChangesAsync();
+            }
+
+            ViewBag.MonthlyInteraction = interaction;
+            ViewBag.SelectedMonth = targetMonth.ToString("yyyy-MM");
+
             return View(employee);
         }
+
+        // POST: Update Monthly Interaction Manually
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateInteraction(int interactionId, double requiredHours, double completedHours, string redirectMonth)
+        {
+            var interaction = await _context.MonthlyInteractions.FindAsync(interactionId);
+            if (interaction != null)
+            {
+                interaction.RequiredHours = requiredHours;
+                interaction.CompletedHours = completedHours;
+                interaction.IsManuallyEdited = true;
+                _context.Update(interaction);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "تم تحديث بيانات التفاعل الشهري يدوياً.";
+            }
+            return RedirectToAction(nameof(Details), new { id = interaction?.EmployeeId, interactionMonth = redirectMonth });
+        }
+
 
         // GET: Employees/Create
         public async Task<IActionResult> Create()
@@ -135,10 +205,10 @@ namespace NabdAltamayyuz.Controllers
             if (string.IsNullOrWhiteSpace(model.NationalId)) ModelState.AddModelError("NationalId", "رقم الهوية مطلوب");
             if (string.IsNullOrWhiteSpace(model.Email)) ModelState.AddModelError("Email", "البريد الإلكتروني مطلوب");
             if (string.IsNullOrWhiteSpace(model.PhoneNumber)) ModelState.AddModelError("PhoneNumber", "رقم الجوال مطلوب");
-            if (string.IsNullOrWhiteSpace(model.JobTitle)) ModelState.AddModelError("JobTitle", "المسمى الوظيفي مطلوب");
 
             model.PasswordHash = "123456";
             model.CreatedAt = DateTime.Now;
+            if (model.HireDate == null || model.HireDate == DateTime.MinValue) model.HireDate = DateTime.Today;
             model.Status = "Active";
             model.IsSuspended = false;
 
@@ -163,6 +233,15 @@ namespace NabdAltamayyuz.Controllers
 
                 model.Role = UserRole.Employee;
             }
+
+            // جلب اسم المسمى الوظيفي بناءً على ما تم اختياره من القائمة المنسدلة (ProjectJobRole)
+            if (model.ProjectJobRoleId.HasValue && string.IsNullOrEmpty(model.JobTitle))
+            {
+                var role = await _context.ProjectJobRoles.FindAsync(model.ProjectJobRoleId.Value);
+                if (role != null) model.JobTitle = role.Name;
+            }
+
+            if (string.IsNullOrEmpty(model.JobTitle)) ModelState.AddModelError("JobTitle", "المسمى الوظيفي مطلوب");
 
             if (ModelState.IsValid && targetCompanyId != null)
             {
@@ -240,6 +319,12 @@ namespace NabdAltamayyuz.Controllers
             if (string.IsNullOrEmpty(model.FullName)) ModelState.AddModelError("FullName", "الاسم مطلوب");
             if (string.IsNullOrEmpty(model.NationalId)) ModelState.AddModelError("NationalId", "رقم الهوية مطلوب");
 
+            if (model.ProjectJobRoleId.HasValue && string.IsNullOrEmpty(model.JobTitle))
+            {
+                var role = await _context.ProjectJobRoles.FindAsync(model.ProjectJobRoleId.Value);
+                if (role != null) model.JobTitle = role.Name;
+            }
+
             if (ModelState.IsValid)
             {
                 userToUpdate.FullName = model.FullName;
@@ -247,6 +332,9 @@ namespace NabdAltamayyuz.Controllers
                 userToUpdate.JobTitle = model.JobTitle;
                 userToUpdate.PhoneNumber = model.PhoneNumber;
                 userToUpdate.Status = model.Status;
+                userToUpdate.HireDate = model.HireDate;
+                userToUpdate.ProjectId = model.ProjectId;
+                userToUpdate.ProjectJobRoleId = model.ProjectJobRoleId;
 
                 if (!string.IsNullOrEmpty(newPassword))
                 {
@@ -274,7 +362,28 @@ namespace NabdAltamayyuz.Controllers
             return View(model);
         }
 
-        // POST: Employees/Suspend/5
+        // AJAX: جلب المشاريع لشركة معينة
+        [HttpGet]
+        public async Task<IActionResult> GetProjectsByCompany(int companyId)
+        {
+            var projects = await _context.Projects
+                .Where(p => p.CompanyId == companyId)
+                .Select(p => new { id = p.Id, name = p.Name })
+                .ToListAsync();
+            return Json(projects);
+        }
+
+        // AJAX: جلب المهن لمشروع معين
+        [HttpGet]
+        public async Task<IActionResult> GetRolesByProject(int projectId)
+        {
+            var roles = await _context.ProjectJobRoles
+                .Where(r => r.ProjectId == projectId)
+                .Select(r => new { id = r.Id, name = r.Name })
+                .ToListAsync();
+            return Json(roles);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Suspend(int id)
         {
@@ -293,7 +402,6 @@ namespace NabdAltamayyuz.Controllers
             return Json(new { success = true, message = user.IsSuspended ? "تم تعليق الحساب" : "تم تفعيل الحساب" });
         }
 
-        // POST: Employees/ResetPassword/5
         [HttpPost]
         public async Task<IActionResult> ResetPassword(int id)
         {
@@ -314,7 +422,7 @@ namespace NabdAltamayyuz.Controllers
             return RedirectToAction("Edit", new { id = id });
         }
 
-        // POST: Employees/Delete/5
+        [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
             var employee = await _context.Users.FindAsync(id);
@@ -324,6 +432,10 @@ namespace NabdAltamayyuz.Controllers
                 _context.WorkTasks.RemoveRange(tasks);
                 var attendances = _context.Attendances.Where(a => a.EmployeeId == id);
                 _context.Attendances.RemoveRange(attendances);
+                var leaves = _context.LeaveRequests.Where(l => l.EmployeeId == id);
+                _context.LeaveRequests.RemoveRange(leaves);
+                var interactions = _context.MonthlyInteractions.Where(m => m.EmployeeId == id);
+                _context.MonthlyInteractions.RemoveRange(interactions);
 
                 _context.Users.Remove(employee);
                 await _context.SaveChangesAsync();

@@ -25,7 +25,6 @@
                 </div>
                 <div class="card-body p-4 p-md-5 bg-white">
 
-                    <!-- منطقة عرض الأخطاء - مهمة جداً لمعرفة سبب المشكلة -->
                     @if (!ViewData.ModelState.IsValid)
                     {
                         <div class="alert alert-danger shadow-sm rounded-3 mb-4">
@@ -48,10 +47,15 @@
                             {
                                 <div class="col-md-6">
                                     <label asp-for="CompanyId" class="form-label fw-bold small text-gold">الشركة التابع لها</label>
-                                    <select asp-for="CompanyId" class="form-select" asp-items="ViewBag.Companies">
+                                    <select asp-for="CompanyId" id="companySelect" class="form-select" asp-items="ViewBag.Companies" onchange="loadProjects(this.value)">
                                         <option value="">-- اختر الشركة --</option>
                                     </select>
                                 </div>
+                            }
+                            else
+                            {
+                                <!-- حقل مخفي لتحفيز تحميل المشاريع للشركة الحالية عند فتح الصفحة -->
+                                <input type="hidden" id="hiddenCompanyId" value="@(Model?.CompanyId ?? 0)" />
                             }
 
                             <div class="col-md-6">
@@ -75,44 +79,60 @@
                         <div class="row g-4 mb-4">
                             <div class="col-md-6">
                                 <label asp-for="FullName" class="form-label fw-bold small">@(isRtl ? "الاسم الرباعي" : "Full Name")</label>
-                                <input asp-for="FullName" class="form-control" />
-                                <span asp-validation-for="FullName" class="text-danger small"></span>
+                                <input asp-for="FullName" class="form-control bg-light" required />
                             </div>
                             <div class="col-md-6">
                                 <label asp-for="NationalId" class="form-label fw-bold small">@(isRtl ? "رقم الهوية / الإقامة" : "National ID / Iqama")</label>
-                                <input asp-for="NationalId" class="form-control" />
-                                <span asp-validation-for="NationalId" class="text-danger small"></span>
+                                <input asp-for="NationalId" class="form-control bg-light" required />
                             </div>
                             <div class="col-md-6">
                                 <label asp-for="PhoneNumber" class="form-label fw-bold small">@(isRtl ? "رقم الجوال" : "Phone Number")</label>
-                                <input asp-for="PhoneNumber" class="form-control" placeholder="05xxxxxxxx" />
-                                <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                                <input asp-for="PhoneNumber" class="form-control bg-light" placeholder="05xxxxxxxx" required />
                             </div>
                             <div class="col-md-6">
                                 <label asp-for="Email" class="form-label fw-bold small">@(isRtl ? "البريد الإلكتروني" : "Email")</label>
-                                <input asp-for="Email" type="email" class="form-control" placeholder="user@company.com" />
-                                <span asp-validation-for="Email" class="text-danger small"></span>
+                                <input asp-for="Email" type="email" class="form-control bg-light" placeholder="user@company.com" required />
                             </div>
                         </div>
 
-                        <!-- Job Info -->
-                        <h6 class="text-dark fw-bold mb-3 border-bottom pb-2 pt-2">@(isRtl ? "بيانات الوظيفة" : "Job Details")</h6>
+                        <!-- Job & Project Info -->
+                        <h6 class="text-dark fw-bold mb-3 border-bottom pb-2 pt-2">@(isRtl ? "بيانات الوظيفة والمشروع" : "Job & Project Details")</h6>
                         <div class="row g-4 mb-4">
                             <div class="col-md-6">
-                                <label asp-for="JobTitle" class="form-label fw-bold small">@(isRtl ? "المسمى الوظيفي" : "Job Title")</label>
-                                <input asp-for="JobTitle" class="form-control" />
-                                <span asp-validation-for="JobTitle" class="text-danger small"></span>
+                                <label asp-for="HireDate" class="form-label fw-bold small text-primary">@(isRtl ? "تاريخ التعيين" : "Hire Date")</label>
+                                <input asp-for="HireDate" type="date" class="form-control bg-light border-primary border-opacity-50" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
                             </div>
+
                             <div class="col-md-6">
-                                <label class="form-label fw-bold small text-muted">@(isRtl ? "كلمة المرور الافتراضية" : "Default Password")</label>
+                                <label asp-for="ProjectId" class="form-label fw-bold small">@(isRtl ? "المشروع المسند إليه" : "Assigned Project")</label>
+                                <select asp-for="ProjectId" id="projectSelect" class="form-select bg-light" onchange="loadRoles(this.value)">
+                                    <option value="">@(isRtl ? "-- بدون مشروع (عام) --" : "-- No Project (General) --")</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="ProjectJobRoleId" class="form-label fw-bold small">@(isRtl ? "المهنة / المسمى الوظيفي (حسب المشروع)" : "Job Role (Based on Project)")</label>
+                                <select asp-for="ProjectJobRoleId" id="roleSelect" class="form-select bg-light" onchange="setJobTitle(this)">
+                                    <option value="">@(isRtl ? "-- اختر مهنة أولاً --" : "-- Select Role First --")</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="JobTitle" class="form-label fw-bold small">@(isRtl ? "المسمى الوظيفي المباشر" : "Direct Job Title")</label>
+                                <input asp-for="JobTitle" id="jobTitleInput" class="form-control bg-light" placeholder="@(isRtl ? "يملأ تلقائياً عند اختيار المهنة أو يكتب يدوياً" : "Auto-filled or typed manually")" required />
+                            </div>
+
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold small text-muted">@(isRtl ? "كلمة المرور الافتراضية للكل" : "Default Password")</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-0"><i class="fas fa-lock"></i></span>
                                     <input type="text" class="form-control bg-light text-muted border-0" value="123456" readonly />
                                 </div>
                             </div>
+
                             <div class="col-md-12">
                                 <label class="form-label fw-bold small">@(isRtl ? "مرفقات (صورة الهوية / العقد)" : "Attachments")</label>
-                                <input type="file" name="attachment" class="form-control" />
+                                <input type="file" name="attachment" class="form-control bg-light" />
                                 <div class="form-text small">@(isRtl ? "صيغ مسموحة: PDF, JPG, PNG" : "Allowed: PDF, JPG, PNG")</div>
                             </div>
                         </div>
@@ -128,3 +148,91 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        // دالة جلب المشاريع بناءً على الشركة
+        function loadProjects(companyId) {
+            var projectSelect = document.getElementById("projectSelect");
+            var roleSelect = document.getElementById("roleSelect");
+
+            projectSelect.innerHTML = "<option value=''>جار التحميل...</option>";
+            roleSelect.innerHTML = "<option value=''>-- اختر مشروع أولاً --</option>";
+
+            if (!companyId) {
+                projectSelect.innerHTML = "<option value=''>-- بدون مشروع (عام) --</option>";
+                return;
+            }
+
+            fetch('/Employees/GetProjectsByCompany?companyId=' + companyId)
+                .then(res => res.json())
+                .then(data => {
+                    projectSelect.innerHTML = "<option value=''>-- بدون مشروع (عام) --</option>";
+                    data.forEach(item => {
+                        var opt = document.createElement("option");
+                        opt.value = item.id;
+                        opt.text = item.name;
+                        projectSelect.appendChild(opt);
+                    });
+                });
+        }
+
+        // دالة جلب المهن بناءً على المشروع
+        function loadRoles(projectId) {
+            var roleSelect = document.getElementById("roleSelect");
+
+            roleSelect.innerHTML = "<option value=''>جار التحميل...</option>";
+
+            if (!projectId) {
+                roleSelect.innerHTML = "<option value=''>-- اختر مشروع أولاً --</option>";
+                return;
+            }
+
+            fetch('/Employees/GetRolesByProject?projectId=' + projectId)
+                .then(res => res.json())
+                .then(data => {
+                    roleSelect.innerHTML = "<option value=''>-- اختر المهنة --</option>";
+                    data.forEach(item => {
+                        var opt = document.createElement("option");
+                        opt.value = item.id;
+                        opt.text = item.name;
+                        roleSelect.appendChild(opt);
+                    });
+                });
+        }
+
+        // عند اختيار مهنة، ضع اسمها في حقل المسمى الوظيفي
+        function setJobTitle(selectElement) {
+            var text = selectElement.options[selectElement.selectedIndex].text;
+            var val = selectElement.value;
+            var jobTitleInput = document.getElementById("jobTitleInput");
+            if(val) {
+                jobTitleInput.value = text;
+                jobTitleInput.readOnly = true; // نمنع التعديل اليدوي طالما اختار من القائمة
+            } else {
+                jobTitleInput.value = "";
+                jobTitleInput.readOnly = false;
+            }
+        }
+
+        // إذا كان المستخدم ليس سوبر أدمن، نحمل مشاريعه تلقائياً عند فتح الصفحة
+        window.onload = function() {
+            var hiddenCompId = document.getElementById("hiddenCompanyId");
+            if(hiddenCompId && hiddenCompId.value > 0) {
+                // نطلب جلب المشاريع للشركة الحالية الخاصة بالمدير
+                fetch('/Employees/GetProjectsByCompany?companyId=' + hiddenCompId.value)
+                .then(res => res.json())
+                .then(data => {
+                    var projectSelect = document.getElementById("projectSelect");
+                    projectSelect.innerHTML = "<option value=''>-- بدون مشروع (عام) --</option>";
+                    data.forEach(item => {
+                        var opt = document.createElement("option");
+                        opt.value = item.id;
+                        opt.text = item.name;
+                        projectSelect.appendChild(opt);
+                    });
+                });
+            }
+        };
+    </script>
+}

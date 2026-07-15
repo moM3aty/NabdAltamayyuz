@@ -16,21 +16,25 @@
                         <i class="fas fa-user-edit me-2"></i> @(isRtl ? "تعديل بيانات الموظف" : "Edit Employee")
                     </h5>
                     <a href="/Employees" class="btn btn-sm btn-outline-light rounded-pill border-secondary text-white-50 hover-white">
-                        <i class="fas fa-arrow-left me-1"></i> @(isRtl ? "عودة" : "Back")
+                        <i class="fas fa-arrow-left me-1 rtl-flip"></i> @(isRtl ? "عودة" : "Back")
                     </a>
                 </div>
                 <div class="card-body p-4 p-md-5 bg-white">
 
                     @if (TempData["Success"] != null)
                     {
-                        <div class="alert alert-success">@TempData["Success"]</div>
+                        <div class="alert alert-success shadow-sm rounded-3">@TempData["Success"]</div>
                     }
 
                     <form asp-action="Edit" enctype="multipart/form-data" method="post">
                         @Html.AntiForgeryToken()
                         <input type="hidden" asp-for="Id" />
                         <input type="hidden" asp-for="AttachmentPath" />
+                        <input type="hidden" id="hiddenCompanyId" value="@Model.CompanyId" />
+                        <input type="hidden" id="hiddenProjectId" value="@Model.ProjectId" />
+                        <input type="hidden" id="hiddenRoleId" value="@Model.ProjectJobRoleId" />
 
+                        <h6 class="text-dark fw-bold mb-3 border-bottom pb-2">@(isRtl ? "البيانات الشخصية" : "Personal Info")</h6>
                         <div class="row g-4 mb-4">
                             <div class="col-md-6">
                                 <label asp-for="FullName" class="form-label fw-bold small">@(isRtl ? "الاسم الكامل" : "Full Name")</label>
@@ -48,18 +52,42 @@
                                 <label asp-for="Email" class="form-label fw-bold small">@(isRtl ? "البريد الإلكتروني" : "Email")</label>
                                 <input asp-for="Email" class="form-control bg-light" readonly />
                             </div>
+                        </div>
+
+                        <h6 class="text-dark fw-bold mb-3 border-bottom pb-2 pt-2">@(isRtl ? "بيانات الوظيفة والمشروع" : "Job & Project Details")</h6>
+                        <div class="row g-4 mb-4">
                             <div class="col-md-6">
-                                <label asp-for="JobTitle" class="form-label fw-bold small">@(isRtl ? "المسمى الوظيفي" : "Job Title")</label>
-                                <input asp-for="JobTitle" class="form-control bg-light" required />
+                                <label asp-for="HireDate" class="form-label fw-bold small text-primary">@(isRtl ? "تاريخ التعيين" : "Hire Date")</label>
+                                <input asp-for="HireDate" type="date" class="form-control bg-light border-primary border-opacity-50" value="@(Model.HireDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd"))" required />
                             </div>
+
                             <div class="col-md-6">
-                                <label asp-for="Status" class="form-label fw-bold small">@(isRtl ? "حالة الحساب" : "Account Status")</label>
-                                <select asp-for="Status" class="form-select bg-light">
-                                    <option value="Active">@(isRtl ? "نشط" : "Active")</option>
-                                    <option value="Inactive">@(isRtl ? "غير نشط" : "Inactive")</option>
-                                    <option value="Suspended">@(isRtl ? "معلق" : "Suspended")</option>
+                                <label asp-for="ProjectId" class="form-label fw-bold small">@(isRtl ? "المشروع المسند إليه" : "Assigned Project")</label>
+                                <select asp-for="ProjectId" id="projectSelect" class="form-select bg-light" onchange="loadRoles(this.value)">
+                                    <option value="">@(isRtl ? "-- بدون مشروع (عام) --" : "-- No Project (General) --")</option>
                                 </select>
                             </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="ProjectJobRoleId" class="form-label fw-bold small">@(isRtl ? "المهنة / المسمى الوظيفي" : "Job Role")</label>
+                                <select asp-for="ProjectJobRoleId" id="roleSelect" class="form-select bg-light" onchange="setJobTitle(this)">
+                                    <option value="">@(isRtl ? "-- اختر مهنة أولاً --" : "-- Select Role First --")</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="JobTitle" class="form-label fw-bold small">@(isRtl ? "المسمى الوظيفي المباشر" : "Direct Job Title")</label>
+                                <input asp-for="JobTitle" id="jobTitleInput" class="form-control bg-light" required />
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="Status" class="form-label fw-bold small text-danger">@(isRtl ? "حالة الحساب" : "Account Status")</label>
+                                <select asp-for="Status" class="form-select bg-light border-danger border-opacity-50">
+                                    <option value="Active">@(isRtl ? "نشط" : "Active")</option>
+                                    <option value="Inactive">@(isRtl ? "غير نشط" : "Inactive")</option>
+                                </select>
+                            </div>
+
                             <div class="col-md-12">
                                 <div class="p-3 border border-warning rounded-3 bg-light">
                                     <label class="form-label fw-bold small text-warning"><i class="fas fa-key me-1"></i> @(isRtl ? "تغيير كلمة المرور" : "Change Password")</label>
@@ -74,12 +102,11 @@
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center pt-3 border-top">
-                            <!-- زر إعادة تعيين كلمة المرور -->
-                            <button type="submit" formaction="/Employees/ResetPassword/@Model.Id" class="btn btn-outline-warning rounded-pill">
+                            <button type="submit" formaction="/Employees/ResetPassword/@Model.Id" class="btn btn-outline-warning rounded-pill shadow-sm">
                                 <i class="fas fa-key me-2"></i> @(isRtl ? "إعادة تعيين كلمة المرور (الافتراضية)" : "Reset to Default Password")
                             </button>
 
-                            <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold px-5 rounded-pill shadow-sm">
+                            <button type="submit" class="btn btn-gold bg-dark text-gold fw-bold px-5 rounded-pill shadow-sm hover-scale">
                                 <i class="fas fa-save me-2"></i> @(isRtl ? "حفظ التعديلات" : "Save Changes")
                             </button>
                         </div>
@@ -89,3 +116,78 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function loadProjects(companyId) {
+            var projectSelect = document.getElementById("projectSelect");
+            var roleSelect = document.getElementById("roleSelect");
+            var projId = document.getElementById("hiddenProjectId").value;
+            var roleId = document.getElementById("hiddenRoleId").value;
+
+            projectSelect.innerHTML = "<option value=''>جار التحميل...</option>";
+            roleSelect.innerHTML = "<option value=''>-- اختر مشروع أولاً --</option>";
+
+            if (!companyId) {
+                projectSelect.innerHTML = "<option value=''>-- بدون مشروع (عام) --</option>";
+                return;
+            }
+
+            fetch('/Employees/GetProjectsByCompany?companyId=' + companyId)
+                .then(res => res.json())
+                .then(data => {
+                    projectSelect.innerHTML = "<option value=''>-- بدون مشروع (عام) --</option>";
+                    data.forEach(item => {
+                        var opt = new Option(item.name, item.id);
+                        if (item.id == projId) opt.selected = true;
+                        projectSelect.add(opt);
+                    });
+
+                    if (projId) {
+                        loadRoles(projId, roleId);
+                    }
+                });
+        }
+
+        function loadRoles(projectId, selectedRoleId = null) {
+            var roleSelect = document.getElementById("roleSelect");
+            roleSelect.innerHTML = "<option value=''>جار التحميل...</option>";
+
+            if (!projectId) {
+                roleSelect.innerHTML = "<option value=''>-- اختر مشروع أولاً --</option>";
+                return;
+            }
+
+            fetch('/Employees/GetRolesByProject?projectId=' + projectId)
+                .then(res => res.json())
+                .then(data => {
+                    roleSelect.innerHTML = "<option value=''>-- اختر المهنة --</option>";
+                    data.forEach(item => {
+                        var opt = new Option(item.name, item.id);
+                        if (selectedRoleId && item.id == selectedRoleId) opt.selected = true;
+                        roleSelect.add(opt);
+                    });
+                });
+        }
+
+        function setJobTitle(selectElement) {
+            var text = selectElement.options[selectElement.selectedIndex].text;
+            var val = selectElement.value;
+            var jobTitleInput = document.getElementById("jobTitleInput");
+            if(val) {
+                jobTitleInput.value = text;
+                jobTitleInput.readOnly = true;
+            } else {
+                jobTitleInput.value = "";
+                jobTitleInput.readOnly = false;
+            }
+        }
+
+        window.onload = function() {
+            var compId = document.getElementById("hiddenCompanyId").value;
+            if (compId) {
+                loadProjects(compId);
+            }
+        };
+    </script>
+}

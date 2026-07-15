@@ -73,6 +73,7 @@ namespace NabdAltamayyuz.Controllers
             return View(companies);
         }
 
+        // GET: Companies/Details/5 (تمت إضافة المشاريع)
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -80,6 +81,7 @@ namespace NabdAltamayyuz.Controllers
             var company = await _context.Companies
                 .Include(c => c.SubCompanies)
                 .Include(c => c.Employees)
+                .Include(c => c.Projects).ThenInclude(p => p.JobRoles) // جلب المشاريع والمهن
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (company == null) return NotFound();
@@ -96,6 +98,60 @@ namespace NabdAltamayyuz.Controllers
 
             return View(company);
         }
+
+        // --- دوال إدارة المشاريع والمهن الجديدة ---
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddProject(int companyId, string projectName, DateTime startDate, string description)
+        {
+            if (!string.IsNullOrEmpty(projectName))
+            {
+                var project = new Project
+                {
+                    CompanyId = companyId,
+                    Name = projectName,
+                    StartDate = startDate,
+                    Description = description
+                };
+                _context.Projects.Add(project);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "تم إضافة المشروع بنجاح.";
+            }
+            return RedirectToAction(nameof(Details), new { id = companyId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddJobRole(int companyId, int projectId, string roleName)
+        {
+            if (!string.IsNullOrEmpty(roleName))
+            {
+                var role = new ProjectJobRole
+                {
+                    ProjectId = projectId,
+                    Name = roleName
+                };
+                _context.ProjectJobRoles.Add(role);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "تم إضافة المسمى الوظيفي للمشروع بنجاح.";
+            }
+            return RedirectToAction(nameof(Details), new { id = companyId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteProject(int id, int companyId)
+        {
+            var project = await _context.Projects.FindAsync(id);
+            if (project != null)
+            {
+                _context.Projects.Remove(project);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "تم حذف المشروع بنجاح.";
+            }
+            return RedirectToAction(nameof(Details), new { id = companyId });
+        }
+        // -------------------------------------------
 
         [Authorize(Roles = "SuperAdmin")]
         public IActionResult Create()
@@ -116,6 +172,7 @@ namespace NabdAltamayyuz.Controllers
 
             ModelState.Remove(nameof(company.SubCompanies));
             ModelState.Remove(nameof(company.Employees));
+            ModelState.Remove(nameof(company.Projects));
 
             if (ModelState.IsValid)
             {
@@ -236,6 +293,7 @@ namespace NabdAltamayyuz.Controllers
             ModelState.Remove("ParentCompany");
             ModelState.Remove("SubCompanies");
             ModelState.Remove("Employees");
+            ModelState.Remove("Projects");
             ModelState.Remove("UnifiedNumber");
             ModelState.Remove("NationalAddressShortCode");
 
@@ -321,6 +379,7 @@ namespace NabdAltamayyuz.Controllers
 
             ModelState.Remove(nameof(company.SubCompanies));
             ModelState.Remove(nameof(company.Employees));
+            ModelState.Remove(nameof(company.Projects));
 
             if (ModelState.IsValid)
             {
@@ -402,6 +461,7 @@ namespace NabdAltamayyuz.Controllers
                 .Include(c => c.Employees)
                 .Include(c => c.SubCompanies)
                     .ThenInclude(sc => sc.Employees)
+                .Include(c => c.Projects)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (company != null)
@@ -416,6 +476,12 @@ namespace NabdAltamayyuz.Controllers
 
                     var attendances = _context.Attendances.Where(a => userIds.Contains(a.EmployeeId));
                     _context.Attendances.RemoveRange(attendances);
+
+                    var leaves = _context.LeaveRequests.Where(l => userIds.Contains(l.EmployeeId));
+                    _context.LeaveRequests.RemoveRange(leaves);
+
+                    var interactions = _context.MonthlyInteractions.Where(m => userIds.Contains(m.EmployeeId));
+                    _context.MonthlyInteractions.RemoveRange(interactions);
 
                     _context.Users.RemoveRange(users);
                     await Task.CompletedTask;

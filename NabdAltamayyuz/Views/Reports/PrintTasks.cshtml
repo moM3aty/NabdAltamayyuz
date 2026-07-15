@@ -5,8 +5,8 @@
     Layout = null;
     var culture = CultureInfo.CurrentCulture.Name.StartsWith("ar") ? "ar" : "en";
     var isArabic = culture == "ar";
-
-    // التعديل 3: استخدام اسم الشركة الممرر من الكنترولر إن وجد
+    
+    // التعديل: استخدام اسم الشركة الممرر من الكنترولر ليكون ديناميكياً
     var companyName = ViewBag.CompanyName as string ?? (isArabic ? "نبض التميز الذهبي" : "Nabd AlTamayyuz");
 }
 
@@ -118,7 +118,7 @@
 
         .text-start-custom {
             text-align: @(isArabic ? "right" : "left") !important;
-            padding- @(isArabic ? "right" : "left") : 10px;
+            padding-@(isArabic ? "right" : "left"): 10px;
         }
 
         .font-mono {
@@ -142,9 +142,13 @@
         <div>
             <div class="company-name"><i class="fas fa-building me-2"></i> @companyName</div>
             <div class="report-title">@(isArabic ? "تقرير حالة المهام" : "Tasks Status Report")</div>
+            <!-- إضافة النسبة المئوية لإنجاز المهام في الترويسة -->
+            <div style="margin-top: 10px; font-size: 14px; font-weight: bold; padding: 5px 10px; background: #f8fafc; border: 1px solid #e2e8f0; display: inline-block; border-radius: 5px;">
+                @(isArabic ? "نسبة إنجاز المهام الكلية:" : "Overall Completion Rate:") <span style="color: #15803d; font-size: 16px;">@ViewBag.CompletionPercentage %</span>
+            </div>
         </div>
         <div class="meta-box">
-            <div><strong>@(isArabic ? "تاريخ الطباعة:" : "Print Date:")</strong> @DateTime.Now.ToString("yyyy-MM-dd HH:mm")</div>
+            <div><strong>@(isArabic ? "تاريخ الطباعة:" : "Print Date:")</strong> @DateTime.UtcNow.AddHours(3).ToString("yyyy-MM-dd HH:mm")</div>
             <div><strong>@(isArabic ? "عدد المهام:" : "Tasks Count:")</strong> @Model.Count()</div>
         </div>
     </div>
@@ -161,45 +165,52 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in Model)
+            @if (Model.Any())
             {
-                <tr>
-                    <td class="text-start-custom" style="font-weight:bold;">@item.Title</td>
-                    <td>@item.AssignedTo?.FullName</td>
-                    <td class="font-mono" dir="ltr">
-                        <small>@(isArabic ? "من:" : "From:")</small> @item.StartDate.ToString("dd/MM/yyyy") <br>
-                        <small>@(isArabic ? "إلى:" : "To:")</small> @item.DueDate.ToString("dd/MM/yyyy")
-                    </td>
-                    <td>
-                        @switch (item.Status)
-                        {
-                            case NabdAltamayyuz.Models.TaskStatus.Completed:
-                                <span class="status-badge" style="background:#dcfce7; color:#15803d; border-color:#86efac;">@(isArabic ? "منجز" : "Completed")</span>
-                                break;
-                            case NabdAltamayyuz.Models.TaskStatus.Pending:
-                                <span class="status-badge" style="background:#ffedd5; color:#b45309; border-color:#fdba74;">@(isArabic ? "قيد الانتظار" : "Pending")</span>
-                                break;
-                            case NabdAltamayyuz.Models.TaskStatus.Delayed:
-                                <span class="status-badge" style="background:#e0f2fe; color:#0369a1; border-color:#7dd3fc;">@(isArabic ? "مؤجل" : "Delayed")</span>
-                                break;
-                            case NabdAltamayyuz.Models.TaskStatus.Cancelled:
-                                <span class="status-badge" style="background:#fee2e2; color:#b91c1c; border-color:#fca5a5;">@(isArabic ? "ملغي" : "Cancelled")</span>
-                                break;
-                        }
-                    </td>
-                    <td class="text-start-custom" style="color: #64748b;">
-                        @if (!string.IsNullOrEmpty(item.StatusReason))
-                        {
-                            <span style="color:#b91c1c; font-weight:bold;">@(isArabic ? "السبب:" : "Reason:")</span>
-                            @item.StatusReason
-                        }
-                        else
-                        {
-                            @item.Description
-                        }
-                    </td>
-                    <td>@item.CreatedBy?.FullName</td>
-                </tr>
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="text-start-custom" style="font-weight:bold;">@item.Title</td>
+                        <td>@item.AssignedTo?.FullName</td>
+                        <td class="font-mono" dir="ltr">
+                            <small>@(isArabic ? "من:" : "From:")</small> @item.StartDate.ToString("dd/MM/yyyy") <br>
+                            <small>@(isArabic ? "إلى:" : "To:")</small> @item.DueDate.ToString("dd/MM/yyyy")
+                        </td>
+                        <td>
+                            @switch (item.Status)
+                            {
+                                case NabdAltamayyuz.Models.TaskStatus.Completed:
+                                    <span class="status-badge" style="background:#dcfce7; color:#15803d; border-color:#86efac;">@(isArabic ? "منجز" : "Completed")</span>
+                                    break;
+                                case NabdAltamayyuz.Models.TaskStatus.Pending:
+                                    <span class="status-badge" style="background:#ffedd5; color:#b45309; border-color:#fdba74;">@(isArabic ? "قيد الانتظار" : "Pending")</span>
+                                    break;
+                                case NabdAltamayyuz.Models.TaskStatus.Delayed:
+                                    <span class="status-badge" style="background:#e0f2fe; color:#0369a1; border-color:#7dd3fc;">@(isArabic ? "مؤجل" : "Delayed")</span>
+                                    break;
+                                case NabdAltamayyuz.Models.TaskStatus.Cancelled:
+                                    <span class="status-badge" style="background:#fee2e2; color:#b91c1c; border-color:#fca5a5;">@(isArabic ? "ملغي" : "Cancelled")</span>
+                                    break;
+                            }
+                        </td>
+                        <td class="text-start-custom" style="color: #64748b;">
+                            @if (!string.IsNullOrEmpty(item.StatusReason))
+                            {
+                                <span style="color:#b91c1c; font-weight:bold;">@(isArabic ? "السبب:" : "Reason:")</span> 
+                                @item.StatusReason
+                            }
+                            else
+                            {
+                                @item.Description
+                            }
+                        </td>
+                        <td>@item.CreatedBy?.FullName</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                 <tr><td colspan="6" style="text-align:center; padding: 40px; color: #64748b;">@(isArabic ? "لا توجد مهام مسندة في هذه الفترة" : "No tasks found for this period")</td></tr>
             }
         </tbody>
     </table>

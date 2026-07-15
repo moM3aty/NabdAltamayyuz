@@ -6,16 +6,16 @@
     ViewData["Title"] = isRtl ? "سجل حضوري" : "My Attendance";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
-    // جلب اسم الشركة من الكنترولر للطباعة (التعديل 5)
+    // جلب اسم الشركة من الكنترولر للطباعة
     var companyName = ViewBag.CompanyName as string ?? "نبض التميز الذهبي";
 }
 
-<!-- التعديل 5: إضافة تنسيقات الطباعة لمنع قص الجدول وإضافة ترويسة صحيحة -->
+<!-- إصلاح تنسيقات الطباعة لمنع قص الجدول وإضافة ترويسة متكاملة -->
 <style>
     @@media print {
         @@page {
             size: A4 portrait;
-            margin: 1.5cm;
+            margin: 1.5cm; /* هوامش متزنة لمنع القص */
         }
 
         body {
@@ -23,8 +23,8 @@
             font-family: 'Cairo', sans-serif;
             -webkit-print-color-adjust: exact;
         }
-
-        .premium-navbar, footer, .btn, .alert, .no-print, .mb-4.d-flex {
+        /* إخفاء العناصر غير المرغوبة في الطباعة */
+        .premium-navbar, footer, .btn, .alert, .no-print, .action-buttons-container {
             display: none !important;
         }
 
@@ -43,7 +43,7 @@
         .card-body {
             padding: 0 !important;
         }
-
+        /* تنسيق الترويسة المطبوعة */
         .print-header {
             display: flex !important;
             justify-content: space-between;
@@ -51,6 +51,7 @@
             border-bottom: 2px solid #D4AF37;
             padding-bottom: 15px;
             margin-bottom: 25px;
+            page-break-after: avoid; /* منع الفصل بعد الترويسة */
         }
 
             .print-header h4 {
@@ -70,7 +71,7 @@
                 font-size: 12px;
                 margin: 0;
             }
-
+        /* تنسيقات الجدول لمنع القص الداخلي */
         .table-responsive {
             overflow: visible !important;
         }
@@ -79,6 +80,12 @@
             width: 100% !important;
             border-collapse: collapse !important;
             font-size: 13px;
+            page-break-inside: auto;
+        }
+
+        tr {
+            page-break-inside: avoid; /* يمنع انقسام الصف عبر صفحتين */
+            page-break-after: auto;
         }
 
         th {
@@ -122,7 +129,7 @@
     </div>
 
     <!-- ترويسة الواجهة (تختفي في الطباعة) -->
-    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print action-buttons-container">
         <div>
             <h3 class="fw-bold text-dark"><i class="fas fa-history text-gold me-2"></i> @(isRtl ? "سجل الحضور الشخصي" : "My Attendance History")</h3>
             <p class="text-muted small">@(isRtl ? "عرض سجلات الدوام لآخر 30 يوم" : "Showing records for the last 30 days")</p>

@@ -1,0 +1,88 @@
+﻿@model IEnumerable<NabdAltamayyuz.Models.LeaveRequest>
+@using System.Globalization
+@{
+    Layout = null;
+    var companyName = ViewBag.CompanyName as string ?? "نبض التميز الذهبي";
+}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>سجل الإجازات - @companyName</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+
+        th {
+            background-color: #0F172A !important;
+            color: #fff !important;
+            padding: 10px;
+            border: 1px solid #0F172A;
+            text-align: center;
+            -webkit-print-color-adjust: exact;
+        }
+
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #D4AF37;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="header">
+        <div><h2 style="color:#D4AF37; margin:0;">@companyName</h2><h3>تقرير الإجازات</h3></div>
+        <div style="font-size:12px; color:#666;">
+            <div><strong>تاريخ الطباعة:</strong> @ViewBag.PrintDate.ToString("yyyy-MM-dd")</div>
+            <div><strong>الفترة:</strong> من @ViewBag.FromDate إلى @ViewBag.ToDate</div>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>تاريخ الطلب</th>
+                <th>الموظف</th>
+                <th>نوع الإجازة</th>
+                <th>من تاريخ</th>
+                <th>إلى تاريخ</th>
+                <th>المدة (يوم)</th>
+                <th>الحالة</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                var typeName = item.Type == NabdAltamayyuz.Models.LeaveType.Other ? item.CustomTypeName : item.Type.ToString();
+                <tr>
+                    <td>@item.CreatedAt.ToString("yyyy-MM-dd")</td>
+                    <td>@item.Employee.FullName</td>
+                    <td>@typeName</td>
+                    <td>@item.StartDate.ToString("yyyy-MM-dd")</td>
+                    <td>@item.EndDate.ToString("yyyy-MM-dd")</td>
+                    <td>@item.DurationDays</td>
+                    <td style="font-weight:bold; color:@(item.Status == NabdAltamayyuz.Models.LeaveStatus.Approved ? "green" : (item.Status == NabdAltamayyuz.Models.LeaveStatus.Rejected ? "red" : "orange"))">@item.Status</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</body>
+</html>

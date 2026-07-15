@@ -1,6 +1,7 @@
 ﻿@model NabdAltamayyuz.Models.ApplicationUser
 @using NabdAltamayyuz.Models
 @using System.Globalization
+@inject NabdAltamayyuz.Data.ApplicationDbContext _context
 
 @{
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
@@ -10,16 +11,45 @@
     var attendanceLog = ViewBag.AttendanceLog as List<Attendance>;
     var tasksLog = ViewBag.TasksLog as List<WorkTask>;
 
-    // التعديل 2: تأكيد استقبال بيانات مؤشر الأداء التي تم تعديلها في الكنترولر
+    // إحصائيات المهام الممررة من الكنترولر (للعرض العام)
     double completionRate = ViewBag.CompletionRate ?? 0;
     int totalTasks = ViewBag.TotalTasks ?? 0;
     int completedTasks = ViewBag.CompletedTasks ?? 0;
     int lateTasks = ViewBag.LateTasks ?? 0;
+
+    // --- المنطق التلقائي لسجل نسبة التفاعل (يقرأ حسب الشهر المختار) ---
+    var targetMonthStr = Context.Request.Query["interactionMonth"].ToString();
+    DateTime targetMonth = string.IsNullOrEmpty(targetMonthStr) ? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1) : DateTime.Parse(targetMonthStr + "-01");
+
+    // محاولة جلب السجل من قاعدة البيانات
+    var interaction = _context.MonthlyInteractions.FirstOrDefault(m => m.EmployeeId == Model.Id && m.MonthYear.Year == targetMonth.Year && m.MonthYear.Month == targetMonth.Month);
+
+    // إذا لم يوجد، ننشئ سجل افتراضي (للعرض) يتم حسابه آلياً
+    if (interaction == null)
+    {
+        var monthAtt = _context.Attendances.Where(a => a.EmployeeId == Model.Id && a.Date.Year == targetMonth.Year && a.Date.Month == targetMonth.Month && a.TimeIn != null && a.TimeOut != null).ToList();
+        double compHours = monthAtt.Sum(a => (a.TimeOut.Value - a.TimeIn.Value).TotalHours);
+        var monthTasks = _context.WorkTasks.Where(t => t.AssignedToId == Model.Id && t.DueDate.Year == targetMonth.Year && t.DueDate.Month == targetMonth.Month).ToList();
+
+        interaction = new MonthlyInteraction
+        {
+            Id = 0,
+            EmployeeId = Model.Id,
+            MonthYear = targetMonth,
+            RequiredHours = 176, // المقرر التلقائي
+            CompletedHours = Math.Round(compHours, 1),
+            TotalTasks = monthTasks.Count,
+            CompletedTasks = monthTasks.Count(t => t.IsCompleted)
+        };
+    }
+
+    // --- جلب طلبات الإجازات الخاصة بالموظف ---
+    var leaves = _context.LeaveRequests.Where(l => l.EmployeeId == Model.Id).OrderByDescending(l => l.CreatedAt).ToList();
 }
 
 <div class="container py-5 animate-fade-in" style="margin-top: 100px;">
     <!-- Employee Info Card -->
-    <div class="card border-0 shadow-lg rounded-4 mb-5 overflow-hidden">
+    <div class="card border-0 shadow-lg rounded-4 mb-4 overflow-hidden">
         <div class="card-header bg-dark text-white p-4 d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold text-gold"><i class="fas fa-id-badge me-2"></i> @(isRtl ? "بطاقة الموظف" : "Employee Card")</h5>
             <div class="d-flex gap-2">
@@ -41,12 +71,12 @@
                             <div class="fw-bold text-dark fs-5">@Model.FullName</div>
                         </div>
                         <div class="col-md-4">
-                            <label class="small text-muted fw-bold">@(isRtl ? "المسمى الوظيفي" : "Job Title")</label>
-                            <div class="fw-bold text-primary">@Model.JobTitle</div>
+                            <label class="small text-muted fw-bold">@(isRtl ? "المشروع المسند إليه" : "Project")</label>
+                            <div class="fw-bold text-primary"><i class="fas fa-project-diagram me-1"></i> @(Model.Project?.Name ?? "بدون مشروع")</div>
                         </div>
                         <div class="col-md-4">
-                            <label class="small text-muted fw-bold">@(isRtl ? "الشركة / الفرع" : "Company / Branch")</label>
-                            <div class="fw-bold text-dark"><i class="fas fa-building text-gold me-1"></i> @(Model.Company?.Name ?? "-")</div>
+                            <label class="small text-muted fw-bold">@(isRtl ? "المسمى الوظيفي" : "Job Title")</label>
+                            <div class="fw-bold text-dark">@Model.JobTitle</div>
                         </div>
 
                         <div class="col-12"><hr class="my-1 opacity-10"></div>
@@ -56,12 +86,12 @@
                             <div class="font-monospace text-dark">@Model.NationalId</div>
                         </div>
                         <div class="col-md-4">
-                            <label class="small text-muted fw-bold">@(isRtl ? "رقم الجوال" : "Phone Number")</label>
-                            <div class="font-monospace text-dark" dir="ltr">@Model.PhoneNumber</div>
+                            <label class="small text-muted fw-bold">@(isRtl ? "تاريخ التعيين" : "Hire Date")</label>
+                            <div class="font-monospace text-dark">@(Model.HireDate?.ToString("yyyy-MM-dd") ?? "-")</div>
                         </div>
                         <div class="col-md-4">
-                            <label class="small text-muted fw-bold">@(isRtl ? "البريد الإلكتروني" : "Email")</label>
-                            <div class="text-dark">@Model.Email</div>
+                            <label class="small text-muted fw-bold">@(isRtl ? "الشركة" : "Company")</label>
+                            <div class="text-dark"><i class="fas fa-building text-gold me-1"></i> @(Model.Company?.Name ?? "-")</div>
                         </div>
                     </div>
                 </div>
@@ -69,43 +99,164 @@
         </div>
     </div>
 
-    <!-- Task Performance Meter -->
-    <div class="card border-0 shadow-sm rounded-4 mb-5 bg-gradient-dark text-white overflow-hidden">
-        <div class="card-body p-4">
-            <div class="row align-items-center">
-                <div class="col-md-3 text-center mb-3 mb-md-0">
-                    <div class="position-relative d-inline-block">
-                        <svg viewBox="0 0 36 36" class="circular-chart gold" style="max-width: 100px;">
-                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path class="circle" stroke-dasharray="@completionRate, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <text x="18" y="20.35" class="percentage">@completionRate%</text>
-                        </svg>
-                        <div class="mt-2 small fw-bold text-gold">@(isRtl ? "نسبة الإنجاز" : "Completion Rate")</div>
-                    </div>
+    <div class="row g-4 mb-4">
+        <!-- سجل نسبة التفاعل الشهري (Monthly Interaction Record) -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-gold-light border-start border-5 border-gold">
+                <div class="card-header bg-transparent py-3 border-bottom border-dark border-opacity-10 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-chart-line me-2"></i> @(isRtl ? "سجل نسبة التفاعل الشهري" : "Monthly Interaction Record")</h6>
+                    <form method="get" id="interactionFilterForm">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="month" name="interactionMonth" class="form-control form-control-sm bg-white" value="@targetMonth.ToString("yyyy-MM")" onchange="document.getElementById('interactionFilterForm').submit()" />
+                    </form>
                 </div>
-                <div class="col-md-9">
-                    <h5 class="fw-bold mb-3">@(isRtl ? "مؤشر أداء المهام" : "Task Performance Index")</h5>
-                    <div class="row text-center g-3">
+                <div class="card-body p-4">
+                    <div class="row text-center g-3 mb-4">
                         <div class="col-4">
-                            <div class="bg-white bg-opacity-10 rounded-3 p-2">
-                                <div class="display-6 fw-bold">@totalTasks</div>
-                                <div class="small opacity-75">@(isRtl ? "إجمالي المهام" : "Total Tasks")</div>
+                            <div class="p-2 bg-white rounded-3 shadow-sm border">
+                                <small class="text-muted d-block mb-1">المقرر (ساعة)</small>
+                                <strong class="fs-4 text-dark">@interaction.RequiredHours</strong>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="bg-success bg-opacity-25 rounded-3 p-2 border border-success">
-                                <div class="display-6 fw-bold text-white">@completedTasks</div>
-                                <div class="small text-white">@(isRtl ? "المنجزة" : "Completed")</div>
+                            <div class="p-2 bg-white rounded-3 shadow-sm border">
+                                <small class="text-muted d-block mb-1">المنجز (ساعة)</small>
+                                <strong class="fs-4 text-success">@interaction.CompletedHours</strong>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="bg-danger bg-opacity-25 rounded-3 p-2 border border-danger">
-                                <div class="display-6 fw-bold text-white">@lateTasks</div>
-                                <div class="small text-white">@(isRtl ? "المتأخرة" : "Late")</div>
+                            <div class="p-2 bg-dark rounded-3 shadow-sm">
+                                <small class="text-gold d-block mb-1">النسبة %</small>
+                                <strong class="fs-4 text-white">@Math.Round(interaction.InteractionPercentage, 1)%</strong>
                             </div>
                         </div>
                     </div>
+
+                    <div class="d-flex justify-content-between align-items-center px-3 py-2 bg-white rounded-pill shadow-sm border">
+                        <span class="small fw-bold text-muted">مهام هذا الشهر:</span>
+                        <span class="badge bg-gold text-dark rounded-pill">مسند: @interaction.TotalTasks</span>
+                        <span class="badge bg-success rounded-pill">منجز: @interaction.CompletedTasks</span>
+                        <span class="fw-bold font-monospace">@Math.Round(interaction.TasksPercentage, 1)%</span>
+                    </div>
+
+                    <div class="text-end mt-3">
+                        <button class="btn btn-sm btn-dark rounded-pill shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#editInteractionModal">
+                            <i class="fas fa-edit me-1"></i> تعديل السجل يدوياً
+                        </button>
+                    </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Task Performance Meter (المهام الشاملة) -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-gradient-dark text-white overflow-hidden">
+                <div class="card-body p-4">
+                    <div class="row align-items-center h-100">
+                        <div class="col-md-4 text-center mb-3 mb-md-0">
+                            <div class="position-relative d-inline-block">
+                                <svg viewBox="0 0 36 36" class="circular-chart gold" style="max-width: 120px;">
+                                    <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                    <path class="circle" stroke-dasharray="@completionRate, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                    <text x="18" y="20.35" class="percentage text-white">@completionRate%</text>
+                                </svg>
+                                <div class="mt-2 small fw-bold text-gold">إنجاز المهام الكلي</div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h5 class="fw-bold mb-3">@(isRtl ? "مؤشر أداء المهام (العام)" : "Overall Task Performance")</h5>
+                            <div class="row text-center g-3">
+                                <div class="col-4">
+                                    <div class="bg-white bg-opacity-10 rounded-3 p-2">
+                                        <div class="display-6 fw-bold">@totalTasks</div>
+                                        <div class="small opacity-75">@(isRtl ? "الكلية" : "Total")</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="bg-success bg-opacity-25 rounded-3 p-2 border border-success">
+                                        <div class="display-6 fw-bold text-white">@completedTasks</div>
+                                        <div class="small text-white">@(isRtl ? "منجز" : "Done")</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="bg-danger bg-opacity-25 rounded-3 p-2 border border-danger">
+                                        <div class="display-6 fw-bold text-white">@lateTasks</div>
+                                        <div class="small text-white">@(isRtl ? "متأخر" : "Late")</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- سجل طلبات الإجازات -->
+    <div class="card border-0 shadow-lg rounded-4 mb-4 overflow-hidden">
+        <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold border-start border-5 border-gold ps-3 text-dark">@(isRtl ? "سجل طلبات الإجازات" : "Leave Requests Log")</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="max-height: 250px;">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead class="bg-light small">
+                        <tr>
+                            <th>@(isRtl ? "تاريخ التقديم" : "Request Date")</th>
+                            <th>@(isRtl ? "نوع الإجازة" : "Leave Type")</th>
+                            <th>@(isRtl ? "الفترة (من - إلى)" : "Period (From - To)")</th>
+                            <th>@(isRtl ? "المدة" : "Days")</th>
+                            <th>@(isRtl ? "الحالة" : "Status")</th>
+                            <th>@(isRtl ? "إجراءات وطباعة" : "Actions")</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (leaves.Any())
+                        {
+                            foreach (var l in leaves)
+                            {
+                                var statusBadge = l.Status == NabdAltamayyuz.Models.LeaveStatus.Approved ? "bg-success" :
+                                (l.Status == NabdAltamayyuz.Models.LeaveStatus.Rejected ? "bg-danger" : "bg-warning text-dark");
+                                var typeName = l.Type == NabdAltamayyuz.Models.LeaveType.Other ? l.CustomTypeName : l.Type.ToString();
+
+                                <tr>
+                                    <td class="small">@l.CreatedAt.ToString("yyyy-MM-dd")</td>
+                                    <td class="fw-bold">@typeName</td>
+                                    <td class="font-monospace small text-muted">@l.StartDate.ToString("dd/MM/yyyy") <br> @l.EndDate.ToString("dd/MM/yyyy")</td>
+                                    <td><span class="badge bg-dark text-white rounded-circle p-2">@l.DurationDays</span></td>
+                                    <td><span class="badge @statusBadge rounded-pill px-3 py-2 shadow-sm">@l.Status</span></td>
+                                    <td>
+                                        <div class="btn-group">
+                                            @if (l.Status == NabdAltamayyuz.Models.LeaveStatus.Pending)
+                                            {
+                                                <!-- دوال سيتم معالجتها بكنترولر الإجازات في الدفعة القادمة -->
+                                                <form action="/Leaves/UpdateStatus" method="post" style="display:inline;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@l.Id" />
+                                                    <input type="hidden" name="status" value="Approved" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-success" title="موافقة"><i class="fas fa-check"></i></button>
+                                                </form>
+                                                <form action="/Leaves/UpdateStatus" method="post" style="display:inline;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@l.Id" />
+                                                    <input type="hidden" name="status" value="Rejected" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="رفض"><i class="fas fa-times"></i></button>
+                                                </form>
+                                            }
+                                            <a href="/Leaves/Print/@l.Id" target="_blank" class="btn btn-sm btn-outline-dark" title="طباعة النموذج">
+                                                <i class="fas fa-print"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="6" class="py-4 text-muted">لا توجد طلبات إجازات مسجلة</td></tr>
+                        }
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -233,25 +384,37 @@
     </div>
 </div>
 
-<!-- Modal for Quick Attendance Edit -->
-<div class="modal fade" id="quickEditModal" tabindex="-1">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header py-2">
-                <h6 class="modal-title fw-bold">@(isRtl ? "تعديل سريع" : "Quick Edit")</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- Modal Edit Interaction -->
+<div class="modal fade" id="editInteractionModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-dark text-white border-0 py-3 px-4">
+                <h6 class="modal-title fw-bold text-gold"><i class="fas fa-edit me-2"></i> تعديل نسبة التفاعل لشهر (@targetMonth.ToString("MM/yyyy"))</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form action="/Attendance/Edit" method="post">
+            <!-- دالة الحفظ ستضاف للكنترولر في الدفعة القادمة -->
+            <form action="/Employees/UpdateInteraction" method="post">
                 @Html.AntiForgeryToken()
-                <input type="hidden" name="id" id="editAttId">
-                <div class="modal-body">
-                    <label class="small fw-bold">@(isRtl ? "دخول" : "Time In")</label>
-                    <input type="time" name="TimeIn" id="editTimeIn" class="form-control mb-2">
-                    <label class="small fw-bold">@(isRtl ? "خروج" : "Time Out")</label>
-                    <input type="time" name="TimeOut" id="editTimeOut" class="form-control">
+                <input type="hidden" name="interactionId" value="@interaction.Id" />
+                <input type="hidden" name="redirectMonth" value="@targetMonth.ToString("yyyy-MM")" />
+                <!-- تمرير بيانات الموظف إذا لم يكن السجل موجوداً مسبقاً -->
+                <input type="hidden" name="empId" value="@Model.Id" />
+                <input type="hidden" name="targetDate" value="@targetMonth.ToString("yyyy-MM-dd")" />
+
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">عدد الساعات المقررة (الافتراضي 176)</label>
+                        <input type="number" step="0.1" name="requiredHours" class="form-control bg-light" value="@interaction.RequiredHours" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted">عدد الساعات المنجزة يدوياً</label>
+                        <input type="number" step="0.1" name="completedHours" class="form-control bg-light" value="@interaction.CompletedHours" required />
+                        <span class="form-text small text-danger">ملاحظة: بمجرد الحفظ اليدوي، سيتوقف التحديث الآلي لهذا الشهر.</span>
+                    </div>
                 </div>
-                <div class="modal-footer py-1">
-                    <button type="submit" class="btn btn-sm btn-primary w-100">@(isRtl ? "حفظ" : "Save")</button>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-dark btn-gold text-gold fw-bold rounded-pill px-4">حفظ السجل</button>
                 </div>
             </form>
         </div>
@@ -262,7 +425,7 @@
     .circular-chart {
         display: block;
         margin: 0 auto;
-        max-width: 80%;
+        max-width: 100%;
         max-height: 250px;
     }
 
@@ -297,14 +460,3 @@
         }
     }
 </style>
-
-@section Scripts {
-    <script>
-        function editAttendance(id, inTime, outTime) {
-            document.getElementById('editAttId').value = id;
-            document.getElementById('editTimeIn').value = inTime;
-            document.getElementById('editTimeOut').value = outTime;
-            new bootstrap.Modal(document.getElementById('quickEditModal')).show();
-        }
-    </script>
-}

@@ -30,12 +30,12 @@
     </div>
 </div>
 
-<!-- 1. Remote Work Section (العمل عن بعد كما هو) -->
+<!-- 1. Remote Work Section -->
 <section class="section-padding bg-light">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-6 mb-4 mb-lg-0 animate-up">
-                <img src="~/images/sec.png" class="img-fluid rounded-4 shadow-lg" alt="العمل عن بعد">
+                <img src="https://images.unsplash.com/photo-1593642632823-8f785ba67e45?q=80&w=1000&auto=format&fit=crop" class="img-fluid rounded-4 shadow-lg" alt="العمل عن بعد">
             </div>
             <div class="col-lg-6 ps-lg-5 animate-up delay-100">
                 <h6 class="text-gold text-uppercase fw-bold letter-spacing-2">@(isRtl ? "خدمات العمل عن بعد" : "Remote Work Services")</h6>
@@ -101,7 +101,7 @@
     </div>
 </section>
 
-<!-- 3. Why Us Section (لماذا نحن) -->
+<!-- 3. Why Us Section -->
 <section class="section-padding bg-light">
     <div class="container">
         <div class="text-center mb-5">
@@ -125,8 +125,8 @@
                     <div class="icon-box-lg mx-auto">
                         <i class="fas fa-laptop-house"></i>
                     </div>
-                    <h4 class="fw-bold mb-3 text-dark">@(isRtl ? "خبرة المنصات" : "Platforms Expertise")</h4>
-                    <p class="text-secondary small mb-0">@(isRtl ? "ندير حساباتكم في (قوى، التأمينات، مكتب العمل) لضمان الانسيابية." : "We manage your accounts in government platforms to ensure workflow smoothness.")</p>
+                    <h4 class="fw-bold mb-3 text-dark">@(isRtl ? "خبرة في المنصات الحكومية" : "Government Platforms Expertise")</h4>
+                    <p class="text-secondary small mb-0">@(isRtl ? "خبراؤنا يديرون حساباتكم في (قوى، التأمينات، مكتب العمل، مقيم، ابشر أعمال، مدد، تم) لضمان انسيابية العمل وتجنب الغرامات." : "Our experts manage your accounts in government platforms to ensure workflow smoothness and avoid fines.")</p>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
@@ -135,7 +135,7 @@
                         <i class="fas fa-brain"></i>
                     </div>
                     <h4 class="fw-bold mb-3 text-dark">@(isRtl ? "التفرغ للإبداع" : "Focus on Creativity")</h4>
-                    <p class="text-secondary small mb-0">@(isRtl ? "نحن نهتم بالأوراق والعمليات الإدارية، لنترك لك مساحة الابتكار." : "We handle routine paperwork, leaving you space for innovation.")</p>
+                    <p class="text-secondary small mb-0">@(isRtl ? "نحن نهتم بالأوراق والعمليات الإدارية الروتينية، لنترك لك مساحة الابتكار والتوسع." : "We handle routine paperwork and admin processes, leaving you space for innovation and expansion.")</p>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
@@ -144,7 +144,7 @@
                         <i class="fas fa-coins"></i>
                     </div>
                     <h4 class="fw-bold mb-3 text-dark">@(isRtl ? "توفير التكاليف" : "Cost Saving")</h4>
-                    <p class="text-secondary small mb-0">@(isRtl ? "توفير تكاليف التوظيف العالية عبر إسناد المهام الإدارية لخبرائنا." : "Saving high recruitment costs by outsourcing to our experts.")</p>
+                    <p class="text-secondary small mb-0">@(isRtl ? "توفير تكاليف التوظيف العالية." : "Saving high recruitment costs.")</p>
                 </div>
             </div>
         </div>
@@ -159,8 +159,10 @@
             <div class="mx-auto bg-gold mt-2" style="width: 50px; height: 3px;"></div>
         </div>
 
+        <!-- Continuous Slider -->
         <div class="clients-slider">
             <div class="slide-track">
+                <!-- Loop twice to create seamless infinite scroll -->
                 @for (int j = 0; j < 2; j++)
                 {
                     @for (int i = 1; i <= 8; i++)

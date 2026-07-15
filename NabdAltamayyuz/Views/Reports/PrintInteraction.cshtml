@@ -1,0 +1,85 @@
+﻿@model IEnumerable<NabdAltamayyuz.Models.MonthlyInteraction>
+@using System.Globalization
+@{
+    Layout = null;
+    var companyName = ViewBag.CompanyName as string ?? "نبض التميز الذهبي";
+}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <title>نسبة التفاعل الشهري - @companyName</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #0F172A !important;
+            color: #fff !important;
+            padding: 10px;
+            border: 1px solid #000;
+            -webkit-print-color-adjust: exact;
+        }
+
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #D4AF37;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="header">
+        <div><h2 style="color:#D4AF37; margin:0;">@companyName</h2><h3>سجل التفاعل الشهري</h3></div>
+        <div style="font-size:12px; color:#666;">
+            <div><strong>الشهر المحدد:</strong> @ViewBag.FromDate</div>
+            <div><strong>تاريخ الطباعة:</strong> @ViewBag.PrintDate.ToString("yyyy-MM-dd HH:mm")</div>
+        </div>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>الموظف</th>
+                <th>رقم الهوية</th>
+                <th>المقرر (ساعة)</th>
+                <th>المنجز (ساعة)</th>
+                <th>نسبة الحضور</th>
+                <th>المهام (منجز/كلي)</th>
+                <th>نسبة المهام</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td style="text-align:right; font-weight:bold; padding-right:10px;">@item.Employee.FullName</td>
+                    <td>@item.Employee.NationalId</td>
+                    <td>@item.RequiredHours</td>
+                    <td style="color:green; font-weight:bold;">@item.CompletedHours</td>
+                    <td style="font-weight:bold;">@Math.Round(item.InteractionPercentage, 1)%</td>
+                    <td>@item.CompletedTasks / @item.TotalTasks</td>
+                    <td>@Math.Round(item.TasksPercentage, 1)%</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</body>
+</html>

@@ -47,6 +47,9 @@ namespace NabdAltamayyuz.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("HireDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("IsSuspended")
                         .HasColumnType("bit");
 
@@ -66,6 +69,12 @@ namespace NabdAltamayyuz.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProjectJobRoleId")
+                        .HasColumnType("int");
+
                     b.Property<int>("Role")
                         .HasColumnType("int");
 
@@ -76,6 +85,10 @@ namespace NabdAltamayyuz.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("ProjectJobRoleId");
 
                     b.ToTable("Users");
                 });
@@ -209,6 +222,132 @@ namespace NabdAltamayyuz.Migrations
                     b.ToTable("Companies");
                 });
 
+            modelBuilder.Entity("NabdAltamayyuz.Models.LeaveRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CustomTypeName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DurationDays")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("LeaveRequests");
+                });
+
+            modelBuilder.Entity("NabdAltamayyuz.Models.MonthlyInteraction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<double>("CompletedHours")
+                        .HasColumnType("float");
+
+                    b.Property<int>("CompletedTasks")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsManuallyEdited")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("MonthYear")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double>("RequiredHours")
+                        .HasColumnType("float");
+
+                    b.Property<int>("TotalTasks")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("MonthlyInteractions");
+                });
+
+            modelBuilder.Entity("NabdAltamayyuz.Models.Project", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.ToTable("Projects");
+                });
+
+            modelBuilder.Entity("NabdAltamayyuz.Models.ProjectJobRole", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ProjectJobRoles");
+                });
+
             modelBuilder.Entity("NabdAltamayyuz.Models.WorkTask", b =>
                 {
                     b.Property<int>("Id")
@@ -265,7 +404,19 @@ namespace NabdAltamayyuz.Migrations
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("NabdAltamayyuz.Models.Project", "Project")
+                        .WithMany("Employees")
+                        .HasForeignKey("ProjectId");
+
+                    b.HasOne("NabdAltamayyuz.Models.ProjectJobRole", "ProjectJobRole")
+                        .WithMany()
+                        .HasForeignKey("ProjectJobRoleId");
+
                     b.Navigation("Company");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("ProjectJobRole");
                 });
 
             modelBuilder.Entity("NabdAltamayyuz.Models.Attendance", b =>
@@ -286,6 +437,50 @@ namespace NabdAltamayyuz.Migrations
                         .HasForeignKey("ParentCompanyId");
 
                     b.Navigation("ParentCompany");
+                });
+
+            modelBuilder.Entity("NabdAltamayyuz.Models.LeaveRequest", b =>
+                {
+                    b.HasOne("NabdAltamayyuz.Models.ApplicationUser", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("NabdAltamayyuz.Models.MonthlyInteraction", b =>
+                {
+                    b.HasOne("NabdAltamayyuz.Models.ApplicationUser", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("NabdAltamayyuz.Models.Project", b =>
+                {
+                    b.HasOne("NabdAltamayyuz.Models.Company", "Company")
+                        .WithMany("Projects")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("NabdAltamayyuz.Models.ProjectJobRole", b =>
+                {
+                    b.HasOne("NabdAltamayyuz.Models.Project", "Project")
+                        .WithMany("JobRoles")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("NabdAltamayyuz.Models.WorkTask", b =>
@@ -311,7 +506,16 @@ namespace NabdAltamayyuz.Migrations
                 {
                     b.Navigation("Employees");
 
+                    b.Navigation("Projects");
+
                     b.Navigation("SubCompanies");
+                });
+
+            modelBuilder.Entity("NabdAltamayyuz.Models.Project", b =>
+                {
+                    b.Navigation("Employees");
+
+                    b.Navigation("JobRoles");
                 });
 #pragma warning restore 612, 618
         }

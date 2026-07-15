@@ -27,7 +27,7 @@ namespace NabdAltamayyuz.Controllers
         }
 
         // ---------------------------------------------------------
-        // 1. سجل حضوري (للموظف) - (التعديل: إضافة اسم الشركة للطباعة)
+        // 1. سجل حضوري (للموظف) 
         // ---------------------------------------------------------
         public async Task<IActionResult> MyHistory()
         {
@@ -227,7 +227,7 @@ namespace NabdAltamayyuz.Controllers
                 existingRecord.TimeIn = timeIn;
                 existingRecord.TimeOut = timeOut;
 
-                // إزالة الإضافة الإجبارية لكلمة "تعديل يدوي" للحفاظ على الملاحظات نظيفة
+                // إزالة الإضافة الإجبارية لكلمة "تعديل يدوي" للحفاظ على الملاحظات نظيفة تماماً
                 existingRecord.Notes = notes;
                 existingRecord.IsManualEntry = true;
                 _context.Update(existingRecord);
@@ -241,7 +241,7 @@ namespace NabdAltamayyuz.Controllers
                     DayName = date.ToString("dddd", new CultureInfo("ar-SA")),
                     TimeIn = timeIn,
                     TimeOut = timeOut,
-                    Notes = notes, // يحفظ الملاحظات المكتوبة فقط
+                    Notes = notes,
                     IsManualEntry = true
                 };
                 _context.Add(attendance);

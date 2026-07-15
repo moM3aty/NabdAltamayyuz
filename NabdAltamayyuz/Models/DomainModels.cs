@@ -5,35 +5,27 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace NabdAltamayyuz.Models
 {
-    // أنواع المستخدمين
-    public enum UserRole
+    // أنواع المستخدمين وطرق السداد وحالة المهام (كما هي سابقاً)
+    public enum UserRole { SuperAdmin = 1, CompanyAdmin = 2, SubAdmin = 3, Employee = 4 }
+    public enum PaymentTerm { [Display(Name = "شهري")] Monthly = 1, [Display(Name = "3 شهور")] Quarterly = 3, [Display(Name = "6 شهور")] SemiAnnual = 6, [Display(Name = "سنوي")] Annual = 12 }
+    public enum TaskStatus { [Display(Name = "قيد الانتظار")] Pending, [Display(Name = "منجز")] Completed, [Display(Name = "غير منجز")] NotCompleted, [Display(Name = "مؤجل")] Delayed, [Display(Name = "ملغي")] Cancelled }
+
+    // --- الإضافات الجديدة ---
+    public enum LeaveType
     {
-        SuperAdmin = 1,
-        CompanyAdmin = 2, // المشرف الرئيسي
-        SubAdmin = 3,     // المشرف الفرعي
-        Employee = 4
+        [Display(Name = "سنوي")] Annual,
+        [Display(Name = "بدون أجر")] Unpaid,
+        [Display(Name = "مرضي")] Sick,
+        [Display(Name = "زواج")] Marriage,
+        [Display(Name = "مولود")] Maternity,
+        [Display(Name = "اختبارات")] Exams,
+        [Display(Name = "حج")] Hajj,
+        [Display(Name = "وفاة")] Death,
+        [Display(Name = "أخرى")] Other
     }
 
-    // طرق السداد
-    public enum PaymentTerm
-    {
-        [Display(Name = "شهري")] Monthly = 1,
-        [Display(Name = "3 شهور")] Quarterly = 3,
-        [Display(Name = "6 شهور")] SemiAnnual = 6,
-        [Display(Name = "سنوي")] Annual = 12
-    }
+    public enum LeaveStatus { [Display(Name = "معلق")] Pending, [Display(Name = "مقبول")] Approved, [Display(Name = "مرفوض")] Rejected }
 
-    // حالة المهمة
-    public enum TaskStatus
-    {
-        [Display(Name = "قيد الانتظار")] Pending,
-        [Display(Name = "منجز")] Completed,
-        [Display(Name = "غير منجز")] NotCompleted,
-        [Display(Name = "مؤجل")] Delayed,
-        [Display(Name = "ملغي")] Cancelled
-    }
-
-    // جدول الشركات (يشمل الرئيسية والفرعية)
     public class Company
     {
         [Key]
@@ -52,13 +44,11 @@ namespace NabdAltamayyuz.Models
         [Display(Name = "الرقم الضريبي")]
         public string TaxNumber { get; set; }
 
-        // --- حقول منصة العمل عن بعد (الجديدة) ---
         [Display(Name = "رقم مكتب العمل للشركة")]
         public string? EstLaborOfficeId { get; set; }
 
         [Display(Name = "الرقم التسلسلي للشركة")]
         public string? EstSequenceNumber { get; set; }
-        // ----------------------------------------
 
         [EmailAddress]
         [Display(Name = "البريد الإلكتروني")]
@@ -73,7 +63,6 @@ namespace NabdAltamayyuz.Models
         [Display(Name = "الرقم المختصر للعنوان الوطني")]
         public string NationalAddressShortCode { get; set; }
 
-        // بيانات الاشتراك
         [DataType(DataType.Date)]
         [Display(Name = "تاريخ بداية الاشتراك")]
         public DateTime SubscriptionStartDate { get; set; }
@@ -88,14 +77,12 @@ namespace NabdAltamayyuz.Models
         [Display(Name = "تنبيه قبل الانتهاء (يوم)")]
         public int NotificationDaysBeforeExpiry { get; set; }
 
-        // الحدود والصلاحيات
         [Display(Name = "عدد الحسابات الفرعية المسموحة")]
         public int AllowedSubAccounts { get; set; } = 0;
 
         [Display(Name = "عدد الموظفين المسموح")]
         public int AllowedEmployees { get; set; } = 10;
 
-        // الحسابات المالية
         [Display(Name = "قيمة الاشتراك لكل موظف (غير شامل الضريبة)")]
         [Column(TypeName = "decimal(18, 2)")]
         public decimal PricePerEmployee { get; set; }
@@ -106,31 +93,26 @@ namespace NabdAltamayyuz.Models
 
         [Display(Name = "إجمالي الاشتراك لكل موظف")]
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal TotalPricePerEmployee { get; private set; } // يحسب تلقائياً
+        public decimal TotalPricePerEmployee { get; private set; }
 
         public void CalculateTotal()
         {
             TotalPricePerEmployee = PricePerEmployee + (PricePerEmployee * (TaxRate / 100));
         }
 
-        [Display(Name = "المرفقات")]
         public string? AttachmentPath { get; set; }
-
-        [Display(Name = "تعليق الحساب")]
         public bool IsSuspended { get; set; } = false;
-
-        [Display(Name = "تاريخ الإضافة")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        // العلاقات
-        public int? ParentCompanyId { get; set; } // للشركات الفرعية
+        public int? ParentCompanyId { get; set; }
         [ForeignKey("ParentCompanyId")]
         public virtual Company? ParentCompany { get; set; }
 
         public virtual ICollection<Company> SubCompanies { get; set; }
         public virtual ICollection<ApplicationUser> Employees { get; set; }
+        public virtual ICollection<Project> Projects { get; set; }
     }
-    // جدول المستخدمين (مشرفين وموظفين)
+
     public class ApplicationUser
     {
         [Key]
@@ -158,63 +140,60 @@ namespace NabdAltamayyuz.Models
         [Display(Name = "رقم الجوال")]
         public string PhoneNumber { get; set; }
 
-        [Display(Name = "الحالة")]
-        public string Status { get; set; } = "Active"; // Active, Inactive
-
-        [Display(Name = "تعليق الحساب")]
+        public string Status { get; set; } = "Active";
         public bool IsSuspended { get; set; } = false;
-
-        [Display(Name = "المستندات")]
         public string? AttachmentPath { get; set; }
-
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        // التعديلات الجديدة للموظف
+        [DataType(DataType.Date)]
+        [Display(Name = "تاريخ التعيين")]
+        public DateTime? HireDate { get; set; }
 
         public int? CompanyId { get; set; }
         [ForeignKey("CompanyId")]
         public virtual Company Company { get; set; }
+
+        public int? ProjectId { get; set; }
+        [ForeignKey("ProjectId")]
+        public virtual Project? Project { get; set; }
+
+        public int? ProjectJobRoleId { get; set; }
+        [ForeignKey("ProjectJobRoleId")]
+        public virtual ProjectJobRole? ProjectJobRole { get; set; }
     }
 
-    // جدول المهام
-    public class WorkTask
+    public class Project
     {
         [Key]
         public int Id { get; set; }
-
         [Required]
-        [Display(Name = "المهمة")]
-        public string Title { get; set; }
-
-        [Display(Name = "الوصف")]
-        public string Description { get; set; }
-
-        [Display(Name = "حالة المهمة")]
-        public TaskStatus Status { get; set; } = TaskStatus.Pending;
-
-        // تمت الإضافة لحل الخطأ، وتعمل بالتوافق مع Status
-        public bool IsCompleted { get; set; } = false;
-
-        [Display(Name = "سبب الحالة")]
-        public string? StatusReason { get; set; } // سبب الإنجاز أو التأجيل
-
-        public int AssignedToId { get; set; }
-        [ForeignKey("AssignedToId")]
-        public virtual ApplicationUser AssignedTo { get; set; }
-
-        public int CreatedById { get; set; } // المشرف
-        [ForeignKey("CreatedById")]
-        public virtual ApplicationUser CreatedBy { get; set; }
-
+        public string Name { get; set; }
         [DataType(DataType.Date)]
         public DateTime StartDate { get; set; }
+        public string Description { get; set; }
 
-        [DataType(DataType.Date)]
-        public DateTime DueDate { get; set; }
+        public int CompanyId { get; set; }
+        [ForeignKey("CompanyId")]
+        public virtual Company Company { get; set; }
 
-        public string? AttachmentPath { get; set; }
+        public virtual ICollection<ProjectJobRole> JobRoles { get; set; }
+        public virtual ICollection<ApplicationUser> Employees { get; set; }
     }
 
-    // جدول الحضور
-    public class Attendance
+    public class ProjectJobRole
+    {
+        [Key]
+        public int Id { get; set; }
+        [Required]
+        public string Name { get; set; }
+
+        public int ProjectId { get; set; }
+        [ForeignKey("ProjectId")]
+        public virtual Project Project { get; set; }
+    }
+
+    public class LeaveRequest
     {
         [Key]
         public int Id { get; set; }
@@ -223,14 +202,100 @@ namespace NabdAltamayyuz.Models
         [ForeignKey("EmployeeId")]
         public virtual ApplicationUser Employee { get; set; }
 
+        public LeaveType Type { get; set; }
+        public string? CustomTypeName { get; set; } // يستخدم إذا كان النوع "أخرى"
+
+        [DataType(DataType.Date)]
+        public DateTime StartDate { get; set; }
+
+        [DataType(DataType.Date)]
+        public DateTime EndDate { get; set; }
+
+        public int DurationDays { get; set; }
+        public LeaveStatus Status { get; set; } = LeaveStatus.Pending;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+    }
+
+    public class MonthlyInteraction
+    {
+        [Key]
+        public int Id { get; set; }
+
+        public int EmployeeId { get; set; }
+        [ForeignKey("EmployeeId")]
+        public virtual ApplicationUser Employee { get; set; }
+
+        public DateTime MonthYear { get; set; } // مثلا 01-07-2026
+
+        public double RequiredHours { get; set; } = 176; // المقرر الافتراضي
+        public double CompletedHours { get; set; } // المنجز (يُحسب تلقائياً أو يُعدل يدوياً)
+
+        // المهام المسندة والمنجزة لهذا الشهر
+        public int TotalTasks { get; set; }
+        public int CompletedTasks { get; set; }
+
+        public bool IsManuallyEdited { get; set; } = false;
+
+        public double InteractionPercentage
+        {
+            get
+            {
+                if (RequiredHours <= 0) return 0;
+                var percentage = (CompletedHours / RequiredHours) * 100;
+                return percentage > 100 ? 100 : percentage;
+            }
+        }
+
+        public double TasksPercentage
+        {
+            get
+            {
+                if (TotalTasks <= 0) return 0;
+                return ((double)CompletedTasks / TotalTasks) * 100;
+            }
+        }
+    }
+
+    // جداول العمل والمهام (تبقى كما هي)
+    public class WorkTask
+    {
+        [Key]
+        public int Id { get; set; }
+        [Required]
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public TaskStatus Status { get; set; } = TaskStatus.Pending;
+        public bool IsCompleted { get; set; } = false;
+        public string? StatusReason { get; set; }
+
+        public int AssignedToId { get; set; }
+        [ForeignKey("AssignedToId")]
+        public virtual ApplicationUser AssignedTo { get; set; }
+
+        public int CreatedById { get; set; }
+        [ForeignKey("CreatedById")]
+        public virtual ApplicationUser CreatedBy { get; set; }
+
+        [DataType(DataType.Date)]
+        public DateTime StartDate { get; set; }
+        [DataType(DataType.Date)]
+        public DateTime DueDate { get; set; }
+        public string? AttachmentPath { get; set; }
+    }
+
+    public class Attendance
+    {
+        [Key]
+        public int Id { get; set; }
+        public int EmployeeId { get; set; }
+        [ForeignKey("EmployeeId")]
+        public virtual ApplicationUser Employee { get; set; }
+
         [DataType(DataType.Date)]
         public DateTime Date { get; set; }
-
-        public string DayName { get; set; } // سبت، أحد...
-
+        public string DayName { get; set; }
         public DateTime? TimeIn { get; set; }
         public DateTime? TimeOut { get; set; }
-
         public bool IsManualEntry { get; set; }
         public string? Notes { get; set; }
     }
