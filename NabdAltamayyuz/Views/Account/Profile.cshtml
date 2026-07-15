@@ -6,7 +6,6 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
     var isRtl = CultureInfo.CurrentCulture.Name.StartsWith("ar");
 
-    // Model now contains real data
     var roleDisplay = Model.Role.ToString();
 }
 
@@ -47,7 +46,7 @@
                         </div>
                     }
                     <div class="d-flex justify-content-between">
-                        <small class="text-muted">@(isRtl ? "تاريخ الانضمام" : "Joined")</small>
+                        <small class="text-muted">@(isRtl ? "تاريخ الانضمام للنظام" : "System Joined")</small>
                         <small class="fw-bold text-dark">@Model.CreatedAt.ToString("dd MMM yyyy")</small>
                     </div>
                 </div>
@@ -82,6 +81,25 @@
                             <label class="form-label fw-bold small text-muted">@(isRtl ? "رقم الهاتف" : "Phone")</label>
                             <input type="text" class="form-control bg-light border-0" value="@Model.PhoneNumber" readonly>
                         </div>
+
+                        <div class="col-12"><hr class="opacity-10 my-2"></div>
+
+                        <!-- التعديل: إضافة المشروع وتاريخ التعيين -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">@(isRtl ? "المشروع" : "Project")</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0 text-gold"><i class="fas fa-project-diagram"></i></span>
+                                <input type="text" class="form-control bg-light border-0 fw-bold text-dark" value="@(Model.Project?.Name ?? (isRtl ? "مشروع عام" : "General Project"))" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted">@(isRtl ? "تاريخ التعيين" : "Hire Date")</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0 text-gold"><i class="far fa-calendar-check"></i></span>
+                                <input type="text" class="form-control bg-light border-0 fw-bold text-dark" value="@(Model.HireDate?.ToString("yyyy-MM-dd") ?? "-")" readonly>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>

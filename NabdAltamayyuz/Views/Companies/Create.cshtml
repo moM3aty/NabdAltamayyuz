@@ -52,6 +52,10 @@
                         <input asp-for="PhoneNumber" class="form-control bg-light" />
                     </div>
                     <div class="col-md-4">
+                        <label asp-for="CreatedAt" class="form-label small fw-bold">تاريخ الإضافة / التعاقد</label>
+                        <input asp-for="CreatedAt" type="date" class="form-control bg-light" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                    </div>
+                    <div class="col-md-4">
                         <label class="form-label small fw-bold text-dark">كلمة المرور للمدير</label>
                         <input type="text" name="adminPassword" class="form-control bg-white border-gold" placeholder="اتركها فارغة لتعيين الافتراضي (123456)" />
                     </div>

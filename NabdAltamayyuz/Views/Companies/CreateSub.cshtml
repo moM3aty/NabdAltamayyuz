@@ -63,7 +63,13 @@
                                 <label class="form-label small fw-bold text-dark">@(isRtl ? "كلمة المرور (للمدير)" : "Password (Manager)")</label>
                                 <input type="text" name="adminPassword" class="form-control bg-white border-gold" placeholder="@(isRtl ? "اتركها فارغة لتعيين الافتراضي (123456)" : "Leave empty for default (123456)")" />
                             </div>
+                            <div class="col-md-6">
+                                <label asp-for="CreatedAt" class="form-label small fw-bold">@(isRtl ? "تاريخ الإضافة / التعاقد" : "Creation Date")</label>
+                                <input asp-for="CreatedAt" type="date" class="form-control bg-light" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                            </div>
                         </div>
+
+                        
 
                         <!-- Hidden Inherited Fields -->
                         <input type="hidden" asp-for="TaxNumber" />

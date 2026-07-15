@@ -11,11 +11,11 @@
     bool isCheckedIn = ViewBag.IsCheckedIn ?? false;
     bool isCheckedOut = ViewBag.IsCheckedOut ?? false;
 
-    // جلب بيانات الموظف
+    // جلب بيانات الموظف والمشروع
     var userId = int.Parse(User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier));
     var employee = _context.Users.Include(u => u.Project).FirstOrDefault(u => u.Id == userId);
 
-    // --- منطق إحصائيات المهام المفلترة بالشهر (تلقائي بدون الحاجة للكنترولر) ---
+    // إحصائيات المهام المفلترة بالشهر
     var taskMonthStr = Context.Request.Query["taskMonth"].ToString();
     var queryTasks = _context.WorkTasks.Where(t => t.AssignedToId == userId);
 
@@ -31,7 +31,7 @@
     int pendingTasks = filteredTasks.Count(t => !t.IsCompleted);
     double completionRate = totalTasks > 0 ? Math.Round((double)completedTasks / totalTasks * 100, 1) : 0;
 
-    // --- جلب طلبات الإجازات السابقة ---
+    // جلب طلبات الإجازات السابقة
     var myLeaves = _context.LeaveRequests.Where(l => l.EmployeeId == userId).OrderByDescending(l => l.CreatedAt).ToList();
 }
 
@@ -44,7 +44,7 @@
         </div>
     }
 
-    <!-- Welcome Section -->
+    <!-- Welcome Section (تمت إضافة المشروع وتاريخ التعيين) -->
     <div class="row align-items-center mb-5">
         <div class="col-md-8">
             <h2 class="fw-bold text-dark mb-1">
@@ -72,7 +72,6 @@
                     <h4 class="fw-bold mb-4 text-gold"><i class="fas fa-fingerprint me-2"></i> @(isRtl ? "تسجيل الحضور والإجازات" : "Attendance & Leaves")</h4>
 
                     <div class="d-flex justify-content-center gap-3 flex-wrap mb-4">
-                        <!-- Check In -->
                         <form action="/Dashboard/CheckIn" method="post">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn btn-lg rounded-4 p-3 shadow-lg hover-scale transition-all @(isCheckedIn ? "btn-secondary disabled" : "btn-success")" style="min-width: 140px;" @(isCheckedIn ? "disabled" : "")>
@@ -81,7 +80,6 @@
                             </button>
                         </form>
 
-                        <!-- Check Out -->
                         <form action="/Dashboard/CheckOut" method="post">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn btn-lg rounded-4 p-3 shadow-lg hover-scale transition-all @(isCheckedOut || !isCheckedIn ? "btn-secondary disabled" : "btn-danger")" style="min-width: 140px;" @(isCheckedOut || !isCheckedIn ? "disabled" : "")>
@@ -104,13 +102,13 @@
             </div>
         </div>
 
-        <!-- Task Performance Meter -->
+        <!-- Task Performance Meter (تعديل: إضافة فلتر الشهر) -->
         <div class="col-lg-5">
             <div class="card border-0 shadow-lg rounded-4 h-100 bg-white overflow-hidden">
                 <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
                     <h6 class="fw-bold text-dark mb-0"><i class="fas fa-chart-pie text-gold me-2"></i> @(isRtl ? "مؤشر الإنجاز" : "Task Completion")</h6>
                     <form method="get" id="taskFilterForm">
-                        <input type="month" name="taskMonth" class="form-control form-control-sm text-primary fw-bold" value="@taskMonthStr" onchange="document.getElementById('taskFilterForm').submit()" title="@(isRtl ? "اختر الشهر لتصفية المهام أو اتركه فارغاً للكل" : "Select month to filter")" />
+                        <input type="month" name="taskMonth" class="form-control form-control-sm text-primary fw-bold" value="@taskMonthStr" onchange="document.getElementById('taskFilterForm').submit()" title="اختر الشهر لتصفية المهام أو اتركه فارغاً للكل" />
                     </form>
                 </div>
                 <div class="card-body p-4 d-flex align-items-center justify-content-between">
@@ -140,7 +138,6 @@
         </div>
     </div>
 
-    <!-- Leaves Log & Current Tasks -->
     <div class="row g-4">
         <!-- My Leaves Log -->
         <div class="col-lg-12 mb-2">
@@ -168,7 +165,20 @@
                                     {
                                         var statusBadge = l.Status == NabdAltamayyuz.Models.LeaveStatus.Approved ? "bg-success" :
                                         (l.Status == NabdAltamayyuz.Models.LeaveStatus.Rejected ? "bg-danger" : "bg-warning text-dark");
-                                        var typeName = l.Type == NabdAltamayyuz.Models.LeaveType.Other ? l.CustomTypeName : l.Type.ToString(); // يمكن استخدام مكتبة ترجمة لـ Enum لاحقاً
+
+                                        // ترجمة نوع الإجازة للغة العربية في العرض
+                                        var typeName = l.Type switch
+                                        {
+                                            NabdAltamayyuz.Models.LeaveType.Annual => "إجازة سنوية",
+                                            NabdAltamayyuz.Models.LeaveType.Unpaid => "إجازة بدون أجر",
+                                            NabdAltamayyuz.Models.LeaveType.Sick => "إجازة مرضية",
+                                            NabdAltamayyuz.Models.LeaveType.Marriage => "إجازة زواج",
+                                            NabdAltamayyuz.Models.LeaveType.Maternity => "إجازة مولود",
+                                            NabdAltamayyuz.Models.LeaveType.Exams => "إجازة اختبارات",
+                                            NabdAltamayyuz.Models.LeaveType.Hajj => "إجازة حج",
+                                            NabdAltamayyuz.Models.LeaveType.Death => "إجازة وفاة",
+                                            _ => l.CustomTypeName ?? "أخرى"
+                                        };
 
                                         <tr>
                                             <td class="small">@l.CreatedAt.ToString("yyyy-MM-dd")</td>
@@ -177,7 +187,6 @@
                                             <td><span class="badge bg-dark bg-opacity-10 text-dark">@l.DurationDays</span></td>
                                             <td><span class="badge @statusBadge rounded-pill px-3">@l.Status</span></td>
                                             <td>
-                                                <!-- رابط طباعة نموذج الإجازة (الكنترولر سيتوفر في الدفعة القادمة) -->
                                                 <a href="/Leaves/Print/@l.Id" target="_blank" class="btn btn-sm btn-outline-secondary rounded-circle" title="طباعة النموذج">
                                                     <i class="fas fa-print"></i>
                                                 </a>
@@ -200,9 +209,9 @@
         <div class="col-lg-12">
             <h5 class="fw-bold text-dark border-start border-5 border-gold ps-3 mb-3">@(isRtl ? "المهام المعلقة" : "Pending Tasks")</h5>
             <div class="row g-4">
-                @if (Model != null && Model.Any())
+                @if (filteredTasks.Any(t => !t.IsCompleted))
                 {
-                    foreach (var task in Model)
+                    foreach (var task in filteredTasks.Where(t => !t.IsCompleted))
                     {
                         <div class="col-md-6 col-lg-4">
                             <div class="card border-0 shadow-sm h-100 rounded-4 hover-lift task-card bg-white position-relative">
@@ -217,15 +226,9 @@
                                     <hr class="border-secondary opacity-10">
 
                                     <div class="d-flex gap-2">
-                                        <button class="btn btn-dark btn-sm rounded-pill w-100" onclick="completeTask(@task.Id)">
+                                        <button type="button" class="btn btn-dark btn-sm rounded-pill w-100" onclick="completeTaskUI(@task.Id)">
                                             <i class="fas fa-check me-2 text-gold"></i> @(isRtl ? "إنجاز" : "Complete")
                                         </button>
-                                        @if (!string.IsNullOrEmpty(task.AttachmentPath))
-                                        {
-                                            <a href="/uploads/tasks/@task.AttachmentPath" target="_blank" class="btn btn-outline-secondary btn-sm rounded-pill">
-                                                <i class="fas fa-paperclip"></i>
-                                            </a>
-                                        }
                                     </div>
                                 </div>
                             </div>
@@ -244,7 +247,6 @@
     </div>
 </div>
 
-<!-- Modal For Leave Request -->
 <div class="modal fade" id="leaveModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4">
@@ -252,19 +254,22 @@
                 <h5 class="modal-title fw-bold text-gold"><i class="fas fa-file-signature me-2"></i> @(isRtl ? "نموذج طلب إجازة" : "Leave Request Form")</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <!-- سيتم إضافة مسار الكنترولر الفعلي في الدفعة القادمة -->
             <form action="/Leaves/Create" method="post">
                 @Html.AntiForgeryToken()
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label fw-bold small">@(isRtl ? "نوع الإجازة" : "Leave Type")</label>
+                        <!-- أنواع الإجازات بالعربي -->
                         <select name="Type" id="leaveTypeSelect" class="form-select bg-light" required onchange="checkCustomType(this.value)">
-                            <!-- الاستفادة من الـ Enum الموجودة بالـ Models -->
-                            @foreach (var type in Enum.GetValues(typeof(NabdAltamayyuz.Models.LeaveType)))
-                            {
-                                // يمكن استخدام Display Attribute للترجمة الدقيقة، هنا كحل سريع استخدمنا الأسماء
-                                <option value="@type">@type.ToString()</option>
-                            }
+                            <option value="Annual">إجازة سنوية</option>
+                            <option value="Unpaid">إجازة بدون أجر</option>
+                            <option value="Sick">إجازة مرضية</option>
+                            <option value="Marriage">إجازة زواج</option>
+                            <option value="Maternity">إجازة مولود</option>
+                            <option value="Exams">إجازة اختبارات</option>
+                            <option value="Hajj">إجازة حج</option>
+                            <option value="Death">إجازة وفاة</option>
+                            <option value="Other">أخرى</option>
                         </select>
                     </div>
 
@@ -286,7 +291,8 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-bold small">@(isRtl ? "مدة الإجازة (بالأيام)" : "Duration (Days)")</label>
-                        <input type="number" name="DurationDays" id="leaveDuration" class="form-control bg-white fw-bold text-center fs-5" readonly required />
+                        <input type="number" name="DurationDays" id="leaveDuration" class="form-control bg-white fw-bold text-center fs-5 text-primary" readonly required />
+                        <span class="form-text small text-muted">يتم حساب المدة تلقائياً بناءً على التواريخ المختارة.</span>
                     </div>
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4">
@@ -363,7 +369,7 @@
                 var d2 = new Date(end);
                 if (d2 >= d1) {
                     var diffTime = Math.abs(d2 - d1);
-                    var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // Inclusive (1 day minimum)
+                    var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end days
                     document.getElementById('leaveDuration').value = diffDays;
                 } else {
                     document.getElementById('leaveDuration').value = 0;
@@ -371,17 +377,14 @@
             }
         }
 
-        function completeTask(id) {
-            var confirmMsg = '@Html.Raw(isRtl ? "هل أنت متأكد من إتمام هذه المهمة؟" : "Are you sure you want to complete this task?")';
-            if (confirm(confirmMsg)) {
-                var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-                fetch('/Tasks/Complete/' + id, {
-                    method: 'POST',
-                    headers: { 'RequestVerificationToken': token }
-                })
-                .then(res => res.json())
-                .then(data => { if (data.success) location.reload(); });
-            }
+        function completeTaskUI(id) {
+            var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            fetch('/Tasks/Complete/' + id, {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': token }
+            })
+            .then(res => res.json())
+            .then(data => { if (data.success) location.reload(); });
         }
     </script>
 }

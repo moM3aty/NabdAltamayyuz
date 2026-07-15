@@ -56,14 +56,14 @@ namespace NabdAltamayyuz.Controllers
 
             ViewBag.EmployeesCount = await _context.Users.CountAsync(u => u.CompanyId == user.CompanyId && u.Role == UserRole.Employee);
 
-            // استخدام توقيت السعودية
-            var today = DateTime.UtcNow.AddHours(3).Date;
+            var ksaZone = OperatingSystem.IsWindows() ? "Arabic Standard Time" : "Asia/Riyadh";
+            var today = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, ksaZone).Date;
+
             ViewBag.AttendanceList = await _context.Attendances.Include(a => a.Employee).Where(a => a.Employee.CompanyId == user.CompanyId && a.Date == today).OrderByDescending(a => a.TimeIn).ToListAsync();
             ViewBag.PendingTasks = await _context.WorkTasks.Include(t => t.AssignedTo).Where(t => t.AssignedTo.CompanyId == user.CompanyId && !t.IsCompleted).OrderBy(t => t.DueDate).Take(10).ToListAsync();
 
             if (user.Company != null)
             {
-                // استخدام توقيت السعودية
                 var daysLeft = (user.Company.SubscriptionEndDate - DateTime.UtcNow.AddHours(3)).Days;
                 if (daysLeft < user.Company.NotificationDaysBeforeExpiry && daysLeft > 0) ViewBag.AlertMessage = $"تنبيه: الاشتراك ينتهي خلال {daysLeft} يوم.";
                 else if (daysLeft <= 0) ViewBag.ErrorMessage = "تنبيه: الاشتراك منتهي.";
@@ -72,12 +72,13 @@ namespace NabdAltamayyuz.Controllers
         }
 
         [Authorize(Roles = "Employee")]
-        public async Task<IActionResult> Employee()
+        public async Task<IActionResult> Employee(string taskMonth)
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-            // استخدام توقيت السعودية
-            var today = DateTime.UtcNow.AddHours(3).Date;
+            var ksaZone = OperatingSystem.IsWindows() ? "Arabic Standard Time" : "Asia/Riyadh";
+            var today = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, ksaZone).Date;
+
             var attendance = await _context.Attendances.FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
 
             ViewBag.IsCheckedIn = attendance != null && attendance.TimeIn != null;
@@ -85,17 +86,26 @@ namespace NabdAltamayyuz.Controllers
 
             if (TempData["Success"] != null) ViewBag.Message = TempData["Success"];
 
-            var myTasks = await _context.WorkTasks.Where(t => t.AssignedToId == userId && !t.IsCompleted).OrderBy(t => t.DueDate).ToListAsync();
+            // استعلام المهام للرسم البياني مع دعم الفلترة بالشهر
+            var allMyTasksQuery = _context.WorkTasks.Where(t => t.AssignedToId == userId).AsQueryable();
 
-            var allMyTasks = await _context.WorkTasks.Where(t => t.AssignedToId == userId).ToListAsync();
+            if (!string.IsNullOrEmpty(taskMonth))
+            {
+                var parsedDate = DateTime.Parse(taskMonth + "-01");
+                allMyTasksQuery = allMyTasksQuery.Where(t => t.DueDate.Year == parsedDate.Year && t.DueDate.Month == parsedDate.Month);
+            }
+
+            var allMyTasks = await allMyTasksQuery.ToListAsync();
             ViewBag.MyTotalTasks = allMyTasks.Count;
             ViewBag.MyCompletedTasks = allMyTasks.Count(t => t.IsCompleted);
             ViewBag.MyPendingTasks = allMyTasks.Count(t => !t.IsCompleted);
 
-            return View(myTasks);
+            // المهام الحالية المعروضة كقائمة
+            var myTasksList = await _context.WorkTasks.Where(t => t.AssignedToId == userId && !t.IsCompleted).OrderBy(t => t.DueDate).ToListAsync();
+
+            return View(myTasksList);
         }
 
-        // --- تسجيل الدخول (مع الربط بالمنصة) ---
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Employee,CompanyAdmin,SubAdmin")]
@@ -103,8 +113,8 @@ namespace NabdAltamayyuz.Controllers
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-            // ضبط الوقت لتوقيت السعودية (UTC+3)
-            var nowTime = DateTime.UtcNow.AddHours(3);
+            var ksaZone = OperatingSystem.IsWindows() ? "Arabic Standard Time" : "Asia/Riyadh";
+            var nowTime = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, ksaZone);
             var today = nowTime.Date;
 
             var existingRecord = await _context.Attendances.FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
@@ -122,20 +132,17 @@ namespace NabdAltamayyuz.Controllers
                 _context.Attendances.Add(attendance);
                 await _context.SaveChangesAsync();
 
-                // إرسال البيانات للمنصة
                 var user = await _context.Users.FindAsync(userId);
                 if (user != null && !string.IsNullOrEmpty(user.NationalId))
                 {
-                    // إرسال في الخلفية
                     await _teleworksService.SendAttendanceAsync(user.NationalId, today, nowTime, null);
                 }
 
-                TempData["Success"] = "تم تسجيل الدخول";
+                TempData["Success"] = "تم تسجيل الدخول بنجاح";
             }
             return RedirectToAction("Index");
         }
 
-        // --- تسجيل الخروج (مع الربط بالمنصة) ---
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Employee,CompanyAdmin,SubAdmin")]
@@ -143,8 +150,8 @@ namespace NabdAltamayyuz.Controllers
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-            // ضبط الوقت لتوقيت السعودية (UTC+3)
-            var nowTime = DateTime.UtcNow.AddHours(3);
+            var ksaZone = OperatingSystem.IsWindows() ? "Arabic Standard Time" : "Asia/Riyadh";
+            var nowTime = TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, ksaZone);
             var today = nowTime.Date;
 
             var record = await _context.Attendances.FirstOrDefaultAsync(a => a.EmployeeId == userId && a.Date == today);
@@ -155,14 +162,13 @@ namespace NabdAltamayyuz.Controllers
                 _context.Update(record);
                 await _context.SaveChangesAsync();
 
-                // إرسال البيانات للمنصة
                 var user = await _context.Users.FindAsync(userId);
                 if (user != null && !string.IsNullOrEmpty(user.NationalId))
                 {
                     await _teleworksService.SendAttendanceAsync(user.NationalId, today, record.TimeIn.Value, nowTime);
                 }
 
-                TempData["Success"] = "تم تسجيل الخروج";
+                TempData["Success"] = "تم تسجيل الخروج بنجاح";
             }
             return RedirectToAction("Index");
         }

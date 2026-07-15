@@ -5,8 +5,10 @@
     var culture = CultureInfo.CurrentCulture.Name.StartsWith("ar") ? "ar" : "en";
     var isArabic = culture == "ar";
 
-    // التعديل 3: استخدام اسم الشركة الممرر من الكنترولر إن وجد
     var companyName = ViewBag.CompanyName as string ?? (isArabic ? "نبض التميز الذهبي" : "Nabd AlTamayyuz");
+
+    // جلب الإجازات الممررة من الكنترولر لعرضها في تقرير الحضور
+    var leaves = ViewBag.ReportLeaves as List<NabdAltamayyuz.Models.LeaveRequest> ?? new List<NabdAltamayyuz.Models.LeaveRequest>();
 }
 
 <!DOCTYPE html>
@@ -173,6 +175,27 @@
             {
                 foreach (var item in Model)
                 {
+                    // التعديل: التحقق مما إذا كان يوم الحضور يقع ضمن أيام الإجازة للموظف
+                    var empLeave = leaves.FirstOrDefault(l => l.EmployeeId == item.EmployeeId && l.StartDate <= item.Date && l.EndDate >= item.Date);
+                    bool hasLeave = empLeave != null;
+                    string leaveName = "";
+
+                    if (hasLeave)
+                    {
+                        leaveName = empLeave.Type switch
+                        {
+                            NabdAltamayyuz.Models.LeaveType.Annual => "إجازة سنوية",
+                            NabdAltamayyuz.Models.LeaveType.Unpaid => "بدون أجر",
+                            NabdAltamayyuz.Models.LeaveType.Sick => "إجازة مرضية",
+                            NabdAltamayyuz.Models.LeaveType.Marriage => "إجازة زواج",
+                            NabdAltamayyuz.Models.LeaveType.Maternity => "إجازة مولود",
+                            NabdAltamayyuz.Models.LeaveType.Exams => "إجازة اختبارات",
+                            NabdAltamayyuz.Models.LeaveType.Hajj => "إجازة حج",
+                            NabdAltamayyuz.Models.LeaveType.Death => "إجازة وفاة",
+                            _ => empLeave.CustomTypeName ?? "أخرى"
+                        };
+                    }
+
                     <tr>
                         <td style="font-weight:bold;">@item.Date.ToString("yyyy-MM-dd")</td>
                         <td>@item.Date.ToString("dddd", CultureInfo.CurrentCulture)</td>
@@ -181,7 +204,11 @@
                         <td dir="ltr" style="font-family: 'Courier New', monospace;">@(item.TimeIn?.ToString("HH:mm") ?? "--")</td>
                         <td dir="ltr" style="font-family: 'Courier New', monospace;">@(item.TimeOut?.ToString("HH:mm") ?? "--")</td>
                         <td>
-                            @if (item.TimeIn != null)
+                            @if (hasLeave)
+                            {
+                                <span class="status-badge" style="color:#0369a1; background:#e0f2fe;">@(isArabic ? "إجازة" : "Leave")</span>
+                            }
+                            else if (item.TimeIn != null)
                             {
                                 <span class="status-badge" style="color:#15803d; background:#dcfce7;">@(isArabic ? "حضور" : "Present")</span>
                             }
@@ -190,7 +217,16 @@
                                 <span class="status-badge" style="color:#b91c1c; background:#fee2e2;">@(isArabic ? "غياب" : "Absent")</span>
                             }
                         </td>
-                        <td style="font-size: 11px; color:#64748b;">@item.Notes</td>
+                        <td style="font-size: 11px; color:#64748b;">
+                            @if (hasLeave)
+                            {
+                                <strong style="color:#0369a1;">@(isArabic ? "إجازة: " : "Leave: ") @leaveName</strong>
+                            }
+                            else
+                            {
+                                @item.Notes
+                            }
+                        </td>
                     </tr>
                 }
             }

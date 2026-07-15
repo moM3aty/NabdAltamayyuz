@@ -6,16 +6,17 @@
     ViewData["Title"] = isRtl ? "سجل حضوري" : "My Attendance";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
-    // جلب اسم الشركة من الكنترولر للطباعة
     var companyName = ViewBag.CompanyName as string ?? "نبض التميز الذهبي";
+
+    // جلب الإجازات المعتمدة لعرضها في سجل الموظف إن تقاطعت مع الأيام المعروضة
+    var leaves = ViewBag.MyLeaves as List<NabdAltamayyuz.Models.LeaveRequest> ?? new List<NabdAltamayyuz.Models.LeaveRequest>();
 }
 
-<!-- إصلاح تنسيقات الطباعة لمنع قص الجدول وإضافة ترويسة متكاملة -->
 <style>
     @@media print {
         @@page {
             size: A4 portrait;
-            margin: 1.5cm; /* هوامش متزنة لمنع القص */
+            margin: 1.5cm;
         }
 
         body {
@@ -23,7 +24,7 @@
             font-family: 'Cairo', sans-serif;
             -webkit-print-color-adjust: exact;
         }
-        /* إخفاء العناصر غير المرغوبة في الطباعة */
+
         .premium-navbar, footer, .btn, .alert, .no-print, .action-buttons-container {
             display: none !important;
         }
@@ -43,7 +44,7 @@
         .card-body {
             padding: 0 !important;
         }
-        /* تنسيق الترويسة المطبوعة */
+
         .print-header {
             display: flex !important;
             justify-content: space-between;
@@ -51,7 +52,7 @@
             border-bottom: 2px solid #D4AF37;
             padding-bottom: 15px;
             margin-bottom: 25px;
-            page-break-after: avoid; /* منع الفصل بعد الترويسة */
+            page-break-after: avoid;
         }
 
             .print-header h4 {
@@ -71,7 +72,7 @@
                 font-size: 12px;
                 margin: 0;
             }
-        /* تنسيقات الجدول لمنع القص الداخلي */
+
         .table-responsive {
             overflow: visible !important;
         }
@@ -84,7 +85,7 @@
         }
 
         tr {
-            page-break-inside: avoid; /* يمنع انقسام الصف عبر صفحتين */
+            page-break-inside: avoid;
             page-break-after: auto;
         }
 
@@ -116,7 +117,6 @@
 
 <div class="container py-5 animate-fade-in" style="margin-top: 120px;">
 
-    <!-- ترويسة مخصصة تظهر فقط عند الطباعة -->
     <div class="print-header">
         <div>
             <h4><i class="fas fa-building me-2"></i> @companyName</h4>
@@ -128,7 +128,6 @@
         </div>
     </div>
 
-    <!-- ترويسة الواجهة (تختفي في الطباعة) -->
     <div class="d-flex justify-content-between align-items-center mb-4 no-print action-buttons-container">
         <div>
             <h3 class="fw-bold text-dark"><i class="fas fa-history text-gold me-2"></i> @(isRtl ? "سجل الحضور الشخصي" : "My Attendance History")</h3>
@@ -160,6 +159,26 @@
                         {
                             foreach (var item in Model)
                             {
+                                // التعديل: إظهار الإجازة إن وجدت ضمن أيام الحضور
+                                var empLeave = leaves.FirstOrDefault(l => l.StartDate <= item.Date && l.EndDate >= item.Date);
+                                bool hasLeave = empLeave != null;
+                                string leaveName = "";
+                                if (hasLeave)
+                                {
+                                    leaveName = empLeave.Type switch
+                                    {
+                                        NabdAltamayyuz.Models.LeaveType.Annual => "إجازة سنوية",
+                                        NabdAltamayyuz.Models.LeaveType.Unpaid => "بدون أجر",
+                                        NabdAltamayyuz.Models.LeaveType.Sick => "إجازة مرضية",
+                                        NabdAltamayyuz.Models.LeaveType.Marriage => "إجازة زواج",
+                                        NabdAltamayyuz.Models.LeaveType.Maternity => "إجازة مولود",
+                                        NabdAltamayyuz.Models.LeaveType.Exams => "إجازة اختبارات",
+                                        NabdAltamayyuz.Models.LeaveType.Hajj => "إجازة حج",
+                                        NabdAltamayyuz.Models.LeaveType.Death => "إجازة وفاة",
+                                        _ => empLeave.CustomTypeName ?? "أخرى"
+                                    };
+                                }
+
                                 <tr>
                                     <td><span class="fw-bold">@item.Date.ToString("yyyy-MM-dd")</span></td>
                                     <td>@item.Date.ToString("dddd", CultureInfo.CurrentCulture)</td>
@@ -178,7 +197,11 @@
                                         }
                                     </td>
                                     <td>
-                                        @if (item.TimeOut == null)
+                                        @if (hasLeave)
+                                        {
+                                            <span class="badge bg-info text-dark rounded-pill">@(isRtl ? "إجازة" : "Leave") (@leaveName)</span>
+                                        }
+                                        else if (item.TimeOut == null)
                                         {
                                             <span class="badge bg-warning bg-opacity-10 text-dark rounded-pill">@(isRtl ? "جاري العمل" : "Working")</span>
                                         }

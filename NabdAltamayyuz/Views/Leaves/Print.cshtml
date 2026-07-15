@@ -1,59 +1,351 @@
-﻿@model IEnumerable<NabdAltamayyuz.Models.LeaveRequest>
-@using System.Globalization
+﻿@model NabdAltamayyuz.Models.LeaveRequest
+@using System.ComponentModel.DataAnnotations
+@using System.Reflection
+
 @{
     Layout = null;
-    var isArabic = true;
-    var companyName = ViewBag.CompanyName as string ?? "نبض التميز الذهبي";
+    var isRtl = true;
+
+    var companyName = Model.Employee?.Company?.Name ?? "نبض التميز الذهبي";
+    var unifiedNumber = Model.Employee?.Company?.UnifiedNumber ?? "-";
+
+    string GetEnumDisplayName(Enum enumValue)
+    {
+        var displayAttribute = enumValue.GetType()
+            .GetMember(enumValue.ToString())
+            .First()
+            .GetCustomAttribute<DisplayAttribute>();
+
+        if (displayAttribute != null) return displayAttribute.Name;
+
+        return enumValue switch
+        {
+            NabdAltamayyuz.Models.LeaveType.Annual => "إجازة سنوية",
+            NabdAltamayyuz.Models.LeaveType.Unpaid => "بدون أجر",
+            NabdAltamayyuz.Models.LeaveType.Sick => "إجازة مرضية",
+            NabdAltamayyuz.Models.LeaveType.Marriage => "إجازة زواج",
+            NabdAltamayyuz.Models.LeaveType.Maternity => "إجازة مولود",
+            NabdAltamayyuz.Models.LeaveType.Exams => "إجازة اختبارات",
+            NabdAltamayyuz.Models.LeaveType.Hajj => "إجازة حج",
+            NabdAltamayyuz.Models.LeaveType.Death => "إجازة وفاة",
+            _ => "أخرى"
+        };
+    }
+
+    var leaveTypeName = Model.Type == NabdAltamayyuz.Models.LeaveType.Other ? Model.CustomTypeName : GetEnumDisplayName(Model.Type);
 }
 
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="utf-8" />
-    <title>سجل الإجازات - @companyName</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>نموذج طلب إجازة إلكتروني - @Model.Employee.FullName</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        body { font-family: 'Cairo', sans-serif; padding: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
-        th { background-color: #0F172A !important; color: #fff !important; padding: 10px; border: 1px solid #0F172A; text-align: center; -webkit-print-color-adjust: exact; }
-        td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #D4AF37; padding-bottom: 10px; margin-bottom: 20px; }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #fff;
+            color: #333;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        .print-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 30px;
+        }
+
+        .header-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #D4AF37;
+            padding-bottom: 10px;
+        }
+
+        .company-logo-text {
+            color: #0F172A;
+            font-weight: bold;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+        }
+
+            .company-logo-text span {
+                color: #D4AF37;
+                margin-right: 8px;
+            }
+
+        .form-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: #111;
+        }
+
+        .section-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #222;
+        }
+
+        .table-custom {
+            width: 100%;
+            margin-bottom: 30px;
+            border-collapse: collapse;
+        }
+
+            .table-custom th, .table-custom td {
+                border: 1px solid #777;
+                padding: 12px;
+                text-align: center;
+                font-size: 16px;
+            }
+
+            .table-custom th {
+                background-color: #e5e7eb !important;
+                font-weight: bold;
+                color: #111;
+            }
+
+            .table-custom td {
+                background-color: #f9fafb !important;
+                font-weight: 600;
+            }
+
+        .status-box {
+            background-color: #f8fafc !important;
+            border: 1px solid #777;
+            margin-bottom: 20px;
+        }
+
+        .status-header {
+            background-color: #e5e7eb !important;
+            padding: 10px;
+            font-weight: bold;
+            border-bottom: 1px solid #777;
+            display: flex;
+            color: #111;
+        }
+
+            .status-header div {
+                flex: 1;
+                text-align: center;
+            }
+
+                .status-header div:first-child {
+                    border-left: 1px solid #777;
+                }
+
+        .status-body {
+            display: flex;
+            padding: 15px 10px;
+            background-color: #f9fafb !important;
+        }
+
+            .status-body div {
+                flex: 1;
+                text-align: center;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+                .status-body div:first-child {
+                    border-left: 1px solid #777;
+                }
+
+        .status-approved {
+            color: #166534;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .status-rejected {
+            color: #991b1b;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .status-pending {
+            color: #b45309;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .legal-note {
+            background-color: #f3f4f6 !important;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 40px;
+            font-size: 14px;
+            text-align: center;
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .qr-code-placeholder {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+            .qr-code-placeholder img {
+                width: 100px;
+                opacity: 0.9;
+            }
+
+        @@media print {
+            .btn-print {
+                display: none !important;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+            }
+        }
     </style>
 </head>
 <body onload="window.print()">
-    <div class="header">
-        <div><h2 style="color:#D4AF37; margin:0;">@companyName</h2><h3>تقرير الإجازات</h3></div>
-        <div style="font-size:12px; color:#666;">
-            <div><strong>تاريخ الطباعة:</strong> @ViewBag.PrintDate.ToString("yyyy-MM-dd")</div>
-            <div><strong>الفترة:</strong> من @ViewBag.FromDate إلى @ViewBag.ToDate</div>
+
+    <div class="print-container">
+
+        <!-- Header -->
+        <div class="header-box">
+            <div class="company-logo-text">
+                <i class="fas fa-building text-gold fa-lg ms-2"></i>
+                <div>
+                    شركة <span>@companyName</span>
+                </div>
+            </div>
+            <div class="text-muted" dir="ltr" style="font-size: 14px; font-weight:bold;">
+                @DateTime.Now.ToString("yyyy/MM/dd")
+            </div>
+        </div>
+
+        <div class="form-title">
+            نموذج طلب إجازة إلكتروني
+        </div>
+
+        <!-- 1. Company Data -->
+        <div class="section-title">1. بيانات الشركة</div>
+        <table class="table-custom">
+            <tr>
+                <th width="50%">الرقم الموحد</th>
+                <th width="50%">اسم الشركة</th>
+            </tr>
+            <tr>
+                <td style="font-family: monospace; font-size:18px;">@unifiedNumber</td>
+                <td style="font-size:18px;">شركة @companyName</td>
+            </tr>
+        </table>
+
+        <!-- 2. Employee Data -->
+        <div class="section-title">2. بيانات الموظف</div>
+        <table class="table-custom">
+            <tr>
+                <th width="50%">المسمى الوظيفي</th>
+                <th width="50%">الاسم الكامل</th>
+            </tr>
+            <tr>
+                <td>@Model.Employee.JobTitle</td>
+                <td>@Model.Employee.FullName</td>
+            </tr>
+            <tr>
+                <th>اسم المشروع / الفرع</th>
+                <th>رقم الهوية / الإقامة</th>
+            </tr>
+            <tr>
+                <td>@(Model.Employee.Project?.Name ?? "المركز الرئيسي")</td>
+                <td style="font-family: monospace; font-size:18px;">@Model.Employee.NationalId</td>
+            </tr>
+        </table>
+
+        <!-- 3. Leave Data -->
+        <div class="section-title">3. بيانات الإجازة</div>
+        <table class="table-custom">
+            <tr>
+                <th width="20%">مدة الإجازة</th>
+                <th width="25%">تاريخ انتهاء الإجازة (إلى)</th>
+                <th width="25%">تاريخ بدء الإجازة (من)</th>
+                <th width="30%">نوع الإجازة</th>
+            </tr>
+            <tr>
+                <td style="font-size:18px; font-weight:bold;">@Model.DurationDays يوم</td>
+                <td style="font-family: monospace; font-size:18px;">@Model.EndDate.ToString("yyyy/MM/dd")</td>
+                <td style="font-family: monospace; font-size:18px;">@Model.StartDate.ToString("yyyy/MM/dd")</td>
+                <td style="font-size:18px;">@leaveTypeName</td>
+            </tr>
+        </table>
+
+        <!-- 4. Approval Status -->
+        <div class="section-title">4. حالة الاعتماد</div>
+        <div class="status-box">
+            <div class="status-header">
+                <div>تفاصيل الاعتماد</div>
+                <div>حالة الطلب</div>
+            </div>
+            <div class="status-body">
+                <div>
+                    @if (Model.Status == NabdAltamayyuz.Models.LeaveStatus.Approved)
+                    {
+                        <span class="text-dark">تم الاعتماد من مشرف النظام</span>
+                    }
+                    else if (Model.Status == NabdAltamayyuz.Models.LeaveStatus.Rejected)
+                    {
+                        <span class="text-dark">تم رفض الطلب من قبل إدارة الموارد البشرية أو مدير النظام.</span>
+                    }
+                    else
+                    {
+                        <span class="text-dark">بانتظار مراجعة واعتماد مشرف النظام للطلب.</span>
+                    }
+                </div>
+                <div>
+                    @if (Model.Status == NabdAltamayyuz.Models.LeaveStatus.Approved)
+                    {
+                        <span class="status-approved"><i class="fas fa-check-square me-2" style="color: #22c55e;"></i> تم الاعتماد</span>
+                    }
+                    else if (Model.Status == NabdAltamayyuz.Models.LeaveStatus.Rejected)
+                    {
+                        <span class="status-rejected"><i class="fas fa-times-circle me-2" style="color: #ef4444;"></i> مرفوض</span>
+                    }
+                    else
+                    {
+                        <span class="status-pending"><i class="fas fa-clock me-2" style="color: #f59e0b;"></i> قيد الانتظار</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Legal Note -->
+        <div class="legal-note">
+            <div class="fw-bold mb-2 text-dark d-flex align-items-center justify-content-center">
+                <i class="fas fa-exclamation-triangle text-warning me-2 fa-lg"></i> ملاحظة نظامية:
+            </div>
+            "تمت الموافقة على هذا النموذج واعتماده عبر النظام الإلكتروني للمنشأة، ويُعتبر سارياً ومفعلاً دون الحاجة لتوقيع ورقي من الموظف أو المدير المباشر."
+        </div>
+
+        <!-- QR Code Placeholder -->
+        <div class="qr-code-placeholder">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=Leave-@Model.Id-@Model.EmployeeId" alt="QR Code">
+            <div class="small text-muted mt-2 fw-bold">النسخة الإلكترونية المعتمدة</div>
+        </div>
+
+        <div class="text-center mt-5 btn-print">
+            <button class="btn btn-dark btn-lg px-5 py-2 shadow-lg" style="border-radius: 50px;" onclick="window.print()"><i class="fas fa-print me-2"></i> طباعة النموذج</button>
         </div>
     </div>
-    <table>
-        <thead>
-            <tr>
-                <th>تاريخ الطلب</th>
-                <th>الموظف</th>
-                <th>نوع الإجازة</th>
-                <th>من تاريخ</th>
-                <th>إلى تاريخ</th>
-                <th>المدة (يوم)</th>
-                <th>الحالة</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach(var item in Model) {
-                var typeName = item.Type == NabdAltamayyuz.Models.LeaveType.Other ? item.CustomTypeName : item.Type.ToString();
-                <tr>
-                    <td>@item.CreatedAt.ToString("yyyy-MM-dd")</td>
-                    <td>@item.Employee.FullName</td>
-                    <td>@typeName</td>
-                    <td>@item.StartDate.ToString("yyyy-MM-dd")</td>
-                    <td>@item.EndDate.ToString("yyyy-MM-dd")</td>
-                    <td>@item.DurationDays</td>
-                    <td style="font-weight:bold; color:@(item.Status == NabdAltamayyuz.Models.LeaveStatus.Approved ? "green" : (item.Status == NabdAltamayyuz.Models.LeaveStatus.Rejected ? "red" : "orange"))">@item.Status</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+
 </body>
 </html>

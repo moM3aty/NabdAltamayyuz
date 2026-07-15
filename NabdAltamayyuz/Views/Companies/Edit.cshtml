@@ -72,6 +72,10 @@
                         <label asp-for="NationalAddressShortCode" class="form-label small fw-bold">العنوان الوطني (مختصر)</label>
                         <input asp-for="NationalAddressShortCode" class="form-control bg-light" />
                     </div>
+                    <div class="col-md-4">
+                        <label asp-for="CreatedAt" class="form-label small fw-bold">تاريخ الإضافة / التعاقد</label>
+                        <input asp-for="CreatedAt" type="date" class="form-control bg-light" required />
+                    </div>
                     @if (isSuperAdmin)
                     {
                         <div class="col-md-4">

@@ -117,6 +117,14 @@ namespace NabdAltamayyuz.Controllers
                 if (to.HasValue) query = query.Where(a => a.Date <= to.Value);
 
                 var data = await query.OrderByDescending(a => a.Date).ToListAsync();
+
+                // جلب الإجازات المتداخلة مع التواريخ لدمجها في التقرير
+                var userIdsInData = data.Select(a => a.EmployeeId).Distinct().ToList();
+                var leaves = await _context.LeaveRequests
+                    .Where(l => userIdsInData.Contains(l.EmployeeId) && l.Status == LeaveStatus.Approved)
+                    .ToListAsync();
+                ViewBag.ReportLeaves = leaves;
+
                 return View("PrintAttendance", data);
             }
 
@@ -172,6 +180,7 @@ namespace NabdAltamayyuz.Controllers
             {
                 if (userRole == "Employee") return Forbid();
 
+                // استخدام from كمحدد للشهر المختار
                 var targetMonth = from ?? DateTime.Today;
 
                 var query = _context.MonthlyInteractions
@@ -220,6 +229,7 @@ namespace NabdAltamayyuz.Controllers
             return BadRequest("نوع التقرير غير صالح");
         }
 
+        // إضافة دالة ترحيل التفاعل لمنصة العمل عن بعد (Teleworks)
         [HttpPost]
         [Authorize(Roles = "SuperAdmin,CompanyAdmin,SubAdmin")]
         public async Task<IActionResult> SyncMonthlyInteraction(int? companyId, string dateStr)
@@ -241,6 +251,7 @@ namespace NabdAltamayyuz.Controllers
 
             var records = await query.ToListAsync();
 
+      
             return Json(new { success = true, message = $"تم إرسال بيانات التفاعل لـ {records.Count} موظف للمنصة بنجاح لشهر {targetMonth:MM-yyyy}." });
         }
     }

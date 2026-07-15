@@ -26,33 +26,34 @@ namespace NabdAltamayyuz.Controllers
             _teleworksService = teleworksService;
         }
 
-        // ---------------------------------------------------------
-        // 1. سجل حضوري (للموظف) 
-        // ---------------------------------------------------------
+        // 1. سجل حضوري (للموظف)
         public async Task<IActionResult> MyHistory()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
             var user = await _context.Users.Include(u => u.Company).FirstOrDefaultAsync(u => u.Id == userId);
-            // إرسال اسم الشركة للواجهة ليظهر في الترويسة المطبوعة
             ViewBag.CompanyName = user?.Company?.Name ?? "نبض التميز الذهبي";
 
             var history = await _context.Attendances
                 .Where(a => a.EmployeeId == userId)
                 .OrderByDescending(a => a.Date)
-                .Take(30) // آخر 30 يوم
+                .Take(30)
                 .ToListAsync();
+
+            // جلب الإجازات المعتمدة لعرضها في السجل الشخصي
+            var leaves = await _context.LeaveRequests
+                .Where(l => l.EmployeeId == userId && l.Status == LeaveStatus.Approved)
+                .ToListAsync();
+
+            ViewBag.MyLeaves = leaves;
 
             return View(history);
         }
 
-        // ---------------------------------------------------------
-        // 2. سجل الحضور العام (للمدراء والمالك) 
-        // ---------------------------------------------------------
+        // 2. سجل الحضور العام (للمدراء)
         [Authorize(Roles = "CompanyAdmin,SuperAdmin,SubAdmin")]
         public async Task<IActionResult> Index(int? companyId, string searchEmployee, DateTime? date, string status)
         {
-            // استخدام توقيت السعودية كافتراضي إذا لم يتم اختيار تاريخ
             var selectedDate = date ?? DateTime.UtcNow.AddHours(3).Date;
 
             var usersQuery = _context.Users.Include(u => u.Company).Where(u => u.Role == UserRole.Employee);
@@ -66,29 +67,25 @@ namespace NabdAltamayyuz.Controllers
             {
                 var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
                 var user = await _context.Users.FindAsync(userId);
-
-                if (user?.CompanyId != null)
-                {
-                    usersQuery = usersQuery.Where(u => u.CompanyId == user.CompanyId);
-                }
+                if (user?.CompanyId != null) usersQuery = usersQuery.Where(u => u.CompanyId == user.CompanyId);
             }
 
-            if (!string.IsNullOrEmpty(searchEmployee))
-            {
-                usersQuery = usersQuery.Where(u => u.FullName.Contains(searchEmployee));
-            }
-
-            if (!string.IsNullOrEmpty(status))
-            {
-                usersQuery = usersQuery.Where(u => u.Status == status);
-            }
+            if (!string.IsNullOrEmpty(searchEmployee)) usersQuery = usersQuery.Where(u => u.FullName.Contains(searchEmployee));
+            if (!string.IsNullOrEmpty(status)) usersQuery = usersQuery.Where(u => u.Status == status);
 
             var employees = await usersQuery.OrderBy(u => u.FullName).ToListAsync();
-
             var empIds = employees.Select(e => e.Id).ToList();
+
             var attendances = await _context.Attendances
                 .Where(a => a.Date == selectedDate && empIds.Contains(a.EmployeeId))
                 .ToListAsync();
+
+            // التعديل: جلب طلبات الإجازات المتقاطعة مع هذا اليوم لهؤلاء الموظفين
+            var dailyLeaves = await _context.LeaveRequests
+                .Where(l => empIds.Contains(l.EmployeeId) && l.StartDate <= selectedDate && l.EndDate >= selectedDate)
+                .ToListAsync();
+
+            ViewBag.DailyLeaves = dailyLeaves;
 
             var resultList = new List<Attendance>();
             foreach (var emp in employees)
@@ -120,17 +117,10 @@ namespace NabdAltamayyuz.Controllers
             ViewBag.CurrentStatus = status;
             ViewBag.CurrentCompany = companyId;
 
-            var sortedList = resultList
-                .OrderByDescending(a => a.TimeIn.HasValue)
-                .ThenBy(a => a.Employee.FullName)
-                .ToList();
-
+            var sortedList = resultList.OrderByDescending(a => a.TimeIn.HasValue).ThenBy(a => a.Employee.FullName).ToList();
             return View(sortedList);
         }
 
-        // ---------------------------------------------------------
-        // إجراء سريع: تسجيل الدخول / الانصراف من الجدول مباشرة بدون Reload
-        // ---------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "CompanyAdmin,SuperAdmin,SubAdmin")]
@@ -148,7 +138,6 @@ namespace NabdAltamayyuz.Controllers
 
             var record = await _context.Attendances.FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.Date == date.Date);
 
-            // حل مشكلة تأخير الوقت (استخدام توقيت السعودية الثابت UTC+3)
             var nowTime = DateTime.UtcNow.AddHours(3);
             var actionDateTime = new DateTime(date.Year, date.Month, date.Day, nowTime.Hour, nowTime.Minute, nowTime.Second);
             var timeString = actionDateTime.ToString("HH:mm");
@@ -179,7 +168,7 @@ namespace NabdAltamayyuz.Controllers
                 await _context.SaveChangesAsync();
                 if (!string.IsNullOrEmpty(employee.NationalId)) await _teleworksService.SendAttendanceAsync(employee.NationalId, date.Date, actionDateTime, null);
 
-                return Json(new { success = true, message = "تم تسجيل الدخول بنجاح", timeStr = timeString });
+                return Json(new { success = true, message = "تم تسجيل الدخول", timeStr = timeString });
             }
             else if (actionType == "Out")
             {
@@ -194,16 +183,12 @@ namespace NabdAltamayyuz.Controllers
                 if (!string.IsNullOrEmpty(employee.NationalId)) await _teleworksService.SendAttendanceAsync(employee.NationalId, date.Date, record.TimeIn.Value, actionDateTime);
 
                 var totalHours = (record.TimeOut.Value - record.TimeIn.Value).TotalHours.ToString("0.0");
-                return Json(new { success = true, message = "تم تسجيل الانصراف بنجاح", timeStr = timeString, totalHours = totalHours });
+                return Json(new { success = true, message = "تم تسجيل الانصراف", timeStr = timeString, totalHours = totalHours });
             }
 
             return Json(new { success = false, message = "إجراء غير معروف" });
         }
 
-
-        // ---------------------------------------------------------
-        // 3. التسجيل والتعديل اليدوي من النافذة المنبثقة
-        // ---------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "CompanyAdmin,SuperAdmin,SubAdmin")]
@@ -219,15 +204,12 @@ namespace NabdAltamayyuz.Controllers
                 if (employee.CompanyId != currentUser.CompanyId) return Forbid();
             }
 
-            var existingRecord = await _context.Attendances
-                .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.Date == date.Date);
+            var existingRecord = await _context.Attendances.FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.Date == date.Date);
 
             if (existingRecord != null)
             {
                 existingRecord.TimeIn = timeIn;
                 existingRecord.TimeOut = timeOut;
-
-                // إزالة الإضافة الإجبارية لكلمة "تعديل يدوي" للحفاظ على الملاحظات نظيفة تماماً
                 existingRecord.Notes = notes;
                 existingRecord.IsManualEntry = true;
                 _context.Update(existingRecord);
@@ -258,9 +240,6 @@ namespace NabdAltamayyuz.Controllers
             return RedirectToAction(nameof(Index), new { date = date.ToString("yyyy-MM-dd") });
         }
 
-        // ---------------------------------------------------------
-        // 5. AJAX: جلب الموظفين لشركة محددة (للسوبر أدمن والتقارير)
-        // ---------------------------------------------------------
         [HttpGet]
         public async Task<IActionResult> GetEmployeesByCompany(int companyId)
         {
@@ -280,9 +259,6 @@ namespace NabdAltamayyuz.Controllers
             return Json(employees);
         }
 
-        // ---------------------------------------------------------
-        // 6. إرسال البيانات المجمع (أسبوعي)
-        // ---------------------------------------------------------
         [HttpPost]
         [Authorize(Roles = "CompanyAdmin,SuperAdmin")]
         public async Task<IActionResult> SubmitWeeklyData(int? companyId)

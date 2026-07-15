@@ -20,14 +20,13 @@ namespace NabdAltamayyuz.Controllers
             _context = context;
         }
 
-        // POST: Leaves/Create (للموظف أو المشرف نيابة عن الموظف)
+        // POST: Leaves/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(LeaveRequest model)
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-            // تحديد من هو الموظف صاحب الإجازة
             if (model.EmployeeId == 0)
             {
                 model.EmployeeId = userId;
@@ -35,17 +34,16 @@ namespace NabdAltamayyuz.Controllers
 
             model.CreatedAt = DateTime.Now;
 
-            // حساب المدة إذا لم يتم تمريرها بشكل صحيح
+            // حساب المدة
             if (model.EndDate >= model.StartDate)
             {
-                model.DurationDays = (model.EndDate - model.StartDate).Days + 1; // +1 لجعل الأيام شاملة
+                model.DurationDays = (model.EndDate - model.StartDate).Days + 1;
             }
             else
             {
                 model.DurationDays = 0;
             }
 
-            // إذا كان مقدم الطلب مشرفاً، يتم قبولها تلقائياً، وإلا فهي معلقة
             if (User.IsInRole("SuperAdmin") || User.IsInRole("CompanyAdmin") || User.IsInRole("SubAdmin"))
             {
                 model.Status = LeaveStatus.Approved;
@@ -58,26 +56,27 @@ namespace NabdAltamayyuz.Controllers
             _context.LeaveRequests.Add(model);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "تم إرسال طلب الإجازة بنجاح.";
+            TempData["Success"] = "تم حفظ طلب الإجازة بنجاح.";
 
-            // توجيه العودة حسب الصلاحية (للموظف للوحة الخاصة به، وللمشرف لصفحة تفاصيل الموظف)
-            if (User.IsInRole("Employee"))
+            // العودة للصفحة التي جاء منها الطلب
+            var referer = Request.Headers["Referer"].ToString();
+            if (!string.IsNullOrEmpty(referer))
             {
-                return RedirectToAction("Employee", "Dashboard");
+                return Redirect(referer);
             }
-            return RedirectToAction("Details", "Employees", new { id = model.EmployeeId });
+
+            return RedirectToAction("Index", "Dashboard");
         }
 
-        // POST: Leaves/UpdateStatus (للمشرفين)
+        // POST: Leaves/UpdateStatus
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "CompanyAdmin,SuperAdmin,SubAdmin")]
-        public async Task<IActionResult> UpdateStatus(int id, LeaveStatus status)
+        public async Task<IActionResult> UpdateStatus(int id, LeaveStatus status, string returnUrl)
         {
             var leave = await _context.LeaveRequests.Include(l => l.Employee).FirstOrDefaultAsync(l => l.Id == id);
             if (leave == null) return NotFound();
 
-            // التحقق من الصلاحيات (يجب أن يكون المشرف من نفس شركة الموظف أو سوبر أدمن)
             if (!User.IsInRole("SuperAdmin"))
             {
                 var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -89,23 +88,22 @@ namespace NabdAltamayyuz.Controllers
             _context.Update(leave);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = $"تم تحديث حالة الإجازة إلى: {status}";
+            TempData["Success"] = $"تم تحديث حالة الإجازة بنجاح";
+
+            if (!string.IsNullOrEmpty(returnUrl)) return Redirect(returnUrl);
             return RedirectToAction("Details", "Employees", new { id = leave.EmployeeId });
         }
 
-        // GET: Leaves/Print/5 (نموذج الطباعة)
+        // GET: Leaves/Print/5
         public async Task<IActionResult> Print(int id)
         {
             var leave = await _context.LeaveRequests
-                .Include(l => l.Employee)
-                .ThenInclude(e => e.Company)
-                .Include(l => l.Employee)
-                .ThenInclude(e => e.Project)
+                .Include(l => l.Employee).ThenInclude(e => e.Company)
+                .Include(l => l.Employee).ThenInclude(e => e.Project) // جلب المشروع
                 .FirstOrDefaultAsync(l => l.Id == id);
 
             if (leave == null) return NotFound();
 
-            // الصلاحيات: الموظف يمكنه طباعة إجازته فقط، والمشرف للموظفين في شركته
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             if (!User.IsInRole("SuperAdmin"))
             {
