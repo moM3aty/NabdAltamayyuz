@@ -109,7 +109,7 @@ namespace NabdAltamayyuz.Controllers
                 if (userRole == "Employee") query = query.Where(a => a.EmployeeId == userId);
                 else
                 {
-                    query = query.Where(a => allowedCompanyIds.Contains(a.Employee.CompanyId.Value));
+                    query = query.Where(a => a.Employee.CompanyId != null && allowedCompanyIds.Contains(a.Employee.CompanyId.Value));
                     if (employeeId.HasValue) query = query.Where(a => a.EmployeeId == employeeId.Value);
                 }
 
@@ -139,7 +139,7 @@ namespace NabdAltamayyuz.Controllers
                 if (userRole == "Employee") query = query.Where(t => t.AssignedToId == userId);
                 else
                 {
-                    query = query.Where(t => allowedCompanyIds.Contains(t.AssignedTo.CompanyId.Value));
+                    query = query.Where(t => t.AssignedTo.CompanyId != null && allowedCompanyIds.Contains(t.AssignedTo.CompanyId.Value));
                     if (employeeId.HasValue) query = query.Where(t => t.AssignedToId == employeeId.Value);
                 }
 
@@ -165,7 +165,7 @@ namespace NabdAltamayyuz.Controllers
                 if (userRole == "Employee") query = query.Where(l => l.EmployeeId == userId);
                 else
                 {
-                    query = query.Where(l => allowedCompanyIds.Contains(l.Employee.CompanyId.Value));
+                    query = query.Where(l => l.Employee.CompanyId != null && allowedCompanyIds.Contains(l.Employee.CompanyId.Value));
                     if (employeeId.HasValue) query = query.Where(l => l.EmployeeId == employeeId.Value);
                 }
 
@@ -188,10 +188,13 @@ namespace NabdAltamayyuz.Controllers
                     .Where(m => m.MonthYear.Year == targetMonth.Year && m.MonthYear.Month == targetMonth.Month)
                     .AsQueryable();
 
-                query = query.Where(m => allowedCompanyIds.Contains(m.Employee.CompanyId.Value));
+                query = query.Where(m => m.Employee.CompanyId != null && allowedCompanyIds.Contains(m.Employee.CompanyId.Value));
                 if (employeeId.HasValue) query = query.Where(m => m.EmployeeId == employeeId.Value);
 
-                var data = await query.OrderByDescending(m => m.InteractionPercentage).ToListAsync();
+                // الحل: جلب البيانات أولاً من قاعدة البيانات ثم ترتيبها في الذاكرة لمنع خطأ EF Core
+                var dbData = await query.ToListAsync();
+                var data = dbData.OrderByDescending(m => m.InteractionPercentage).ToList();
+
                 return View("PrintInteraction", data);
             }
 
@@ -251,7 +254,8 @@ namespace NabdAltamayyuz.Controllers
 
             var records = await query.ToListAsync();
 
-      
+
+
             return Json(new { success = true, message = $"تم إرسال بيانات التفاعل لـ {records.Count} موظف للمنصة بنجاح لشهر {targetMonth:MM-yyyy}." });
         }
     }
