@@ -61,6 +61,16 @@
             color: #0F172A;
         }
 
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0F172A;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
         .meta-box {
             font-size: 12px;
             color: #64748b;
@@ -148,7 +158,7 @@
     <div class="report-header">
         <div>
             <div class="company-name"><i class="fas fa-building me-2"></i> @companyName</div>
-            <div class="report-title">@(isArabic ? "تقرير الحضور والانصراف" : "Attendance Report")</div>
+            <div class="report-title">@(isArabic ? "تقرير الحضور والانصراف (مدمج مع الإجازات)" : "Attendance & Leaves Report")</div>
         </div>
         <div class="meta-box">
             <div><strong>@(isArabic ? "تاريخ الطباعة:" : "Print Date:")</strong> @ViewBag.PrintDate.ToString("yyyy-MM-dd HH:mm")</div>
@@ -157,6 +167,7 @@
         </div>
     </div>
 
+    <!-- جدول الحضور -->
     <table>
         <thead>
             <tr>
@@ -175,7 +186,7 @@
             {
                 foreach (var item in Model)
                 {
-                    // التعديل: التحقق مما إذا كان يوم الحضور يقع ضمن أيام الإجازة للموظف
+                    // التحقق مما إذا كان يوم الحضور يقع ضمن أيام الإجازة للموظف
                     var empLeave = leaves.FirstOrDefault(l => l.EmployeeId == item.EmployeeId && l.StartDate <= item.Date && l.EndDate >= item.Date);
                     bool hasLeave = empLeave != null;
                     string leaveName = "";
@@ -184,15 +195,15 @@
                     {
                         leaveName = empLeave.Type switch
                         {
-                            NabdAltamayyuz.Models.LeaveType.Annual => "إجازة سنوية",
-                            NabdAltamayyuz.Models.LeaveType.Unpaid => "بدون أجر",
-                            NabdAltamayyuz.Models.LeaveType.Sick => "إجازة مرضية",
-                            NabdAltamayyuz.Models.LeaveType.Marriage => "إجازة زواج",
-                            NabdAltamayyuz.Models.LeaveType.Maternity => "إجازة مولود",
-                            NabdAltamayyuz.Models.LeaveType.Exams => "إجازة اختبارات",
-                            NabdAltamayyuz.Models.LeaveType.Hajj => "إجازة حج",
-                            NabdAltamayyuz.Models.LeaveType.Death => "إجازة وفاة",
-                            _ => empLeave.CustomTypeName ?? "أخرى"
+                            NabdAltamayyuz.Models.LeaveType.Annual => isArabic ? "إجازة سنوية" : "Annual Leave",
+                            NabdAltamayyuz.Models.LeaveType.Unpaid => isArabic ? "بدون أجر" : "Unpaid",
+                            NabdAltamayyuz.Models.LeaveType.Sick => isArabic ? "إجازة مرضية" : "Sick Leave",
+                            NabdAltamayyuz.Models.LeaveType.Marriage => isArabic ? "إجازة زواج" : "Marriage Leave",
+                            NabdAltamayyuz.Models.LeaveType.Maternity => isArabic ? "إجازة مولود" : "Maternity Leave",
+                            NabdAltamayyuz.Models.LeaveType.Exams => isArabic ? "إجازة اختبارات" : "Exams Leave",
+                            NabdAltamayyuz.Models.LeaveType.Hajj => isArabic ? "إجازة حج" : "Hajj Leave",
+                            NabdAltamayyuz.Models.LeaveType.Death => isArabic ? "إجازة وفاة" : "Death Leave",
+                            _ => empLeave.CustomTypeName ?? (isArabic ? "أخرى" : "Other")
                         };
                     }
 
@@ -236,6 +247,50 @@
             }
         </tbody>
     </table>
+
+    <!-- جدول الإجازات (يظهر فقط في حال وجود إجازات) -->
+    @if (leaves.Any())
+    {
+        <div style="page-break-inside: avoid;">
+            <div class="section-title">@(isArabic ? "ملخص الإجازات المعتمدة خلال هذه الفترة" : "Approved Leaves Summary")</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th width="25%">@(isArabic ? "الموظف" : "Employee")</th>
+                        <th width="20%">@(isArabic ? "نوع الإجازة" : "Leave Type")</th>
+                        <th width="20%">@(isArabic ? "من تاريخ" : "From Date")</th>
+                        <th width="20%">@(isArabic ? "إلى تاريخ" : "To Date")</th>
+                        <th width="15%">@(isArabic ? "المدة (أيام)" : "Duration (Days)")</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var leave in leaves)
+                    {
+                        string leaveSummaryName = leave.Type switch
+                        {
+                            NabdAltamayyuz.Models.LeaveType.Annual => isArabic ? "إجازة سنوية" : "Annual Leave",
+                            NabdAltamayyuz.Models.LeaveType.Unpaid => isArabic ? "بدون أجر" : "Unpaid",
+                            NabdAltamayyuz.Models.LeaveType.Sick => isArabic ? "إجازة مرضية" : "Sick Leave",
+                            NabdAltamayyuz.Models.LeaveType.Marriage => isArabic ? "إجازة زواج" : "Marriage Leave",
+                            NabdAltamayyuz.Models.LeaveType.Maternity => isArabic ? "إجازة مولود" : "Maternity Leave",
+                            NabdAltamayyuz.Models.LeaveType.Exams => isArabic ? "إجازة اختبارات" : "Exams Leave",
+                            NabdAltamayyuz.Models.LeaveType.Hajj => isArabic ? "إجازة حج" : "Hajj Leave",
+                            NabdAltamayyuz.Models.LeaveType.Death => isArabic ? "إجازة وفاة" : "Death Leave",
+                            _ => leave.CustomTypeName ?? (isArabic ? "أخرى" : "Other")
+                        };
+
+                        <tr>
+                            <td style="@(isArabic ? "text-align:right; padding-right: 10px;" : "text-align:left; padding-left: 10px;") font-weight:600;">@leave.Employee.FullName</td>
+                            <td><span class="status-badge" style="color:#0369a1; background:#e0f2fe;">@leaveSummaryName</span></td>
+                            <td style="font-weight:bold;">@leave.StartDate.ToString("yyyy-MM-dd")</td>
+                            <td style="font-weight:bold;">@leave.EndDate.ToString("yyyy-MM-dd")</td>
+                            <td>@leave.DurationDays</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 
     <div style="margin-top: 50px; display: flex; justify-content: space-between; page-break-inside: avoid;">
         <div style="text-align: center; width: 200px;">

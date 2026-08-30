@@ -183,17 +183,51 @@ namespace NabdAltamayyuz.Controllers
                 // استخدام from كمحدد للشهر المختار
                 var targetMonth = from ?? DateTime.Today;
 
-                var query = _context.MonthlyInteractions
-                    .Include(m => m.Employee).ThenInclude(e => e.Company)
-                    .Where(m => m.MonthYear.Year == targetMonth.Year && m.MonthYear.Month == targetMonth.Month)
-                    .AsQueryable();
+                // 1. جلب الموظفين المسموح للمستخدم برؤيتهم أولاً
+                var empQuery = _context.Users
+                    .Include(u => u.Company)
+                    .Where(u => u.Role == UserRole.Employee && u.CompanyId != null && allowedCompanyIds.Contains(u.CompanyId.Value));
 
-                query = query.Where(m => m.Employee.CompanyId != null && allowedCompanyIds.Contains(m.Employee.CompanyId.Value));
-                if (employeeId.HasValue) query = query.Where(m => m.EmployeeId == employeeId.Value);
+                if (employeeId.HasValue)
+                    empQuery = empQuery.Where(u => u.Id == employeeId.Value);
 
-                // الحل: جلب البيانات أولاً من قاعدة البيانات ثم ترتيبها في الذاكرة لمنع خطأ EF Core
-                var dbData = await query.ToListAsync();
-                var data = dbData.OrderByDescending(m => m.InteractionPercentage).ToList();
+                var employees = await empQuery.ToListAsync();
+
+                // 2. جلب سجلات التفاعل لهؤلاء الموظفين في الشهر المحدد
+                var empIds = employees.Select(e => e.Id).ToList();
+                var interactions = await _context.MonthlyInteractions
+                    .Where(m => empIds.Contains(m.EmployeeId) && m.MonthYear.Year == targetMonth.Year && m.MonthYear.Month == targetMonth.Month)
+                    .ToListAsync();
+
+                // 3. تجهيز القائمة النهائية للطباعة (دمج الموظفين مع التفاعلات)
+                var data = new List<MonthlyInteraction>();
+
+                foreach (var emp in employees)
+                {
+                    var empInteraction = interactions.FirstOrDefault(m => m.EmployeeId == emp.Id);
+
+                    if (empInteraction != null)
+                    {
+                        empInteraction.Employee = emp; // ربط صريح لضمان ظهور البيانات
+                        data.Add(empInteraction);
+                    }
+                    else
+                    {
+                        // إنشاء سجل صفري للموظف الذي لم يتفاعل بعد ليظهر في الطباعة
+                        data.Add(new MonthlyInteraction
+                        {
+                            EmployeeId = emp.Id,
+                            Employee = emp,
+                            MonthYear = targetMonth,
+                            RequiredHours = 176, // تم التعديل لتطابق اسم الحقل في الموديل
+                            CompletedHours = 0   // تم التعديل لتطابق اسم الحقل في الموديل
+                                                 // لن نكتب InteractionPercentage لأنه يُحسب تلقائياً في الموديل
+                        });
+                    }
+                }
+
+                // 4. الترتيب في الذاكرة بأمان تام
+                data = data.OrderByDescending(m => m.InteractionPercentage).ToList();
 
                 return View("PrintInteraction", data);
             }
