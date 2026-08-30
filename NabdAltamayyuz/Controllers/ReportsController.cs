@@ -180,10 +180,8 @@ namespace NabdAltamayyuz.Controllers
             {
                 if (userRole == "Employee") return Forbid();
 
-                // استخدام from كمحدد للشهر المختار
                 var targetMonth = from ?? DateTime.Today;
 
-                // 1. جلب الموظفين المسموح للمستخدم برؤيتهم أولاً
                 var empQuery = _context.Users
                     .Include(u => u.Company)
                     .Where(u => u.Role == UserRole.Employee && u.CompanyId != null && allowedCompanyIds.Contains(u.CompanyId.Value));
@@ -192,42 +190,19 @@ namespace NabdAltamayyuz.Controllers
                     empQuery = empQuery.Where(u => u.Id == employeeId.Value);
 
                 var employees = await empQuery.ToListAsync();
-
-                // 2. جلب سجلات التفاعل لهؤلاء الموظفين في الشهر المحدد
                 var empIds = employees.Select(e => e.Id).ToList();
+
+                // استدعاء دالة المزامنة لحساب الحضور والمهام تلقائياً قبل عرض التقرير
+                await SyncMonthlyInteractionsAsync(empIds, targetMonth);
+
+                // جلب البيانات بعد تحديثها
                 var interactions = await _context.MonthlyInteractions
+                    .Include(m => m.Employee)
                     .Where(m => empIds.Contains(m.EmployeeId) && m.MonthYear.Year == targetMonth.Year && m.MonthYear.Month == targetMonth.Month)
                     .ToListAsync();
 
-                // 3. تجهيز القائمة النهائية للطباعة (دمج الموظفين مع التفاعلات)
-                var data = new List<MonthlyInteraction>();
-
-                foreach (var emp in employees)
-                {
-                    var empInteraction = interactions.FirstOrDefault(m => m.EmployeeId == emp.Id);
-
-                    if (empInteraction != null)
-                    {
-                        empInteraction.Employee = emp; // ربط صريح لضمان ظهور البيانات
-                        data.Add(empInteraction);
-                    }
-                    else
-                    {
-                        // إنشاء سجل صفري للموظف الذي لم يتفاعل بعد ليظهر في الطباعة
-                        data.Add(new MonthlyInteraction
-                        {
-                            EmployeeId = emp.Id,
-                            Employee = emp,
-                            MonthYear = targetMonth,
-                            RequiredHours = 176, // تم التعديل لتطابق اسم الحقل في الموديل
-                            CompletedHours = 0   // تم التعديل لتطابق اسم الحقل في الموديل
-                                                 // لن نكتب InteractionPercentage لأنه يُحسب تلقائياً في الموديل
-                        });
-                    }
-                }
-
-                // 4. الترتيب في الذاكرة بأمان تام
-                data = data.OrderByDescending(m => m.InteractionPercentage).ToList();
+                // الترتيب بناءً على نسبة التفاعل
+                var data = interactions.OrderByDescending(m => m.InteractionPercentage).ToList();
 
                 return View("PrintInteraction", data);
             }
@@ -269,28 +244,52 @@ namespace NabdAltamayyuz.Controllers
         // إضافة دالة ترحيل التفاعل لمنصة العمل عن بعد (Teleworks)
         [HttpPost]
         [Authorize(Roles = "SuperAdmin,CompanyAdmin,SubAdmin")]
-        public async Task<IActionResult> SyncMonthlyInteraction(int? companyId, string dateStr)
+        private async Task SyncMonthlyInteractionsAsync(List<int> employeeIds, DateTime targetMonth)
         {
-            DateTime targetMonth = DateTime.TryParse(dateStr, out var d) ? d : DateTime.Today;
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-
-            var query = _context.MonthlyInteractions.Include(m => m.Employee).Where(m => m.MonthYear.Year == targetMonth.Year && m.MonthYear.Month == targetMonth.Month);
-
-            if (!User.IsInRole("SuperAdmin"))
+            foreach (var empId in employeeIds)
             {
-                var user = await _context.Users.FindAsync(userId);
-                query = query.Where(m => m.Employee.CompanyId == user.CompanyId);
+                // 1. البحث عن سجل التفاعل لهذا الشهر، أو إنشاؤه إذا لم يكن موجوداً
+                var interaction = await _context.MonthlyInteractions
+                    .FirstOrDefaultAsync(m => m.EmployeeId == empId && m.MonthYear.Year == targetMonth.Year && m.MonthYear.Month == targetMonth.Month);
+
+                if (interaction == null)
+                {
+                    interaction = new MonthlyInteraction
+                    {
+                        EmployeeId = empId,
+                        MonthYear = new DateTime(targetMonth.Year, targetMonth.Month, 1),
+                        RequiredHours = 176, // المقرر التلقائي
+                        IsManuallyEdited = false
+                    };
+                    _context.MonthlyInteractions.Add(interaction);
+                }
+
+                // 2. تحديث المنجز والمهام فقط إذا لم يقم المشرف بتعديلها يدوياً
+                if (!interaction.IsManuallyEdited)
+                {
+                    // حساب ساعات الحضور الفعلية خلال الشهر
+                    var attendances = await _context.Attendances
+                        .Where(a => a.EmployeeId == empId && a.Date.Year == targetMonth.Year && a.Date.Month == targetMonth.Month && a.TimeIn != null && a.TimeOut != null)
+                        .ToListAsync();
+
+                    double totalHours = 0;
+                    foreach (var att in attendances)
+                    {
+                        totalHours += (att.TimeOut.Value - att.TimeIn.Value).TotalHours;
+                    }
+                    interaction.CompletedHours = Math.Round(totalHours, 2);
+
+                    // حساب المهام المسندة والمنجزة خلال الشهر
+                    var tasks = await _context.WorkTasks
+                        .Where(t => t.AssignedToId == empId && t.DueDate.Year == targetMonth.Year && t.DueDate.Month == targetMonth.Month)
+                        .ToListAsync();
+
+                    interaction.TotalTasks = tasks.Count;
+                    interaction.CompletedTasks = tasks.Count(t => t.IsCompleted);
+                }
             }
-            else if (companyId.HasValue)
-            {
-                query = query.Where(m => m.Employee.CompanyId == companyId.Value);
-            }
 
-            var records = await query.ToListAsync();
-
-
-
-            return Json(new { success = true, message = $"تم إرسال بيانات التفاعل لـ {records.Count} موظف للمنصة بنجاح لشهر {targetMonth:MM-yyyy}." });
+            await _context.SaveChangesAsync();
         }
     }
 }
