@@ -102,28 +102,77 @@ namespace NabdAltamayyuz.Controllers
                 allowedCompanyIds = Enumerable.Empty<int>().AsQueryable();
             }
 
-            if (type == "attendance")
+           if (type == "attendance")
             {
-                var query = _context.Attendances.Include(a => a.Employee).ThenInclude(e => e.Company).AsQueryable();
+                // تحديد فترة التقرير (إذا لم يتم التحديد نختار من بداية الشهر الحالي حتى اليوم)
+                var targetFrom = from ?? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                var targetTo = to ?? DateTime.Today;
 
-                if (userRole == "Employee") query = query.Where(a => a.EmployeeId == userId);
+                // 1. جلب الموظفين المطلوبين بناءً على الصلاحيات والفلتر
+                var empQuery = _context.Users.Include(u => u.Company)
+                    .Where(u => u.Role == UserRole.Employee);
+
+                if (userRole == "Employee")
+                {
+                    empQuery = empQuery.Where(u => u.Id == userId);
+                }
                 else
                 {
-                    query = query.Where(a => a.Employee.CompanyId != null && allowedCompanyIds.Contains(a.Employee.CompanyId.Value));
-                    if (employeeId.HasValue) query = query.Where(a => a.EmployeeId == employeeId.Value);
+                    empQuery = empQuery.Where(u => u.CompanyId != null && allowedCompanyIds.Contains(u.CompanyId.Value));
+                    if (employeeId.HasValue) empQuery = empQuery.Where(u => u.Id == employeeId.Value);
                 }
 
-                if (from.HasValue) query = query.Where(a => a.Date >= from.Value);
-                if (to.HasValue) query = query.Where(a => a.Date <= to.Value);
+                var employees = await empQuery.ToListAsync();
+                var empIds = employees.Select(e => e.Id).ToList();
 
-                var data = await query.OrderByDescending(a => a.Date).ToListAsync();
-
-                // جلب الإجازات المتداخلة مع التواريخ لدمجها في التقرير
-                var userIdsInData = data.Select(a => a.EmployeeId).Distinct().ToList();
-                var leaves = await _context.LeaveRequests
-                    .Where(l => userIdsInData.Contains(l.EmployeeId) && l.Status == LeaveStatus.Approved)
+                // 2. جلب سجلات الحضور الفعلية المتوفرة في قاعدة البيانات
+                var actualAttendances = await _context.Attendances
+                    .Where(a => empIds.Contains(a.EmployeeId) && a.Date >= targetFrom && a.Date <= targetTo)
                     .ToListAsync();
+
+                // 3. جلب الإجازات المعتمدة خلال هذه الفترة
+                var leaves = await _context.LeaveRequests
+                    .Where(l => empIds.Contains(l.EmployeeId) && l.Status == LeaveStatus.Approved && l.StartDate <= targetTo && l.EndDate >= targetFrom)
+                    .ToListAsync();
+
+                // 4. بناء التقرير الشامل (تسلسل الأيام لكل موظف)
+                var comprehensiveData = new List<Attendance>();
+
+                foreach (var emp in employees)
+                {
+                    // حلقة تكرارية تمر على كل يوم في الفترة المحددة
+                    for (var date = targetFrom.Date; date <= targetTo.Date; date = date.AddDays(1))
+                    {
+                        var existingAtt = actualAttendances.FirstOrDefault(a => a.EmployeeId == emp.Id && a.Date.Date == date);
+
+                        if (existingAtt != null)
+                        {
+                            existingAtt.Employee = emp; // ربط الموظف لضمان ظهور بياناته
+                            comprehensiveData.Add(existingAtt);
+                        }
+                        else
+                        {
+                            // إذا لم يجد سجل للحضور في هذا اليوم، يقوم بإنشاء سجل افتراضي لمعالجته كغياب أو إجازة
+                            comprehensiveData.Add(new Attendance
+                            {
+                                EmployeeId = emp.Id,
+                                Employee = emp,
+                                Date = date,
+                                DayName = date.ToString("dddd", new System.Globalization.CultureInfo("ar-SA")),
+                                TimeIn = null, // لا يوجد وقت دخول = غائب (إلا إذا كان لديه إجازة سيتم فحصها في الواجهة)
+                                TimeOut = null,
+                                Notes = null
+                            });
+                        }
+                    }
+                }
+
+                // ترتيب التقرير حسب التاريخ (من الأحدث للأقدم) ثم باسم الموظف
+                var data = comprehensiveData.OrderByDescending(a => a.Date).ThenBy(a => a.Employee.FullName).ToList();
+
                 ViewBag.ReportLeaves = leaves;
+                ViewBag.FromDate = targetFrom.ToString("yyyy-MM-dd");
+                ViewBag.ToDate = targetTo.ToString("yyyy-MM-dd");
 
                 return View("PrintAttendance", data);
             }
